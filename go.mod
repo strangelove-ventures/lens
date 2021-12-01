@@ -1,4 +1,4 @@
-module github.com/jackzampolin/cosmos-client
+module github.com/jackzampolin/lens
 
 go 1.17
 

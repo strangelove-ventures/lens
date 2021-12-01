@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/jackzampolin/cosmos-client/cmd"
+import "github.com/jackzampolin/lens/cmd"
 
 func main() {
 	cmd.Execute()
