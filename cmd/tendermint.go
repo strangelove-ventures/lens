@@ -16,19 +16,26 @@ limitations under the License.
 package cmd
 
 import (
+	"bytes"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
+
 	"github.com/spf13/cobra"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
 )
 
 // tendermintCmd represents the tendermint command
-var tendermintCmd = &cobra.Command{
-	Use:     "tendermint",
-	Aliases: []string{"tm"},
-	Short:   "all tendermint query commands",
-}
-
-func init() {
-	rootCmd.AddCommand(tendermintCmd)
-	tendermintCmd.AddCommand(
+func tendermintCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "tendermint",
+		Aliases: []string{"tm"},
+		Short:   "all tendermint query commands",
+	}
+	cmd.AddCommand(
 		abciInfoCmd(),
 		abciQueryCmd(),
 		blockCmd(),
@@ -44,6 +51,7 @@ func init() {
 		statusCmd(),
 		queryTxCmd(),
 	)
+	return cmd
 }
 
 func abciInfoCmd() *cobra.Command {
@@ -53,6 +61,15 @@ func abciInfoCmd() *cobra.Command {
 		Short:   "queries for block height, app name and app hash",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			info, err := config.cl.RPCClient.ABCIInfo(cmd.Context())
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(info, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -66,6 +83,28 @@ func abciQueryCmd() *cobra.Command {
 		Short:   "query the abci interface for tendermint directly",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			path := args[0]
+			data := []byte(args[1])
+			height, err := strconv.ParseInt(args[2], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			// TODO: wire up prove
+			opts := rpcclient.ABCIQueryOptions{
+				Height: height,
+				Prove:  false,
+			}
+
+			info, err := config.cl.RPCClient.ABCIQueryWithOptions(cmd.Context(), path, data, opts)
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(info, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -81,6 +120,19 @@ func blockCmd() *cobra.Command {
 		Short:   "query tendermint data for a block at given height",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			height, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+			block, err := config.cl.RPCClient.Block(cmd.Context(), &height)
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -94,6 +146,19 @@ func blockByHashCmd() *cobra.Command {
 		Short:   "query tendermint for a given block by hash",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			h, err := hex.DecodeString(args[0])
+			if err != nil {
+				return err
+			}
+			block, err := config.cl.RPCClient.BlockByHash(cmd.Context(), h)
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -107,6 +172,20 @@ func blockResultsCmd() *cobra.Command {
 		Short:   "query tendermint tx results for a given block by height",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			height, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+			block, err := config.cl.RPCClient.BlockResults(cmd.Context(), &height)
+			if err != nil {
+				return err
+			}
+			// TODO: figure out how to fix the base64 output here
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -121,6 +200,7 @@ func blockSearchCmd() *cobra.Command {
 		// TODO: long explaination and example should include example queries
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("TODO")
 			return nil
 		},
 	}
@@ -136,6 +216,20 @@ func consensusParamsCmd() *cobra.Command {
 		Short:   "query tendermint consensus params at a given height",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			height, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+			block, err := config.cl.RPCClient.ConsensusParams(cmd.Context(), &height)
+			if err != nil {
+				return err
+			}
+			// TODO: figure out how to fix the base64 output here
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -152,6 +246,15 @@ func consensusStateCmd() *cobra.Command {
 		Short:   "query current tendermint consensus state",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			block, err := config.cl.RPCClient.ConsensusState(cmd.Context())
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -165,6 +268,15 @@ func dumpConsensusStateCmd() *cobra.Command {
 		Short:   "query detailed version of current tendermint consensus state",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			block, err := config.cl.RPCClient.DumpConsensusState(cmd.Context())
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -178,6 +290,15 @@ func healthCmd() *cobra.Command {
 		Short:   "query to see if node server is online",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			block, err := config.cl.RPCClient.Health(cmd.Context())
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -194,23 +315,63 @@ func netInfoCmd() *cobra.Command {
 		Short:   "query for p2p network connection information",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			peers, err := cmd.Flags().GetBool("peers")
+			if err != nil {
+				return err
+			}
+			block, err := config.cl.RPCClient.NetInfo(cmd.Context())
+			if err != nil {
+				return err
+			}
+			if !peers {
+				bz, err := json.MarshalIndent(block, "", "  ")
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(bz))
+				return nil
+			}
+			peersList := ""
+			for _, peer := range block.Peers {
+				url, err := url.Parse(peer.NodeInfo.ListenAddr)
+				if err != nil {
+					continue
+				}
+				peersList += fmt.Sprintf("%s@%s:%s,", peer.NodeInfo.ID(), peer.RemoteIP, url.Port())
+			}
+			fmt.Println(strings.TrimSuffix(peersList, ","))
 			return nil
 		},
 	}
-	return cmd
+	return peersFlag(cmd)
 }
 
 func numUnconfirmedTxs() *cobra.Command {
+	// TODO: add example for parsing these txs
+	// _{*extraCredit*}_
 	cmd := &cobra.Command{
 		Use:     "num-unconfirmed-txs",
 		Aliases: []string{"count-unconf", "unconf-count"},
 		Short:   "query for number of unconfirmed txs",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			limit, err := cmd.Flags().GetInt("limit")
+			if err != nil {
+				return err
+			}
+			block, err := config.cl.RPCClient.UnconfirmedTxs(cmd.Context(), &limit)
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
-	return cmd
+	return limitFlag(cmd)
 }
 
 func statusCmd() *cobra.Command {
@@ -220,6 +381,15 @@ func statusCmd() *cobra.Command {
 		Short:   "query status of the node",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			block, err := config.cl.RPCClient.Status(cmd.Context())
+			if err != nil {
+				return err
+			}
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -232,9 +402,39 @@ func queryTxCmd() *cobra.Command {
 		Short: "query for a transaction by hash",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			log, err := cmd.Flags().GetBool("log")
+			if err != nil {
+				return err
+			}
+			prove, err := cmd.Flags().GetBool("prove")
+			if err != nil {
+				return err
+			}
+			h, err := hex.DecodeString(args[0])
+			if err != nil {
+				return err
+			}
+			block, err := config.cl.RPCClient.Tx(cmd.Context(), h, prove)
+			if err != nil {
+				return err
+			}
+			if log {
+				out := bytes.NewBuffer(nil)
+				if err := json.Indent(out, []byte(block.TxResult.Log), "", "  "); err != nil {
+					return err
+				}
+				fmt.Println(out.String())
+				return nil
+			}
+			bz, err := json.MarshalIndent(block, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
+
 		},
 	}
 	// TODO: add prove flag
-	return cmd
+	return proveFlag(logFlag(cmd))
 }

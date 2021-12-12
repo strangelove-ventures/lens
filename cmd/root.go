@@ -16,74 +16,69 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	homePath    string
+	debug       bool
+	config      *Config
+	defaultHome = os.ExpandEnv("$HOME/.lens")
+	appName     = "lens"
+)
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "cosmos-client",
-	Short: "this client is like many others but this one is yours",
-	Long: `cosmos-client aims to provide a generic command line interface 
-friendly to operators and other command line deneziens desiring a tool to look
-into the various chains of the interchain. functionality common between many chains
-is the aim of this tool.`,
+// NewRootCmd returns the root command for relayer.
+func NewRootCmd() *cobra.Command {
+	// RootCmd represents the base command when called without any subcommands
+	var rootCmd = &cobra.Command{
+		Use:   appName,
+		Short: "This is my lens, there are many like it, but this one is mine.",
+	}
+
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
+		// reads `homeDir/config.yaml` into `var config *Config` before each command
+		if err := initConfig(rootCmd); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// --home flag
+	rootCmd.PersistentFlags().StringVar(&homePath, flags.FlagHome, defaultHome, "set home directory")
+	if err := viper.BindPFlag(flags.FlagHome, rootCmd.PersistentFlags().Lookup(flags.FlagHome)); err != nil {
+		panic(err)
+	}
+
+	// --debug flag
+	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug output")
+	if err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
+		panic(err)
+	}
+
+	rootCmd.AddCommand(
+		configCmd(),
+		tendermintCmd(),
+	)
+
+	return rootCmd
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	cobra.EnableCommandSorting = false
+
+	rootCmd := NewRootCmd()
+	rootCmd.SilenceUsage = true
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
-	}
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-	// TODO: homedir flag should determine where config is
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cosmos-client.yaml)")
-
-	// TODO: add debug flag here
-
-	// These commands will need to be chain specific
-	// but for osmosis and a couple of others they could
-	// be very interesting
-	// tendermintGenesisCmd(), NOTE: this should be implemented with the paginated genesis query function
-	// tendermintTxSearchCmd(),
-	// tendermintUnconfirmedTxsCmd(),
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// Search config in home directory with name ".cosmos-client" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".cosmos-client")
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
