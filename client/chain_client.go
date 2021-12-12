@@ -21,7 +21,7 @@ type ChainClient struct {
 	RPCClient      rpcclient.Client
 	LightProvider  provtypes.Provider
 	Input          io.Reader
-	Output         io.Reader
+	Output         io.Writer
 	// TODO: GRPC Client type?
 
 	Codec  Codec
@@ -34,7 +34,7 @@ func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, k
 	}
 
 	// TODO: test key directory and return error if not created
-	keybase, err := keyring.New(ccc.ChainID, ccc.KeyringBackend, ccc.KeyDirectory, nil)
+	keybase, err := keyring.New(ccc.ChainID, ccc.KeyringBackend, ccc.KeyDirectory, input, kro...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +58,8 @@ func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, k
 		LightProvider:  lightprovider,
 		KeyringOptions: kro,
 		Config:         ccc,
+		Input:          input,
+		Output:         output,
 		Codec:          MakeCodec(ccc.Modules),
 		Logger:         log.NewTMLogger(log.NewSyncWriter(output)),
 	}, nil

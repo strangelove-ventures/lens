@@ -165,6 +165,7 @@ func initConfig(cmd *cobra.Command) error {
 			}
 
 			// instantiate chain client
+			// TODO: use keyring options here?
 			cl, err := client.NewChainClient(config.Chain, os.Stdin, os.Stdout)
 			if err != nil {
 				fmt.Println("Error creating chain client:", err)

@@ -45,3 +45,11 @@ func limitFlag(cmd *cobra.Command) *cobra.Command {
 	}
 	return cmd
 }
+
+func skipConfirm(cmd *cobra.Command) *cobra.Command {
+	cmd.Flags().BoolP("skip", "y", false, "output using yaml")
+	if err := viper.BindPFlag("skip", cmd.Flags().Lookup("skip")); err != nil {
+		panic(err)
+	}
+	return cmd
+}

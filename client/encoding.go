@@ -12,10 +12,9 @@ import (
 
 type Codec struct {
 	InterfaceRegistry types.InterfaceRegistry
-	// NOTE: this field will be renamed to Codec
-	Marshaler codec.Codec
-	TxConfig  client.TxConfig
-	Amino     *codec.LegacyAmino
+	Marshaler         codec.Codec
+	TxConfig          client.TxConfig
+	Amino             *codec.LegacyAmino
 }
 
 func MakeCodec(moduleBasics []module.AppModuleBasic) Codec {

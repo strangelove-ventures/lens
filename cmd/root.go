@@ -64,6 +64,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(
 		configCmd(),
 		tendermintCmd(),
+		keysCmd(),
 	)
 
 	return rootCmd
