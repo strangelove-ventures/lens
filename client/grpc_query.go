@@ -46,7 +46,7 @@ func (cc *ChainClient) Invoke(ctx context.Context, method string, req, reply int
 			return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "expected %T, got %T", (*tx.BroadcastTxResponse)(nil), req)
 		}
 
-		broadcastRes, err := TxServiceBroadcast(ctx, cc, reqProto)
+		broadcastRes, err := cc.TxServiceBroadcast(ctx, reqProto)
 		if err != nil {
 			return err
 		}
@@ -61,8 +61,7 @@ func (cc *ChainClient) Invoke(ctx context.Context, method string, req, reply int
 		return err
 	}
 
-	err = protoCodec.Unmarshal(abciRes.Value, reply)
-	if err != nil {
+	if err = protoCodec.Unmarshal(abciRes.Value, reply); err != nil {
 		return err
 	}
 
@@ -76,7 +75,7 @@ func (cc *ChainClient) Invoke(ctx context.Context, method string, req, reply int
 	}
 
 	if cc.Codec.InterfaceRegistry != nil {
-		return types.UnpackInterfaces(reply, cc.Codec.InterfaceRegistry)
+		return types.UnpackInterfaces(reply, cc.Codec.Marshaler)
 	}
 
 	return nil
@@ -139,18 +138,17 @@ func (cc *ChainClient) RunGRPCQuery(ctx context.Context, method string, req inte
 	// HeaderCallOption, then we manually set the value of that header to the
 	// metadata.
 	md = metadata.Pairs(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(abciRes.Height, 10))
-
 	return abciRes, md, nil
 }
 
 // TxServiceBroadcast is a helper function to broadcast a Tx with the correct gRPC types
 // from the tx service. Calls `clientCtx.BroadcastTx` under the hood.
-func TxServiceBroadcast(grpcCtx context.Context, chain *ChainClient, req *tx.BroadcastTxRequest) (*tx.BroadcastTxResponse, error) {
+func (cc *ChainClient) TxServiceBroadcast(ctx context.Context, req *tx.BroadcastTxRequest) (*tx.BroadcastTxResponse, error) {
 	if req == nil || req.TxBytes == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid empty tx")
 	}
 
-	resp, err := chain.BroadcastTx(context.Background(), req.TxBytes)
+	resp, err := cc.BroadcastTx(context.Background(), req.TxBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -158,21 +156,6 @@ func TxServiceBroadcast(grpcCtx context.Context, chain *ChainClient, req *tx.Bro
 	return &tx.BroadcastTxResponse{
 		TxResponse: resp,
 	}, nil
-}
-
-// normalizeBroadcastMode converts a broadcast mode into a normalized string
-// to be passed into the clientCtx.
-func normalizeBroadcastMode(mode tx.BroadcastMode) string {
-	switch mode {
-	case tx.BroadcastMode_BROADCAST_MODE_ASYNC:
-		return "async"
-	case tx.BroadcastMode_BROADCAST_MODE_BLOCK:
-		return "block"
-	case tx.BroadcastMode_BROADCAST_MODE_SYNC:
-		return "sync"
-	default:
-		return "unspecified"
-	}
 }
 
 func SetHeightOnContext(ctx context.Context, height int64) context.Context {
@@ -185,7 +168,6 @@ func GetHeightFromMetadata(md metadata.MD) (int64, error) {
 		return strconv.ParseInt(height[0], 10, 64)
 	}
 	return 0, nil
-	// return strconv.ParseInt(md.Get(grpctypes.GRPCBlockHeightHeader)[0], 10, 64)
 }
 
 func SetProveOnContext(ctx context.Context, prove bool) context.Context {

@@ -16,7 +16,10 @@ func queryCmd() *cobra.Command {
 		Short:   "query things about a chain",
 	}
 
-	cmd.AddCommand(queryBalanceCmd())
+	cmd.AddCommand(
+		queryBalanceCmd(),
+		queryAccountCmd(),
+	)
 
 	return cmd
 }
@@ -47,11 +50,52 @@ func queryBalanceCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			balance, err := config.cl.QueryBalance(address, true)
+			balance, err := config.cl.QueryBalance(address, false)
 			if err != nil {
 				return err
 			}
 			bz, err := json.MarshalIndent(balance, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
+			return nil
+		},
+	}
+	return cmd
+}
+
+func queryAccountCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "account [key-or-address]",
+		Aliases: []string{"acc"},
+		Short:   "query the account details for a key or address, if none is passed will query the balance of the default account",
+		Args:    cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var (
+				keyNameOrAddress = ""
+				address          sdk.AccAddress
+				err              error
+			)
+			if len(args) == 0 {
+				keyNameOrAddress = config.Chain.Key
+			} else {
+				keyNameOrAddress = args[0]
+			}
+			if config.cl.KeyExists(keyNameOrAddress) {
+				config.Chain.Key = keyNameOrAddress
+				address, err = config.cl.GetKeyAddress()
+			} else {
+				address, err = config.cl.DecodeBech32AccAddr(keyNameOrAddress)
+			}
+			if err != nil {
+				return err
+			}
+			account, err := config.cl.QueryAccount(address)
+			if err != nil {
+				return err
+			}
+			bz, err := config.cl.Codec.Marshaler.MarshalInterfaceJSON(account)
 			if err != nil {
 				return err
 			}

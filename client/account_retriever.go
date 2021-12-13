@@ -32,12 +32,12 @@ func (cc *ChainClient) GetAccountWithHeight(clientCtx client.Context, addr sdk.A
 		return nil, 0, err
 	}
 
-	queryClient := authtypes.NewQueryClient(clientCtx)
+	queryClient := authtypes.NewQueryClient(cc)
 	res, err := queryClient.Account(context.Background(), &authtypes.QueryAccountRequest{Address: address}, grpc.Header(&header))
 	if err != nil {
+		fmt.Println("in this error")
 		return nil, 0, err
 	}
-
 	blockHeight := header.Get(grpctypes.GRPCBlockHeightHeader)
 	if l := len(blockHeight); l != 1 {
 		return nil, 0, fmt.Errorf("unexpected '%s' header length; got %d, expected: %d", grpctypes.GRPCBlockHeightHeader, l, 1)
@@ -49,7 +49,7 @@ func (cc *ChainClient) GetAccountWithHeight(clientCtx client.Context, addr sdk.A
 	}
 
 	var acc authtypes.AccountI
-	if err := clientCtx.InterfaceRegistry.UnpackAny(res.Account, &acc); err != nil {
+	if err := cc.Codec.InterfaceRegistry.UnpackAny(res.Account, &acc); err != nil {
 		return nil, 0, err
 	}
 

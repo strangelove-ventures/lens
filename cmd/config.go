@@ -165,7 +165,13 @@ func initConfig(cmd *cobra.Command) error {
 			}
 
 			// instantiate chain client
-			// TODO: use keyring options here?
+			// TODO: this is a bit of a hack, we should probably have a
+			// better way to inject modules into the client
+			modules := []module.AppModuleBasic{}
+			for _, v := range simapp.ModuleBasics {
+				modules = append(modules, v)
+			}
+			config.Chain.Modules = modules
 			cl, err := client.NewChainClient(config.Chain, os.Stdin, os.Stdout)
 			if err != nil {
 				fmt.Println("Error creating chain client:", err)

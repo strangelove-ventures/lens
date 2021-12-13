@@ -41,6 +41,10 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 	return signMode
 }
 
+func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, bool, error) {
+	return cc.SendMsgs(ctx, []sdk.Msg{msg})
+}
+
 // SendMsgs wraps the msgs in a StdTx, signs and sends it. An error is returned if there
 // was an issue sending the transaction. A successfully sent, but failed transaction will
 // not return an error. If a transaction is successfully sent, the result of the execution
@@ -108,14 +112,19 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		return tx.Factory{}, err
 	}
 
-	if err := txf.AccountRetriever().EnsureExists(client.Context{}, from); err != nil {
+	cliCtx := client.Context{}.WithClient(cc.RPCClient).
+		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
+		WithChainID(cc.Config.ChainID).
+		WithCodec(cc.Codec.Marshaler)
+	// Set the account number and sequence on the transaction factory
+	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
 		return txf, err
 	}
 
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
-		num, seq, err := txf.AccountRetriever().GetAccountNumberSequence(client.Context{}, from)
+		num, seq, err := txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
 		if err != nil {
 			return txf, err
 		}

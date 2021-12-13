@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	querytypes "github.com/cosmos/cosmos-sdk/types/query"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	transfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 )
@@ -34,6 +35,22 @@ func (cc *ChainClient) QueryDenomTraces(pageReq *querytypes.PageRequest, height 
 	return transfertypes.NewQueryClient(cc).DenomTraces(ctx, &transfertypes.QueryDenomTracesRequest{
 		Pagination: pageReq,
 	})
+}
+
+func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI, error) {
+	addr, err := cc.EncodeBech32AccAddr(address)
+	if err != nil {
+		return nil, err
+	}
+	res, err := authtypes.NewQueryClient(cc).Account(context.Background(), &authtypes.QueryAccountRequest{Address: addr})
+	if err != nil {
+		return nil, err
+	}
+	var acc authtypes.AccountI
+	if err := cc.Codec.InterfaceRegistry.UnpackAny(res.Account, &acc); err != nil {
+		return nil, err
+	}
+	return acc, nil
 }
 
 // QueryBalance is a helper function for query balance
