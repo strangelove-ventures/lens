@@ -66,8 +66,11 @@ func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, k
 }
 
 func (cc *ChainClient) GetKeyAddress() (sdk.AccAddress, error) {
-	// TODO: implement
-	return nil, nil
+	info, err := cc.Keybase.Key(cc.Config.Key)
+	if err != nil {
+		return nil, err
+	}
+	return info.GetAddress(), nil
 }
 
 func newRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
