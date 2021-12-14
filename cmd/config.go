@@ -10,10 +10,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	// "github.com/cosmos/relayer/relayer"
-	"github.com/jackzampolin/lens/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/strangelove-ventures/lens/client"
 	"gopkg.in/yaml.v2"
 )
 

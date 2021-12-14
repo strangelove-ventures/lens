@@ -5,10 +5,10 @@ COMMIT  := $(shell git log -1 --format='%H')
 
 all: install
 
-LD_FLAGS = -X github.com/jackzampolin/lens/cmd/cmd.Version=$(VERSION) \
-	-X github.com/jackzampolin/lens/cmd/cmd.Commit=$(COMMIT) \
-	-X github.com/jackzampolin/lens/cmd/cmd.SDKVersion=$(SDKVERSION) \
-	-X github.com/jackzampolin/lens/cmd/cmd.TMVersion=$(TMVERSION)
+LD_FLAGS = -X github.com/strangelove-ventures/lens/cmd/cmd.Version=$(VERSION) \
+	-X github.com/strangelove-ventures/lens/cmd/cmd.Commit=$(COMMIT) \
+	-X github.com/strangelove-ventures/lens/cmd/cmd.SDKVersion=$(SDKVERSION) \
+	-X github.com/strangelove-ventures/lens/cmd/cmd.TMVersion=$(TMVERSION)
 
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
