@@ -15,6 +15,11 @@ const (
 	defaultCoinType uint32 = sdk.CoinType
 )
 
+var (
+	// FlagAccountPrefix allows the user to override the prefix for a given account
+	FlagAccountPrefix = ""
+)
+
 // keysCmd represents the keys command
 func keysCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -190,8 +195,6 @@ $ %s k l ibc-1`, appName, appName)),
 
 // keysShowCmd respresents the `keys show` command
 func keysShowCmd() *cobra.Command {
-	// TODO: add in flags to allow for rendering addresses in different
-	// formats as well as for different chains (i.e. prefixes)
 	cmd := &cobra.Command{
 		Use:     "show [name]",
 		Aliases: []string{"s"},
@@ -213,6 +216,10 @@ $ %s k s ibc-2 testkey`, appName, appName, appName)),
 				return errKeyDoesntExist(keyName)
 			}
 
+			if FlagAccountPrefix != "" {
+				config.cl.Config.AccountPrefix = FlagAccountPrefix
+			}
+
 			address, err := config.cl.ShowAddress(keyName)
 			if err != nil {
 				return err
@@ -222,6 +229,8 @@ $ %s k s ibc-2 testkey`, appName, appName, appName)),
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVar(&FlagAccountPrefix, "prefix", "", "Encode the key with the user specified prefix")
 
 	return cmd
 }
