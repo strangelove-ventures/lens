@@ -29,19 +29,20 @@ func bankSendCmd() *cobra.Command {
 		Short: "send coins from one address to another",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			var (
 				fromAddress sdk.AccAddress
 				err         error
 			)
-			if config.cl.KeyExists(args[0]) {
-				fromAddress, err = config.cl.GetKeyAddress()
+			if cl.KeyExists(args[0]) {
+				fromAddress, err = cl.GetKeyAddress()
 			} else {
-				fromAddress, err = config.cl.DecodeBech32AccAddr(args[0])
+				fromAddress, err = cl.DecodeBech32AccAddr(args[0])
 			}
 			if err != nil {
 				return err
 			}
-			toAddr, err := config.cl.DecodeBech32AccAddr(args[1])
+			toAddr, err := cl.DecodeBech32AccAddr(args[1])
 			if err != nil {
 				return err
 			}
@@ -51,7 +52,7 @@ func bankSendCmd() *cobra.Command {
 				return err
 			}
 
-			res, ok, err := config.cl.SendMsg(cmd.Context(), types.NewMsgSend(fromAddress, toAddr, coins))
+			res, ok, err := cl.SendMsg(cmd.Context(), types.NewMsgSend(fromAddress, toAddr, coins))
 			if err != nil || !ok {
 				if res != nil {
 					return fmt.Errorf("failed to send coins: code(%d) msg(%s)", res.Code, res.Logs)
@@ -59,7 +60,7 @@ func bankSendCmd() *cobra.Command {
 				return fmt.Errorf("failed to send coins: err(%w)", err)
 			}
 
-			bz, err := config.cl.Codec.Marshaler.MarshalJSON(res)
+			bz, err := cl.Codec.Marshaler.MarshalJSON(res)
 			if err != nil {
 				return err
 			}

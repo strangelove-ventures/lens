@@ -87,14 +87,32 @@ func configInitCmd() *cobra.Command {
 
 // Config represents the config file for the relayer
 type Config struct {
-	Chain *client.ChainClientConfig
-	cl    *client.ChainClient
+	DefaultChain string                      `yaml:"default_chain" json:"default_chain"`
+	Chains       []*client.ChainClientConfig `yaml:"chains" json:"chains"`
+
+	cl map[string]*client.ChainClient
+}
+
+func (c *Config) GetDefaultClient() *client.ChainClient {
+	return c.GetClient(c.DefaultChain)
+}
+
+func (c *Config) GetClient(chainID string) *client.ChainClient {
+	if v, ok := c.cl[chainID]; ok {
+		return v
+	}
+	return nil
 }
 
 // Called to initialize the relayer.Chain types on Config
 func validateConfig(c *Config) error {
-	if err := c.Chain.Validate(); err != nil {
-		return err
+	for _, chain := range c.Chains {
+		if err := chain.Validate(); err != nil {
+			return err
+		}
+	}
+	if c.GetDefaultClient() == nil {
+		return fmt.Errorf("default chain (%s) configuration not found", c.DefaultChain)
 	}
 	return nil
 }
@@ -114,22 +132,42 @@ func defaultConfig(keyHome string, debug bool) []byte {
 		modules = append(modules, v)
 	}
 	cfg := Config{
-		Chain: &client.ChainClientConfig{
-			Key:            "default",
-			ChainID:        "cosmoshub-4",
-			RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
-			GRPCAddr:       "https://gprc.cosmoshub-4.technofractal.com:443",
-			AccountPrefix:  "cosmos",
-			KeyringBackend: "test",
-			GasAdjustment:  1.2,
-			GasPrices:      "0.01uatom",
-			KeyDirectory:   keyHome,
-			Debug:          debug,
-			Timeout:        "20s",
-			OutputFormat:   "json",
-			BroadcastMode:  "block",
-			SignModeStr:    "direct",
-			Modules:        modules,
+		DefaultChain: "cosmoshub-4",
+		Chains: []*client.ChainClientConfig{
+			{
+				Key:            "default",
+				ChainID:        "cosmoshub-4",
+				RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
+				GRPCAddr:       "https://gprc.cosmoshub-4.technofractal.com:443",
+				AccountPrefix:  "cosmos",
+				KeyringBackend: "test",
+				GasAdjustment:  1.2,
+				GasPrices:      "0.01uatom",
+				KeyDirectory:   keyHome,
+				Debug:          debug,
+				Timeout:        "20s",
+				OutputFormat:   "json",
+				BroadcastMode:  "block",
+				SignModeStr:    "direct",
+				Modules:        modules,
+			},
+			{
+				Key:            "default",
+				ChainID:        "osmosis-1",
+				RPCAddr:        "https://osmosis-1.technofractal.com:443",
+				GRPCAddr:       "https://gprc.osmosis-1.technofractal.com:443",
+				AccountPrefix:  "osmo",
+				KeyringBackend: "test",
+				GasAdjustment:  1.2,
+				GasPrices:      "0.01uosmo",
+				KeyDirectory:   keyHome,
+				Debug:          debug,
+				Timeout:        "20s",
+				OutputFormat:   "json",
+				BroadcastMode:  "block",
+				SignModeStr:    "direct",
+				Modules:        modules,
+			},
 		},
 	}
 	return cfg.MustYAML()
@@ -176,26 +214,28 @@ func initConfig(cmd *cobra.Command) error {
 		os.Exit(1)
 	}
 
+	// instantiate chain client
+	// TODO: this is a bit of a hack, we should probably have a
+	// better way to inject modules into the client
+	config.cl = make(map[string]*client.ChainClient)
+	modules := []module.AppModuleBasic{}
+	for _, v := range simapp.ModuleBasics {
+		modules = append(modules, v)
+	}
+	for _, chain := range config.Chains {
+		chain.Modules = modules
+		cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
+		if err != nil {
+			fmt.Println("Error creating chain client:", err)
+			os.Exit(1)
+		}
+		config.cl[chain.ChainID] = cl
+	}
+
 	// validate configuration
 	if err = validateConfig(config); err != nil {
 		fmt.Println("Error parsing chain config:", err)
 		os.Exit(1)
 	}
-
-	// instantiate chain client
-	// TODO: this is a bit of a hack, we should probably have a
-	// better way to inject modules into the client
-	modules := []module.AppModuleBasic{}
-	for _, v := range simapp.ModuleBasics {
-		modules = append(modules, v)
-	}
-	config.Chain.Modules = modules
-	cl, err := client.NewChainClient(config.Chain, os.Stdin, os.Stdout)
-	if err != nil {
-		fmt.Println("Error creating chain client:", err)
-		os.Exit(1)
-	}
-	config.cl = cl
-
 	return nil
 }

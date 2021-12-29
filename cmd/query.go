@@ -31,26 +31,27 @@ func queryBalanceCmd() *cobra.Command {
 		Short:   "query the account balance for a key or address, if none is passed will query the balance of the default account",
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			var (
 				keyNameOrAddress = ""
 				address          sdk.AccAddress
 				err              error
 			)
 			if len(args) == 0 {
-				keyNameOrAddress = config.Chain.Key
+				keyNameOrAddress = cl.Config.Key
 			} else {
 				keyNameOrAddress = args[0]
 			}
-			if config.cl.KeyExists(keyNameOrAddress) {
-				config.Chain.Key = keyNameOrAddress
-				address, err = config.cl.GetKeyAddress()
+			if cl.KeyExists(keyNameOrAddress) {
+				cl.Config.Key = keyNameOrAddress
+				address, err = cl.GetKeyAddress()
 			} else {
-				address, err = config.cl.DecodeBech32AccAddr(keyNameOrAddress)
+				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)
 			}
 			if err != nil {
 				return err
 			}
-			balance, err := config.cl.QueryBalance(address, false)
+			balance, err := cl.QueryBalance(address, false)
 			if err != nil {
 				return err
 			}
@@ -72,30 +73,31 @@ func queryAccountCmd() *cobra.Command {
 		Short:   "query the account details for a key or address, if none is passed will query the balance of the default account",
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			var (
 				keyNameOrAddress = ""
 				address          sdk.AccAddress
 				err              error
 			)
 			if len(args) == 0 {
-				keyNameOrAddress = config.Chain.Key
+				keyNameOrAddress = cl.Config.Key
 			} else {
 				keyNameOrAddress = args[0]
 			}
-			if config.cl.KeyExists(keyNameOrAddress) {
-				config.Chain.Key = keyNameOrAddress
-				address, err = config.cl.GetKeyAddress()
+			if cl.KeyExists(keyNameOrAddress) {
+				cl.Config.Key = keyNameOrAddress
+				address, err = cl.GetKeyAddress()
 			} else {
-				address, err = config.cl.DecodeBech32AccAddr(keyNameOrAddress)
+				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)
 			}
 			if err != nil {
 				return err
 			}
-			account, err := config.cl.QueryAccount(address)
+			account, err := cl.QueryAccount(address)
 			if err != nil {
 				return err
 			}
-			bz, err := config.cl.Codec.Marshaler.MarshalInterfaceJSON(account)
+			bz, err := cl.Codec.Marshaler.MarshalInterfaceJSON(account)
 			if err != nil {
 				return err
 			}
