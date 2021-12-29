@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -162,7 +163,7 @@ func defaultConfig(keyHome string, debug bool) []byte {
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig(cmd *cobra.Command) error {
+func initConfig(ctx context.Context, cmd *cobra.Command) error {
 	home, err := cmd.PersistentFlags().GetString(flags.FlagHome)
 	if err != nil {
 		return err
@@ -170,46 +171,58 @@ func initConfig(cmd *cobra.Command) error {
 
 	config = &Config{}
 	cfgPath := path.Join(home, "config.yaml")
-	if _, err := os.Stat(cfgPath); err == nil {
-		viper.SetConfigFile(cfgPath)
-		if err := viper.ReadInConfig(); err == nil {
-			// read the config file bytes
-			file, err := ioutil.ReadFile(viper.ConfigFileUsed())
-			if err != nil {
-				fmt.Println("Error reading file:", err)
-				os.Exit(1)
-			}
 
-			// unmarshall them into the struct
-			if err = yaml.Unmarshal(file, config); err != nil {
-				fmt.Println("Error unmarshalling config:", err)
-				os.Exit(1)
-			}
+	_, err = os.Stat(cfgPath)
+	if err != nil {
+		fmt.Println("Error stating config file file:", err)
+		os.Exit(1)
+	}
 
-			// validate configuration
-			if err = validateConfig(config); err != nil {
-				fmt.Println("Error parsing chain config:", err)
-				os.Exit(1)
-			}
+	viper.SetConfigFile(cfgPath)
+	err = viper.ReadInConfig()
+	if err != nil {
+		fmt.Println("Error reading in config:", err)
+		os.Exit(1)
+	}
+	// read the config file bytes
+	file, err := ioutil.ReadFile(viper.ConfigFileUsed())
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		os.Exit(1)
+	}
 
-			// instantiate chain client
-			// TODO: this is a bit of a hack, we should probably have a
-			// better way to inject modules into the client
-			modules := []module.AppModuleBasic{}
-			for _, v := range simapp.ModuleBasics {
-				modules = append(modules, v)
-			}
-			ctx := cmd.Context()
-			for _, chain := range config.Chains {
-				chain.Modules = modules
-				cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
-				if err != nil {
-					fmt.Println("Error creating chain client:", err)
-					os.Exit(1)
-				}
-				client.SetChainClientOnContext(ctx, chain.ChainID, cl)
-			}
+	// unmarshall them into the struct
+	if err = yaml.Unmarshal(file, config); err != nil {
+		fmt.Println("Error unmarshalling config:", err)
+		os.Exit(1)
+	}
+
+	// validate configuration
+	if err = validateConfig(config); err != nil {
+		fmt.Println("Error parsing chain config:", err)
+		os.Exit(1)
+	}
+
+	// instantiate chain client
+	// TODO: this is a bit of a hack, we should probably have a
+	// better way to inject modules into the client
+	modules := []module.AppModuleBasic{}
+	for _, v := range simapp.ModuleBasics {
+		modules = append(modules, v)
+	}
+	for _, chain := range config.Chains {
+		chain.Modules = modules
+		cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
+		if err != nil {
+			fmt.Println("Error creating chain client:", err)
+			os.Exit(1)
+		}
+		err = client.SetChainClientOnContext(ctx, chain.ChainID, cl)
+		if err != nil {
+			fmt.Println("Failed setting chain client:", err)
+			os.Exit(1)
 		}
 	}
+
 	return nil
 }

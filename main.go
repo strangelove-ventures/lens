@@ -15,8 +15,18 @@ limitations under the License.
 */
 package main
 
-import "github.com/strangelove-ventures/lens/cmd"
+import (
+	"context"
+
+	"github.com/strangelove-ventures/lens/client"
+	"github.com/strangelove-ventures/lens/cmd"
+)
 
 func main() {
-	cmd.Execute()
+
+	clients := make(map[string]*client.ChainClient)
+
+	ctx := context.WithValue(context.Background(), client.NewContextKey("clients"), clients)
+
+	cmd.Execute(ctx)
 }

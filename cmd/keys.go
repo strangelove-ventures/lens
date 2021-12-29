@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -177,6 +178,9 @@ $ %s keys list ibc-0
 $ %s k l ibc-1`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := client.GetChainClientFromContext(cmd.Context(), config.DefaultChain)
+			if cl == nil {
+				return errors.New("client is nil")
+			}
 			info, err := cl.ListAddresses()
 			if err != nil {
 				return err

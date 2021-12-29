@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -33,7 +34,7 @@ var (
 )
 
 // NewRootCmd returns the root command for relayer.
-func NewRootCmd() *cobra.Command {
+func NewRootCmd(ctx context.Context) *cobra.Command {
 	// RootCmd represents the base command when called without any subcommands
 	var rootCmd = &cobra.Command{
 		Use:   appName,
@@ -42,7 +43,7 @@ func NewRootCmd() *cobra.Command {
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
 		// reads `homeDir/config.yaml` into `var config *Config` before each command
-		if err := initConfig(rootCmd); err != nil {
+		if err := initConfig(ctx, rootCmd); err != nil {
 			return err
 		}
 
@@ -74,14 +75,14 @@ func NewRootCmd() *cobra.Command {
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute(ctx context.Context) {
 	cobra.EnableCommandSorting = false
 
-	rootCmd := NewRootCmd()
+	rootCmd := NewRootCmd(ctx)
 	rootCmd.SilenceUsage = true
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(1)
 	}
 }

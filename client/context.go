@@ -6,27 +6,35 @@ import (
 	"fmt"
 )
 
-type contextKey string
+type ContextKey string
 
-func newContextKey(chainid string) contextKey {
-	return contextKey(fmt.Sprintf("chain-client-context/%s", chainid))
+func NewContextKey(chainid string) ContextKey {
+	return ContextKey(fmt.Sprintf("chain-client-context/%s", chainid))
 }
 
 // SetChainClientToContext sets the chain client to the context
 func SetChainClientOnContext(ctx context.Context, chainid string, client *ChainClient) error {
-	v := ctx.Value(newContextKey(chainid))
-	if v == nil {
-		return errors.New("chain client not found in context")
+	key := NewContextKey("clients")
+
+	fmt.Printf("Creating key %s from %#v\n", key, ctx)
+	v := ctx.Value(key)
+	ptr := v.(map[string]*ChainClient)
+	if ptr == nil {
+		return errors.New("failed to type assert")
 	}
-	ptr := v.(*ChainClient)
-	*ptr = *client
+
+	ptr[chainid] = client
 	return nil
 }
 
 // GetChainClientFromContext returns the chain client from the context
 func GetChainClientFromContext(ctx context.Context, chainid string) *ChainClient {
-	if v, ok := ctx.Value(newContextKey(chainid)).(*ChainClient); ok {
-		return v
+	key := NewContextKey("clients")
+
+	fmt.Printf("Getting key %s from %#v\n", key, ctx)
+
+	if v, ok := ctx.Value(key).(map[string]*ChainClient); ok {
+		return v[chainid]
 	}
 	return nil
 }
