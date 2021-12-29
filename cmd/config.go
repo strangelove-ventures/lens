@@ -84,14 +84,23 @@ func configInitCmd() *cobra.Command {
 
 // Config represents the config file for the relayer
 type Config struct {
-	Chain *client.ChainClientConfig
-	cl    *client.ChainClient
+	DefaultChain string                      `yaml:"default_chain"`
+	Chains       []*client.ChainClientConfig `yaml:"chains"`
 }
 
 // Called to initialize the relayer.Chain types on Config
 func validateConfig(c *Config) error {
-	if err := c.Chain.Validate(); err != nil {
-		return err
+	var found bool
+	for _, chain := range c.Chains {
+		if err := chain.Validate(); err != nil {
+			return err
+		}
+		if c.DefaultChain == chain.ChainID {
+			found = true
+		}
+	}
+	if !found {
+		return fmt.Errorf("default chain %s not found in chains", c.DefaultChain)
 	}
 	return nil
 }
@@ -111,22 +120,42 @@ func defaultConfig(keyHome string, debug bool) []byte {
 		modules = append(modules, v)
 	}
 	cfg := Config{
-		Chain: &client.ChainClientConfig{
-			Key:            "default",
-			ChainID:        "cosmoshub-4",
-			RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
-			GRPCAddr:       "https://gprc.cosmoshub-4.technofractal.com:443",
-			AccountPrefix:  "cosmos",
-			KeyringBackend: "test",
-			GasAdjustment:  1.2,
-			GasPrices:      "0.01uatom",
-			KeyDirectory:   keyHome,
-			Debug:          debug,
-			Timeout:        "20s",
-			OutputFormat:   "json",
-			BroadcastMode:  "block",
-			SignModeStr:    "direct",
-			Modules:        modules,
+		DefaultChain: "cosmoshub-4",
+		Chains: []*client.ChainClientConfig{
+			{
+				Key:            "default",
+				ChainID:        "cosmoshub-4",
+				RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
+				GRPCAddr:       "https://gprc.cosmoshub-4.technofractal.com:443",
+				AccountPrefix:  "cosmos",
+				KeyringBackend: "test",
+				GasAdjustment:  1.2,
+				GasPrices:      "0.01uatom",
+				KeyDirectory:   keyHome,
+				Debug:          debug,
+				Timeout:        "20s",
+				OutputFormat:   "json",
+				BroadcastMode:  "block",
+				SignModeStr:    "direct",
+				Modules:        modules,
+			},
+			{
+				Key:            "default",
+				ChainID:        "osmosis-1",
+				RPCAddr:        "https://osmosis-1.technofractal.com:443",
+				GRPCAddr:       "https://grpc.osmosis-1.technofractal.com:443",
+				AccountPrefix:  "osmo",
+				KeyringBackend: "test",
+				GasAdjustment:  1.2,
+				GasPrices:      "0.01uosmo",
+				KeyDirectory:   keyHome,
+				Debug:          debug,
+				Timeout:        "20s",
+				OutputFormat:   "json",
+				BroadcastMode:  "block",
+				SignModeStr:    "direct",
+				Modules:        modules,
+			},
 		},
 	}
 	return cfg.MustYAML()
@@ -170,13 +199,16 @@ func initConfig(cmd *cobra.Command) error {
 			for _, v := range simapp.ModuleBasics {
 				modules = append(modules, v)
 			}
-			config.Chain.Modules = modules
-			cl, err := client.NewChainClient(config.Chain, os.Stdin, os.Stdout)
-			if err != nil {
-				fmt.Println("Error creating chain client:", err)
-				os.Exit(1)
+			ctx := cmd.Context()
+			for _, chain := range config.Chains {
+				chain.Modules = modules
+				cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
+				if err != nil {
+					fmt.Println("Error creating chain client:", err)
+					os.Exit(1)
+				}
+				client.SetChainClientOnContext(ctx, chain.ChainID, cl)
 			}
-			config.cl = cl
 		}
 	}
 	return nil

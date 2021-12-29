@@ -8,13 +8,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/capability"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
+	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
 	feegrant "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
+	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 )
 
 var ModuleBasics = []module.AppModuleBasic{
@@ -22,8 +25,11 @@ var ModuleBasics = []module.AppModuleBasic{
 	authz.AppModuleBasic{},
 	bank.AppModuleBasic{},
 	capability.AppModuleBasic{},
-	// TODO: need to use gov.NewAppModuleBasic to get different governance proposal parsing
-	gov.AppModuleBasic{},
+	// TODO: add osmosis governance proposal types here
+	// TODO: add other proposal types here
+	gov.NewAppModuleBasic(
+		paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
+	),
 	crisis.AppModuleBasic{},
 	distribution.AppModuleBasic{},
 	feegrant.AppModuleBasic{},

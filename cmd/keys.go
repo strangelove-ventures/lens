@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/client"
 )
 
 const (
@@ -46,17 +47,18 @@ $ %s keys add ibc-0
 $ %s keys add ibc-1 key2
 $ %s k a ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := client.GetChainClientFromContext(cmd.Context(), config.DefaultChain)
 			var keyName string
 			if len(args) == 0 {
-				keyName = config.cl.Config.Key
+				keyName = cl.Config.Key
 			} else {
 				keyName = args[0]
 			}
-			if config.cl.KeyExists(keyName) {
+			if cl.KeyExists(keyName) {
 				return errKeyExists(keyName)
 			}
 
-			ko, err := config.cl.AddKey(keyName)
+			ko, err := cl.AddKey(keyName)
 			if err != nil {
 				return err
 			}
@@ -87,12 +89,13 @@ func keysRestoreCmd() *cobra.Command {
 $ %s keys restore ibc-0 testkey "[mnemonic-words]"
 $ %s k r ibc-1 faucet-key "[mnemonic-words]"`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := client.GetChainClientFromContext(cmd.Context(), config.DefaultChain)
 			keyName := args[1]
-			if config.cl.KeyExists(keyName) {
+			if cl.KeyExists(keyName) {
 				return errKeyExists(keyName)
 			}
 
-			address, err := config.cl.RestoreKey(keyName, args[2])
+			address, err := cl.RestoreKey(keyName, args[2])
 			if err != nil {
 				return err
 			}
@@ -118,8 +121,9 @@ $ %s keys delete ibc-0 -y
 $ %s keys delete ibc-1 key2 -y
 $ %s k d ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := client.GetChainClientFromContext(cmd.Context(), config.DefaultChain)
 			keyName := args[1]
-			if !config.cl.KeyExists(keyName) {
+			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
 			}
 
@@ -130,7 +134,7 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 				}
 			}
 
-			if err := config.cl.DeleteKey(keyName); err != nil {
+			if err := cl.DeleteKey(keyName); err != nil {
 				panic(err)
 			}
 
@@ -172,7 +176,8 @@ func keysListCmd() *cobra.Command {
 $ %s keys list ibc-0
 $ %s k l ibc-1`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			info, err := config.cl.ListAddresses()
+			cl := client.GetChainClientFromContext(cmd.Context(), config.DefaultChain)
+			info, err := cl.ListAddresses()
 			if err != nil {
 				return err
 			}
@@ -203,17 +208,18 @@ $ %s keys show ibc-0
 $ %s keys show ibc-1 key2
 $ %s k s ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := client.GetChainClientFromContext(cmd.Context(), config.DefaultChain)
 			var keyName string
 			if len(args) == 0 {
-				keyName = config.cl.Config.Key
+				keyName = cl.Config.Key
 			} else {
 				keyName = args[0]
 			}
-			if !config.cl.KeyExists(keyName) {
+			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
 			}
 
-			address, err := config.cl.ShowAddress(keyName)
+			address, err := cl.ShowAddress(keyName)
 			if err != nil {
 				return err
 			}
@@ -237,12 +243,13 @@ func keysExportCmd() *cobra.Command {
 $ %s keys export ibc-0 testkey
 $ %s k e ibc-2 testkey`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := client.GetChainClientFromContext(cmd.Context(), config.DefaultChain)
 			keyName := args[1]
-			if !config.cl.KeyExists(keyName) {
+			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
 			}
 
-			info, err := config.cl.ExportPrivKeyArmor(keyName)
+			info, err := cl.ExportPrivKeyArmor(keyName)
 			if err != nil {
 				return err
 			}
