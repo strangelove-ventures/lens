@@ -22,7 +22,8 @@ var ModuleBasics = []module.AppModuleBasic{
 	authz.AppModuleBasic{},
 	bank.AppModuleBasic{},
 	capability.AppModuleBasic{},
-	gov.NewAppModule()
+	// TODO: need to use gov.NewAppModuleBasic to get different governance proposal parsing
+	gov.AppModuleBasic{},
 	crisis.AppModuleBasic{},
 	distribution.AppModuleBasic{},
 	feegrant.AppModuleBasic{},
