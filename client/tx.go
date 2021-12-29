@@ -19,6 +19,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// TxFactory returns a new transaction factory based on the chain client's configuration
+// and the provided message.
 func (cc *ChainClient) TxFactory() tx.Factory {
 	return tx.Factory{}.
 		WithAccountRetriever(cc).
@@ -30,6 +32,7 @@ func (cc *ChainClient) TxFactory() tx.Factory {
 		WithSignMode(cc.Config.SignMode())
 }
 
+// SignMode returns the sign mode for the chain client
 func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 	signMode := signing.SignMode_SIGN_MODE_UNSPECIFIED
 	switch ccc.SignModeStr {
@@ -41,6 +44,11 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 	return signMode
 }
 
+// SendMsg wraps the msg in a StdTx, signs and sends it. An error is returned if there
+// was an issue sending the transaction. A successfully sent, but failed transaction will
+// not return an error. If a transaction is successfully sent, the result of the execution
+// of that transaction will be logged. A boolean indicating if a transaction was successfully
+// sent and executed successfully is returned.
 func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, bool, error) {
 	return cc.SendMsgs(ctx, []sdk.Msg{msg})
 }
@@ -106,6 +114,8 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	return res, true, nil
 }
 
+// PrepareFactory returns a new transaction factory based on the chain client's configuration
+// and the provided transaction factory.
 func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 	from, err := cc.GetKeyAddress()
 	if err != nil {
@@ -141,6 +151,7 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 	return txf, nil
 }
 
+// CalculateGas estimates the gas for a transaction based on TxFactory and msgs.
 func (cc *ChainClient) CalculateGas(txf tx.Factory, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
 	txBytes, err := BuildSimTx(txf, msgs...)
 	if err != nil {
@@ -165,6 +176,8 @@ func (cc *ChainClient) CalculateGas(txf tx.Factory, msgs ...sdk.Msg) (txtypes.Si
 	return simRes, uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
 }
 
+// QueryABCI queries the ABCI server with the provided request. An error is returned
+// if the query returns a non-zero code and the ABCI server returns a non-nil error.
 func (cc *ChainClient) QueryABCI(req abci.RequestQuery) (abci.ResponseQuery, error) {
 	opts := rpcclient.ABCIQueryOptions{
 		Height: req.Height,
@@ -187,6 +200,7 @@ func (cc *ChainClient) QueryABCI(req abci.RequestQuery) (abci.ResponseQuery, err
 	return result.Response, nil
 }
 
+// sdkErrorToGRPCError converts an sdk error to a grpc error.
 func sdkErrorToGRPCError(resp abci.ResponseQuery) error {
 	switch resp.Code {
 	case sdkerrors.ErrInvalidRequest.ABCICode():

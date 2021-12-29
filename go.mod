@@ -3,9 +3,9 @@ module github.com/strangelove-ventures/lens
 go 1.17
 
 require (
-	github.com/cosmos/cosmos-sdk v0.44.4
+	github.com/cosmos/cosmos-sdk v0.44.3
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/ibc-go/v2 v2.0.1
+	github.com/cosmos/ibc-go/v2 v2.0.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1

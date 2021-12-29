@@ -21,6 +21,7 @@ func (cc *ChainClient) QueryBalanceWithAddress(address sdk.AccAddress) (sdk.Coin
 	return res.Balances, nil
 }
 
+// QueryLatestHeight returns the latest height from the chain
 func (cc *ChainClient) QueryLatestHeight() (int64, error) {
 	stat, err := cc.RPCClient.Status(context.Background())
 	if err != nil {
@@ -37,6 +38,7 @@ func (cc *ChainClient) QueryDenomTraces(pageReq *querytypes.PageRequest, height 
 	})
 }
 
+// QueryAccount returns the account with address as input
 func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI, error) {
 	addr, err := cc.EncodeBech32AccAddr(address)
 	if err != nil {
@@ -98,6 +100,7 @@ func (cc *ChainClient) QueryBalance(address sdk.AccAddress, showDenoms bool) (sd
 	return out, nil
 }
 
+// DefaultPageRequest returns a default page request
 func DefaultPageRequest() *querytypes.PageRequest {
 	return &querytypes.PageRequest{
 		Key:        []byte(""),
