@@ -14,12 +14,13 @@ func newContextKey(chainid string) contextKey {
 
 // SetChainClientToContext sets the chain client to the context
 func SetChainClientOnContext(ctx context.Context, chainid string, client *ChainClient) error {
+	ctx.
 	v := ctx.Value(newContextKey(chainid))
 	if v == nil {
 		return errors.New("chain client not found in context")
 	}
 	ptr := v.(*ChainClient)
-	*ptr = *client
+	ptr = client
 	return nil
 }
 

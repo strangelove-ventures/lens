@@ -199,7 +199,6 @@ func initConfig(cmd *cobra.Command) error {
 			for _, v := range simapp.ModuleBasics {
 				modules = append(modules, v)
 			}
-			ctx := cmd.Context()
 			for _, chain := range config.Chains {
 				chain.Modules = modules
 				cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
@@ -207,7 +206,7 @@ func initConfig(cmd *cobra.Command) error {
 					fmt.Println("Error creating chain client:", err)
 					os.Exit(1)
 				}
-				client.SetChainClientOnContext(ctx, chain.ChainID, cl)
+				client.SetChainClientOnContext(cmd.Context(), chain.ChainID, cl)
 			}
 		}
 	}

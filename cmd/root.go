@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -81,7 +82,7 @@ func Execute() {
 	rootCmd.SilenceUsage = true
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
 		os.Exit(1)
 	}
 }
