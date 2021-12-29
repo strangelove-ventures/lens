@@ -30,6 +30,35 @@ func configCmd() *cobra.Command {
 	return cmd
 }
 
+func CreateConfig(home string, debug bool) error {
+	cfgPath := path.Join(home, "config.yaml")
+
+	// If the config doesn't exist...
+	if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
+		// And the config folder doesn't exist...
+		// And the home folder doesn't exist
+		if _, err := os.Stat(home); os.IsNotExist(err) {
+			// Create the home folder
+			if err = os.Mkdir(home, os.ModePerm); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Then create the file...
+	f, err := os.Create(cfgPath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// And write the default config to that location...
+	if _, err = f.Write(defaultConfig(path.Join(home, "keys"), debug)); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Command for inititalizing an empty config at the --home location
 func configInitCmd() *cobra.Command {
 	// TODO: add a `--chain` flag here to specify which chain to initialize
@@ -49,34 +78,7 @@ func configInitCmd() *cobra.Command {
 				return err
 			}
 
-			cfgPath := path.Join(home, "config.yaml")
-
-			// If the config doesn't exist...
-			if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
-				// And the config folder doesn't exist...
-				// And the home folder doesn't exist
-				if _, err := os.Stat(home); os.IsNotExist(err) {
-					// Create the home folder
-					if err = os.Mkdir(home, os.ModePerm); err != nil {
-						return err
-					}
-				}
-			}
-
-			// Then create the file...
-			f, err := os.Create(cfgPath)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			// And write the default config to that location...
-			if _, err = f.Write(defaultConfig(path.Join(home, "keys"), debug)); err != nil {
-				return err
-			}
-
-			// And return no error...
-			return nil
+			return CreateConfig(home, debug)
 		},
 	}
 	return cmd
@@ -141,43 +143,51 @@ func initConfig(cmd *cobra.Command) error {
 
 	config = &Config{}
 	cfgPath := path.Join(home, "config.yaml")
-	if _, err := os.Stat(cfgPath); err == nil {
-		viper.SetConfigFile(cfgPath)
-		if err := viper.ReadInConfig(); err == nil {
-			// read the config file bytes
-			file, err := ioutil.ReadFile(viper.ConfigFileUsed())
-			if err != nil {
-				fmt.Println("Error reading file:", err)
-				os.Exit(1)
-			}
-
-			// unmarshall them into the struct
-			if err = yaml.Unmarshal(file, config); err != nil {
-				fmt.Println("Error unmarshalling config:", err)
-				os.Exit(1)
-			}
-
-			// validate configuration
-			if err = validateConfig(config); err != nil {
-				fmt.Println("Error parsing chain config:", err)
-				os.Exit(1)
-			}
-
-			// instantiate chain client
-			// TODO: this is a bit of a hack, we should probably have a
-			// better way to inject modules into the client
-			modules := []module.AppModuleBasic{}
-			for _, v := range simapp.ModuleBasics {
-				modules = append(modules, v)
-			}
-			config.Chain.Modules = modules
-			cl, err := client.NewChainClient(config.Chain, os.Stdin, os.Stdout)
-			if err != nil {
-				fmt.Println("Error creating chain client:", err)
-				os.Exit(1)
-			}
-			config.cl = cl
-		}
+	_, err = os.Stat(cfgPath)
+	if err != nil {
+		fmt.Println("Config not found:", err)
+		os.Exit(1)
 	}
+	viper.SetConfigFile(cfgPath)
+	err = viper.ReadInConfig()
+	if err != nil {
+		fmt.Println("Failed to read in config:", err)
+		os.Exit(1)
+	}
+
+	// read the config file bytes
+	file, err := ioutil.ReadFile(viper.ConfigFileUsed())
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		os.Exit(1)
+	}
+
+	// unmarshall them into the struct
+	if err = yaml.Unmarshal(file, config); err != nil {
+		fmt.Println("Error unmarshalling config:", err)
+		os.Exit(1)
+	}
+
+	// validate configuration
+	if err = validateConfig(config); err != nil {
+		fmt.Println("Error parsing chain config:", err)
+		os.Exit(1)
+	}
+
+	// instantiate chain client
+	// TODO: this is a bit of a hack, we should probably have a
+	// better way to inject modules into the client
+	modules := []module.AppModuleBasic{}
+	for _, v := range simapp.ModuleBasics {
+		modules = append(modules, v)
+	}
+	config.Chain.Modules = modules
+	cl, err := client.NewChainClient(config.Chain, os.Stdin, os.Stdout)
+	if err != nil {
+		fmt.Println("Error creating chain client:", err)
+		os.Exit(1)
+	}
+	config.cl = cl
+
 	return nil
 }
