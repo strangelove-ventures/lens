@@ -16,20 +16,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func configCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     "config",
-		Aliases: []string{"cfg"},
-		Short:   "manage configuration file",
-	}
-
-	cmd.AddCommand(
-		configInitCmd(),
-	)
-
-	return cmd
-}
-
 //createConfig idempotently creates the config.
 func createConfig(home string, debug bool) error {
 	cfgPath := path.Join(home, "config.yaml")
@@ -87,8 +73,8 @@ func configInitCmd() *cobra.Command {
 
 // Config represents the config file for the relayer
 type Config struct {
-	DefaultChain string                      `yaml:"default_chain" json:"default_chain"`
-	Chains       []*client.ChainClientConfig `yaml:"chains" json:"chains"`
+	DefaultChain string                               `yaml:"default_chain" json:"default_chain"`
+	Chains       map[string]*client.ChainClientConfig `yaml:"chains" json:"chains"`
 
 	cl map[string]*client.ChainClient
 }
@@ -132,9 +118,9 @@ func defaultConfig(keyHome string, debug bool) []byte {
 		modules = append(modules, v)
 	}
 	cfg := Config{
-		DefaultChain: "cosmoshub-4",
-		Chains: []*client.ChainClientConfig{
-			{
+		DefaultChain: "cosmoshub",
+		Chains: map[string]*client.ChainClientConfig{
+			"cosmoshub": {
 				Key:            "default",
 				ChainID:        "cosmoshub-4",
 				RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
@@ -151,7 +137,7 @@ func defaultConfig(keyHome string, debug bool) []byte {
 				SignModeStr:    "direct",
 				Modules:        modules,
 			},
-			{
+			"osmosis": {
 				Key:            "default",
 				ChainID:        "osmosis-1",
 				RPCAddr:        "https://osmosis-1.technofractal.com:443",
@@ -222,14 +208,14 @@ func initConfig(cmd *cobra.Command) error {
 	for _, v := range simapp.ModuleBasics {
 		modules = append(modules, v)
 	}
-	for _, chain := range config.Chains {
+	for name, chain := range config.Chains {
 		chain.Modules = modules
 		cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
 		if err != nil {
 			fmt.Println("Error creating chain client:", err)
 			os.Exit(1)
 		}
-		config.cl[chain.ChainID] = cl
+		config.cl[name] = cl
 	}
 
 	// validate configuration
