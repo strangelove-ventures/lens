@@ -30,7 +30,8 @@ func configCmd() *cobra.Command {
 	return cmd
 }
 
-func CreateConfig(home string, debug bool) error {
+//createConfig idempotently creates the config.
+func createConfig(home string, debug bool) error {
 	cfgPath := path.Join(home, "config.yaml")
 
 	// If the config doesn't exist...
@@ -78,7 +79,7 @@ func configInitCmd() *cobra.Command {
 				return err
 			}
 
-			return CreateConfig(home, debug)
+			return createConfig(home, debug)
 		},
 	}
 	return cmd
@@ -141,12 +142,19 @@ func initConfig(cmd *cobra.Command) error {
 		return err
 	}
 
+	debug, err := cmd.Flags().GetBool("debug")
+	if err != nil {
+		return err
+	}
+
 	config = &Config{}
 	cfgPath := path.Join(home, "config.yaml")
 	_, err = os.Stat(cfgPath)
 	if err != nil {
-		fmt.Println("Config not found:", err)
-		os.Exit(1)
+		err = createConfig(home, debug)
+		if err != nil {
+			return err
+		}
 	}
 	viper.SetConfigFile(cfgPath)
 	err = viper.ReadInConfig()
