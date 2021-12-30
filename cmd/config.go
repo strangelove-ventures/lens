@@ -16,20 +16,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func configCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     "config",
-		Aliases: []string{"cfg"},
-		Short:   "manage configuration file",
-	}
-
-	cmd.AddCommand(
-		configInitCmd(),
-	)
-
-	return cmd
-}
-
 //createConfig idempotently creates the config.
 func createConfig(home string, debug bool) error {
 	cfgPath := path.Join(home, "config.yaml")
@@ -60,41 +46,47 @@ func createConfig(home string, debug bool) error {
 	return nil
 }
 
-// Command for inititalizing an empty config at the --home location
-func configInitCmd() *cobra.Command {
-	// TODO: add a `--chain` flag here to specify which chain to initialize
-	// this should reference standard configs in an `interchain` directory
-	// similar to the one in the relayer
-	cmd := &cobra.Command{
-		Use:     "init",
-		Aliases: []string{"i"},
-		Short:   "Creates a default home directory at path defined by --home",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			home, err := cmd.Flags().GetString(flags.FlagHome)
-			if err != nil {
-				return err
-			}
-			debug, err := cmd.Flags().GetBool("debug")
-			if err != nil {
-				return err
-			}
-
-			return createConfig(home, debug)
-		},
+func overwriteConfig(home string, cfg *Config) error {
+	cfgPath := path.Join(home, "config.yaml")
+	f, err := os.Create(cfgPath)
+	if err != nil {
+		return err
 	}
-	return cmd
+	defer f.Close()
+	if _, err := f.Write(cfg.MustYAML()); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Config represents the config file for the relayer
 type Config struct {
-	Chain *client.ChainClientConfig
-	cl    *client.ChainClient
+	DefaultChain string                               `yaml:"default_chain" json:"default_chain"`
+	Chains       map[string]*client.ChainClientConfig `yaml:"chains" json:"chains"`
+
+	cl map[string]*client.ChainClient
+}
+
+func (c *Config) GetDefaultClient() *client.ChainClient {
+	return c.GetClient(c.DefaultChain)
+}
+
+func (c *Config) GetClient(chainID string) *client.ChainClient {
+	if v, ok := c.cl[chainID]; ok {
+		return v
+	}
+	return nil
 }
 
 // Called to initialize the relayer.Chain types on Config
 func validateConfig(c *Config) error {
-	if err := c.Chain.Validate(); err != nil {
-		return err
+	for _, chain := range c.Chains {
+		if err := chain.Validate(); err != nil {
+			return err
+		}
+	}
+	if c.GetDefaultClient() == nil {
+		return fmt.Errorf("default chain (%s) configuration not found", c.DefaultChain)
 	}
 	return nil
 }
@@ -114,22 +106,42 @@ func defaultConfig(keyHome string, debug bool) []byte {
 		modules = append(modules, v)
 	}
 	cfg := Config{
-		Chain: &client.ChainClientConfig{
-			Key:            "default",
-			ChainID:        "cosmoshub-4",
-			RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
-			GRPCAddr:       "https://gprc.cosmoshub-4.technofractal.com:443",
-			AccountPrefix:  "cosmos",
-			KeyringBackend: "test",
-			GasAdjustment:  1.2,
-			GasPrices:      "0.01uatom",
-			KeyDirectory:   keyHome,
-			Debug:          debug,
-			Timeout:        "20s",
-			OutputFormat:   "json",
-			BroadcastMode:  "block",
-			SignModeStr:    "direct",
-			Modules:        modules,
+		DefaultChain: "cosmoshub",
+		Chains: map[string]*client.ChainClientConfig{
+			"cosmoshub": {
+				Key:            "default",
+				ChainID:        "cosmoshub-4",
+				RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
+				GRPCAddr:       "https://gprc.cosmoshub-4.technofractal.com:443",
+				AccountPrefix:  "cosmos",
+				KeyringBackend: "test",
+				GasAdjustment:  1.2,
+				GasPrices:      "0.01uatom",
+				KeyDirectory:   keyHome,
+				Debug:          debug,
+				Timeout:        "20s",
+				OutputFormat:   "json",
+				BroadcastMode:  "block",
+				SignModeStr:    "direct",
+				Modules:        modules,
+			},
+			"osmosis": {
+				Key:            "default",
+				ChainID:        "osmosis-1",
+				RPCAddr:        "https://osmosis-1.technofractal.com:443",
+				GRPCAddr:       "https://gprc.osmosis-1.technofractal.com:443",
+				AccountPrefix:  "osmo",
+				KeyringBackend: "test",
+				GasAdjustment:  1.2,
+				GasPrices:      "0.01uosmo",
+				KeyDirectory:   keyHome,
+				Debug:          debug,
+				Timeout:        "20s",
+				OutputFormat:   "json",
+				BroadcastMode:  "block",
+				SignModeStr:    "direct",
+				Modules:        modules,
+			},
 		},
 	}
 	return cfg.MustYAML()
@@ -176,26 +188,28 @@ func initConfig(cmd *cobra.Command) error {
 		os.Exit(1)
 	}
 
+	// instantiate chain client
+	// TODO: this is a bit of a hack, we should probably have a
+	// better way to inject modules into the client
+	config.cl = make(map[string]*client.ChainClient)
+	modules := []module.AppModuleBasic{}
+	for _, v := range simapp.ModuleBasics {
+		modules = append(modules, v)
+	}
+	for name, chain := range config.Chains {
+		chain.Modules = modules
+		cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
+		if err != nil {
+			fmt.Println("Error creating chain client:", err)
+			os.Exit(1)
+		}
+		config.cl[name] = cl
+	}
+
 	// validate configuration
 	if err = validateConfig(config); err != nil {
 		fmt.Println("Error parsing chain config:", err)
 		os.Exit(1)
 	}
-
-	// instantiate chain client
-	// TODO: this is a bit of a hack, we should probably have a
-	// better way to inject modules into the client
-	modules := []module.AppModuleBasic{}
-	for _, v := range simapp.ModuleBasics {
-		modules = append(modules, v)
-	}
-	config.Chain.Modules = modules
-	cl, err := client.NewChainClient(config.Chain, os.Stdin, os.Stdout)
-	if err != nil {
-		fmt.Println("Error creating chain client:", err)
-		os.Exit(1)
-	}
-	config.cl = cl
-
 	return nil
 }

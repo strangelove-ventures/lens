@@ -61,7 +61,8 @@ func abciInfoCmd() *cobra.Command {
 		Short:   "queries for block height, app name and app hash",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			info, err := config.cl.RPCClient.ABCIInfo(cmd.Context())
+			cl := config.GetDefaultClient()
+			info, err := cl.RPCClient.ABCIInfo(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -83,6 +84,7 @@ func abciQueryCmd() *cobra.Command {
 		Short:   "query the abci interface for tendermint directly",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			path := args[0]
 			data := []byte(args[1])
 			height, err := strconv.ParseInt(args[2], 10, 64)
@@ -96,7 +98,7 @@ func abciQueryCmd() *cobra.Command {
 				Prove:  false,
 			}
 
-			info, err := config.cl.RPCClient.ABCIQueryWithOptions(cmd.Context(), path, data, opts)
+			info, err := cl.RPCClient.ABCIQueryWithOptions(cmd.Context(), path, data, opts)
 			if err != nil {
 				return err
 			}
@@ -120,11 +122,12 @@ func blockCmd() *cobra.Command {
 		Short:   "query tendermint data for a block at given height",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			height, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return err
 			}
-			block, err := config.cl.RPCClient.Block(cmd.Context(), &height)
+			block, err := cl.RPCClient.Block(cmd.Context(), &height)
 			if err != nil {
 				return err
 			}
@@ -146,11 +149,12 @@ func blockByHashCmd() *cobra.Command {
 		Short:   "query tendermint for a given block by hash",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			h, err := hex.DecodeString(args[0])
 			if err != nil {
 				return err
 			}
-			block, err := config.cl.RPCClient.BlockByHash(cmd.Context(), h)
+			block, err := cl.RPCClient.BlockByHash(cmd.Context(), h)
 			if err != nil {
 				return err
 			}
@@ -172,11 +176,12 @@ func blockResultsCmd() *cobra.Command {
 		Short:   "query tendermint tx results for a given block by height",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			height, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return err
 			}
-			block, err := config.cl.RPCClient.BlockResults(cmd.Context(), &height)
+			block, err := cl.RPCClient.BlockResults(cmd.Context(), &height)
 			if err != nil {
 				return err
 			}
@@ -216,11 +221,12 @@ func consensusParamsCmd() *cobra.Command {
 		Short:   "query tendermint consensus params at a given height",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			height, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return err
 			}
-			block, err := config.cl.RPCClient.ConsensusParams(cmd.Context(), &height)
+			block, err := cl.RPCClient.ConsensusParams(cmd.Context(), &height)
 			if err != nil {
 				return err
 			}
@@ -246,7 +252,8 @@ func consensusStateCmd() *cobra.Command {
 		Short:   "query current tendermint consensus state",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			block, err := config.cl.RPCClient.ConsensusState(cmd.Context())
+			cl := config.GetDefaultClient()
+			block, err := cl.RPCClient.ConsensusState(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -268,7 +275,8 @@ func dumpConsensusStateCmd() *cobra.Command {
 		Short:   "query detailed version of current tendermint consensus state",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			block, err := config.cl.RPCClient.DumpConsensusState(cmd.Context())
+			cl := config.GetDefaultClient()
+			block, err := cl.RPCClient.DumpConsensusState(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -290,7 +298,8 @@ func healthCmd() *cobra.Command {
 		Short:   "query to see if node server is online",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			block, err := config.cl.RPCClient.Health(cmd.Context())
+			cl := config.GetDefaultClient()
+			block, err := cl.RPCClient.Health(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -315,11 +324,12 @@ func netInfoCmd() *cobra.Command {
 		Short:   "query for p2p network connection information",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			peers, err := cmd.Flags().GetBool("peers")
 			if err != nil {
 				return err
 			}
-			block, err := config.cl.RPCClient.NetInfo(cmd.Context())
+			block, err := cl.RPCClient.NetInfo(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -355,11 +365,12 @@ func numUnconfirmedTxs() *cobra.Command {
 		Short:   "query for number of unconfirmed txs",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			limit, err := cmd.Flags().GetInt("limit")
 			if err != nil {
 				return err
 			}
-			block, err := config.cl.RPCClient.UnconfirmedTxs(cmd.Context(), &limit)
+			block, err := cl.RPCClient.UnconfirmedTxs(cmd.Context(), &limit)
 			if err != nil {
 				return err
 			}
@@ -381,7 +392,8 @@ func statusCmd() *cobra.Command {
 		Short:   "query status of the node",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			block, err := config.cl.RPCClient.Status(cmd.Context())
+			cl := config.GetDefaultClient()
+			block, err := cl.RPCClient.Status(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -402,6 +414,7 @@ func queryTxCmd() *cobra.Command {
 		Short: "query for a transaction by hash",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			log, err := cmd.Flags().GetBool("log")
 			if err != nil {
 				return err
@@ -414,7 +427,7 @@ func queryTxCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			block, err := config.cl.RPCClient.Tx(cmd.Context(), h, prove)
+			block, err := cl.RPCClient.Tx(cmd.Context(), h, prove)
 			if err != nil {
 				return err
 			}

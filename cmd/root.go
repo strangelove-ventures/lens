@@ -62,10 +62,10 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	rootCmd.AddCommand(
-		configCmd(),
-		tendermintCmd(),
+		chainsCmd(),
 		keysCmd(),
 		queryCmd(),
+		tendermintCmd(),
 		txCmd(),
 	)
 

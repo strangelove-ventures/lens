@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -33,6 +34,7 @@ func keysCmd() *cobra.Command {
 	cmd.AddCommand(keysDeleteCmd())
 	cmd.AddCommand(keysListCmd())
 	cmd.AddCommand(keysShowCmd())
+	cmd.AddCommand(keysEnumerateCmd())
 	cmd.AddCommand(keysExportCmd())
 
 	return cmd
@@ -51,17 +53,18 @@ $ %s keys add ibc-0
 $ %s keys add ibc-1 key2
 $ %s k a ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			var keyName string
 			if len(args) == 0 {
-				keyName = config.cl.Config.Key
+				keyName = cl.Config.Key
 			} else {
 				keyName = args[0]
 			}
-			if config.cl.KeyExists(keyName) {
+			if cl.KeyExists(keyName) {
 				return errKeyExists(keyName)
 			}
 
-			ko, err := config.cl.AddKey(keyName)
+			ko, err := cl.AddKey(keyName)
 			if err != nil {
 				return err
 			}
@@ -92,12 +95,13 @@ func keysRestoreCmd() *cobra.Command {
 $ %s keys restore ibc-0 testkey "[mnemonic-words]"
 $ %s k r ibc-1 faucet-key "[mnemonic-words]"`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			keyName := args[1]
-			if config.cl.KeyExists(keyName) {
+			if cl.KeyExists(keyName) {
 				return errKeyExists(keyName)
 			}
 
-			address, err := config.cl.RestoreKey(keyName, args[2])
+			address, err := cl.RestoreKey(keyName, args[2])
 			if err != nil {
 				return err
 			}
@@ -123,8 +127,9 @@ $ %s keys delete ibc-0 -y
 $ %s keys delete ibc-1 key2 -y
 $ %s k d ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			keyName := args[1]
-			if !config.cl.KeyExists(keyName) {
+			cl := config.GetDefaultClient()
+			keyName := args[0]
+			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
 			}
 
@@ -135,7 +140,7 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 				}
 			}
 
-			if err := config.cl.DeleteKey(keyName); err != nil {
+			if err := cl.DeleteKey(keyName); err != nil {
 				panic(err)
 			}
 
@@ -177,7 +182,8 @@ func keysListCmd() *cobra.Command {
 $ %s keys list ibc-0
 $ %s k l ibc-1`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			info, err := config.cl.ListAddresses()
+			cl := config.GetDefaultClient()
+			info, err := cl.ListAddresses()
 			if err != nil {
 				return err
 			}
@@ -206,26 +212,91 @@ $ %s keys show ibc-0
 $ %s keys show ibc-1 key2
 $ %s k s ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			var keyName string
 			if len(args) == 0 {
-				keyName = config.cl.Config.Key
+				keyName = cl.Config.Key
 			} else {
 				keyName = args[0]
 			}
-			if !config.cl.KeyExists(keyName) {
+			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
 			}
 
 			if FlagAccountPrefix != "" {
-				config.cl.Config.AccountPrefix = FlagAccountPrefix
+				cl.Config.AccountPrefix = FlagAccountPrefix
 			}
 
-			address, err := config.cl.ShowAddress(keyName)
+			address, err := cl.ShowAddress(keyName)
 			if err != nil {
 				return err
 			}
 
 			fmt.Println(address)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&FlagAccountPrefix, "prefix", "", "Encode the key with the user specified prefix")
+
+	return cmd
+}
+
+type KeyEnumeration struct {
+	KeyName   string            `json:"key_name"`
+	Addresses map[string]string `json:"addresses"`
+}
+
+// keysEnumerateCmd respresents the `keys enumerate` command
+func keysEnumerateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "enumerate [name]",
+		Aliases: []string{"e"},
+		Short:   "enumerates the address for a given key across all configured chains",
+		Long:    "if no name is passed, name in config is used",
+		Args:    cobra.RangeArgs(0, 1),
+		Example: strings.TrimSpace(fmt.Sprintf(`
+$ %s keys enumerate
+$ %s keys enumerate key2
+$ %s k e key2`, appName, appName, appName)),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
+			var keyName string
+			if len(args) == 0 {
+				keyName = cl.Config.Key
+			} else {
+				keyName = args[0]
+			}
+			if !cl.KeyExists(keyName) {
+				return errKeyDoesntExist(keyName)
+			}
+
+			var chains []string
+			for chain := range config.Chains {
+				chains = append(chains, chain)
+			}
+			sort.Strings(chains)
+
+			result := &KeyEnumeration{
+				KeyName:   keyName,
+				Addresses: make(map[string]string),
+			}
+
+			for _, chain := range chains {
+				client := config.GetClient(chain)
+
+				address, err := client.ShowAddress(keyName)
+				if err != nil {
+					return err
+				}
+
+				result.Addresses[chain] = address
+			}
+			rb, err := json.Marshal(&result)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(rb))
 			return nil
 		},
 	}
@@ -246,12 +317,13 @@ func keysExportCmd() *cobra.Command {
 $ %s keys export ibc-0 testkey
 $ %s k e ibc-2 testkey`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
 			keyName := args[1]
-			if !config.cl.KeyExists(keyName) {
+			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
 			}
 
-			info, err := config.cl.ExportPrivKeyArmor(keyName)
+			info, err := cl.ExportPrivKeyArmor(keyName)
 			if err != nil {
 				return err
 			}
