@@ -290,11 +290,9 @@ $ %s k e key2`, appName, appName, appName)),
 			}
 
 			for _, chain := range chains {
-				c := config.Chains[chain]
+				client := config.GetClient(chain)
 
-				cl.Config.AccountPrefix = c.AccountPrefix
-
-				address, err := cl.ShowAddress(keyName)
+				address, err := client.ShowAddress(keyName)
 				if err != nil {
 					return err
 				}
