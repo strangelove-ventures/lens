@@ -96,12 +96,12 @@ $ %s keys restore ibc-0 testkey "[mnemonic-words]"
 $ %s k r ibc-1 faucet-key "[mnemonic-words]"`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			keyName := args[1]
+			keyName := args[0]
 			if cl.KeyExists(keyName) {
 				return errKeyExists(keyName)
 			}
 
-			address, err := cl.RestoreKey(keyName, args[2])
+			address, err := cl.RestoreKey(keyName, args[1])
 			if err != nil {
 				return err
 			}
