@@ -42,7 +42,7 @@ func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, k
 	// TODO: figure out how to deal with input or maybe just make all keyring backends test?
 
 	timeout, _ := time.ParseDuration(ccc.Timeout)
-	rpcClient, err := newRPCClient(ccc.RPCAddr, timeout)
+	rpcClient, err := NewRPCClient(ccc.RPCAddr, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (cc *ChainClient) GetKeyAddress() (sdk.AccAddress, error) {
 	return info.GetAddress(), nil
 }
 
-func newRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
+func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 	httpClient, err := libclient.DefaultHTTPClient(addr)
 	if err != nil {
 		return nil, err
