@@ -242,14 +242,9 @@ $ %s k s ibc-2 testkey`, appName, appName, appName)),
 	return cmd
 }
 
-type ChainAddress struct {
-	Chain   string
-	Address string
-}
-
 type KeyEnumeration struct {
 	KeyName   string
-	Addresses []ChainAddress
+	Addresses map[string]string
 }
 
 // keysEnumerateCmd respresents the `keys enumerate` command
@@ -285,7 +280,7 @@ $ %s k e key2`, appName, appName, appName)),
 
 			result := &KeyEnumeration{
 				KeyName:   keyName,
-				Addresses: []ChainAddress{},
+				Addresses: make(map[string]string),
 			}
 
 			for _, chain := range chains {
@@ -296,11 +291,7 @@ $ %s k e key2`, appName, appName, appName)),
 					return err
 				}
 
-				ca := ChainAddress{
-					Chain:   chain,
-					Address: address,
-				}
-				result.Addresses = append(result.Addresses, ca)
+				result.Addresses[chain] = address
 			}
 			rb, err := json.Marshal(&result)
 			if err != nil {
