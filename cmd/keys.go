@@ -243,8 +243,8 @@ $ %s k s ibc-2 testkey`, appName, appName, appName)),
 }
 
 type KeyEnumeration struct {
-	KeyName   string
-	Addresses map[string]string
+	KeyName   string            `json:"key_name"`
+	Addresses map[string]string `json:"addresses"`
 }
 
 // keysEnumerateCmd respresents the `keys enumerate` command
@@ -260,7 +260,6 @@ $ %s keys enumerate
 $ %s keys enumerate key2
 $ %s k e key2`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			cl := config.GetDefaultClient()
 			var keyName string
 			if len(args) == 0 {
