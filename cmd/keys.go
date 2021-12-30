@@ -9,7 +9,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -303,7 +302,7 @@ $ %s k e key2`, appName, appName, appName)),
 				}
 				result.Addresses = append(result.Addresses, ca)
 			}
-			rb, err := yaml.Marshal(&result)
+			rb, err := json.Marshal(&result)
 			if err != nil {
 				return err
 			}
