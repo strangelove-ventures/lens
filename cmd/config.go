@@ -46,29 +46,17 @@ func createConfig(home string, debug bool) error {
 	return nil
 }
 
-// Command for inititalizing an empty config at the --home location
-func configInitCmd() *cobra.Command {
-	// TODO: add a `--chain` flag here to specify which chain to initialize
-	// this should reference standard configs in an `interchain` directory
-	// similar to the one in the relayer
-	cmd := &cobra.Command{
-		Use:     "init",
-		Aliases: []string{"i"},
-		Short:   "Creates a default home directory at path defined by --home",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			home, err := cmd.Flags().GetString(flags.FlagHome)
-			if err != nil {
-				return err
-			}
-			debug, err := cmd.Flags().GetBool("debug")
-			if err != nil {
-				return err
-			}
-
-			return createConfig(home, debug)
-		},
+func overwriteConfig(home string, cfg *Config) error {
+	cfgPath := path.Join(home, "config.yaml")
+	f, err := os.Create(cfgPath)
+	if err != nil {
+		return err
 	}
-	return cmd
+	defer f.Close()
+	if _, err := f.Write(cfg.MustYAML()); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Config represents the config file for the relayer
