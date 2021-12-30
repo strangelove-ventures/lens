@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -33,6 +34,7 @@ func keysCmd() *cobra.Command {
 	cmd.AddCommand(keysDeleteCmd())
 	cmd.AddCommand(keysListCmd())
 	cmd.AddCommand(keysShowCmd())
+	cmd.AddCommand(keysEnumerateCmd())
 	cmd.AddCommand(keysExportCmd())
 
 	return cmd
@@ -231,6 +233,70 @@ $ %s k s ibc-2 testkey`, appName, appName, appName)),
 			}
 
 			fmt.Println(address)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&FlagAccountPrefix, "prefix", "", "Encode the key with the user specified prefix")
+
+	return cmd
+}
+
+type KeyEnumeration struct {
+	KeyName   string            `json:"key_name"`
+	Addresses map[string]string `json:"addresses"`
+}
+
+// keysEnumerateCmd respresents the `keys enumerate` command
+func keysEnumerateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "enumerate [name]",
+		Aliases: []string{"e"},
+		Short:   "enumerates the address for a given key across all configured chains",
+		Long:    "if no name is passed, name in config is used",
+		Args:    cobra.RangeArgs(0, 1),
+		Example: strings.TrimSpace(fmt.Sprintf(`
+$ %s keys enumerate
+$ %s keys enumerate key2
+$ %s k e key2`, appName, appName, appName)),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
+			var keyName string
+			if len(args) == 0 {
+				keyName = cl.Config.Key
+			} else {
+				keyName = args[0]
+			}
+			if !cl.KeyExists(keyName) {
+				return errKeyDoesntExist(keyName)
+			}
+
+			var chains []string
+			for chain := range config.Chains {
+				chains = append(chains, chain)
+			}
+			sort.Strings(chains)
+
+			result := &KeyEnumeration{
+				KeyName:   keyName,
+				Addresses: make(map[string]string),
+			}
+
+			for _, chain := range chains {
+				client := config.GetClient(chain)
+
+				address, err := client.ShowAddress(keyName)
+				if err != nil {
+					return err
+				}
+
+				result.Addresses[chain] = address
+			}
+			rb, err := json.Marshal(&result)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(rb))
 			return nil
 		},
 	}
