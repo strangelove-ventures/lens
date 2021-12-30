@@ -50,8 +50,9 @@ func getChainFiles(chainName string) (rc RegistryChain, al AssetList, err error)
 		return err
 	})
 	eg.Go(func() (err error) {
-		al, err = getAssetFile(chainName)
-		return err
+		al, _ = getAssetFile(chainName)
+		// TODO: better error handling
+		return nil
 	})
 	err = eg.Wait()
 	return
