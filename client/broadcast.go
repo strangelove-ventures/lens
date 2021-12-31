@@ -22,37 +22,34 @@ import (
 // defined.
 func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxResponse, err error) {
 	// broadcast tx sync waits for check tx to pass
-	// this will give us errors from
 	res, err = cc.BroadcastTxSync(ctx, tx)
-	// TODO: ensure we checking response error codes here
-	// and not just the error
-	if err != nil {
+	if err != nil || res.Code != 0 {
 		return
 	}
 
+	// once check tx passes, we wait for the tx to leave the mempool of the node
+mempool:
 	for {
-		// TODO: wire up context cancellation
-		if cc.TxInMempool(ctx, res.TxHash) {
-			// break for loop once tx isn't in mempool
-			break
+		select {
+		case <-time.After(time.Millisecond * 50):
+			if !cc.TxInMempool(ctx, res.TxHash) {
+				break mempool
+			}
+		case <-ctx.Done():
+			return
 		}
-		// TODO: make this configurable or just run it with no breaks or fewer breaks
-		time.Sleep(time.Millisecond * 100)
 	}
-
-	// TODO: add option to return early here?
 
 	txid, err := hex.DecodeString(res.TxHash)
 	if err != nil {
 		return
 	}
+
 	var resTx *ctypes.ResultTx
 	if err = retry.Do(func() error {
 		resTx, err = cc.RPCClient.Tx(ctx, txid, false)
-		// TODO: return error if tx is not found
 		return err
-		// TODO: retry options here
-	}); err != nil {
+	}, retry.Context(ctx), retry.MaxDelay(100*time.Millisecond)); err != nil {
 		return
 	}
 	return cc.mkTxResult(resTx)
@@ -105,27 +102,6 @@ func (cc *ChainClient) BroadcastTxSync(ctx context.Context, tx []byte) (*sdk.TxR
 	return sdk.NewResponseFormatBroadcastTx(res), err
 
 }
-
-// func (cc *ChainClient) BroadcastTxAsync(ctx context.Context, tx []byte) (*sdk.TxResponse, error) {
-// 	res, err := cc.RPCClient.BroadcastTxAsync(ctx, tx)
-// 	if errRes := CheckTendermintError(err, tx); errRes != nil {
-// 		return errRes, nil
-// 	}
-
-// 	return sdk.NewResponseFormatBroadcastTx(res), err
-// }
-
-// func (cc *ChainClient) BroadcastTxCommit(ctx context.Context, txBytes []byte) (*sdk.TxResponse, error) {
-// 	res, err := cc.RPCClient.BroadcastTxCommit(ctx, txBytes)
-// 	// TODO: why this? need to figure that one out
-// 	if err == nil {
-// 		return sdk.NewResponseFormatBroadcastTxCommit(res), nil
-// 	}
-// 	if errRes := CheckTendermintError(err, txBytes); errRes != nil {
-// 		return errRes, nil
-// 	}
-// 	return sdk.NewResponseFormatBroadcastTxCommit(res), err
-// }
 
 // CheckTendermintError checks if the error returned from BroadcastTx is a
 // Tendermint error that is returned before the tx is submitted due to
