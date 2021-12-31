@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -22,37 +21,30 @@ import (
 // defined.
 func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxResponse, err error) {
 	// broadcast tx sync waits for check tx to pass
+	// NOTE: this can return w/ a timeout
+	// need to investigate if this will leave the tx
+	// in the mempool or we can retry the broadcast at that
+	// point
 	res, err = cc.BroadcastTxSync(ctx, tx)
 	if err != nil || res.Code != 0 {
 		return
 	}
 
-	// once check tx passes, we wait for the tx to leave the mempool of the node
-mempool:
+	// wait for tx to be included in a block
+	txid, _ := hex.DecodeString(res.TxHash)
 	for {
 		select {
-		case <-time.After(time.Millisecond * 50):
-			if !cc.TxInMempool(ctx, res.TxHash) {
-				break mempool
+		// TODO: this is potentially less than optimal and may
+		// be better as something configurable
+		case <-time.After(time.Millisecond * 100):
+			resTx, err := cc.RPCClient.Tx(ctx, txid, false)
+			if err == nil {
+				return cc.mkTxResult(resTx)
 			}
 		case <-ctx.Done():
 			return
 		}
 	}
-
-	txid, err := hex.DecodeString(res.TxHash)
-	if err != nil {
-		return
-	}
-
-	var resTx *ctypes.ResultTx
-	if err = retry.Do(func() error {
-		resTx, err = cc.RPCClient.Tx(ctx, txid, false)
-		return err
-	}, retry.Context(ctx), retry.MaxDelay(100*time.Millisecond)); err != nil {
-		return
-	}
-	return cc.mkTxResult(resTx)
 }
 
 func (cc *ChainClient) mkTxResult(resTx *ctypes.ResultTx) (*sdk.TxResponse, error) {
@@ -86,6 +78,7 @@ func (cc *ChainClient) TxInMempool(ctx context.Context, txHash string) bool {
 		return false
 	}
 	for _, txbz := range res.Txs {
+		fmt.Println(txHash, fmt.Sprintf("%X", txbz.Hash()))
 		if strings.EqualFold(txHash, fmt.Sprintf("%X", txbz.Hash())) {
 			return true
 		}

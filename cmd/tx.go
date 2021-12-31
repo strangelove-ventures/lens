@@ -52,7 +52,23 @@ func bankSendCmd() *cobra.Command {
 				return err
 			}
 
-			res, ok, err := cl.SendMsg(cmd.Context(), types.NewMsgSend(fromAddress, toAddr, coins))
+			from, err := cl.EncodeBech32AccAddr(fromAddress)
+			if err != nil {
+				return err
+			}
+
+			to, err := cl.EncodeBech32AccAddr(toAddr)
+			if err != nil {
+				return err
+			}
+
+			msg := &types.MsgSend{
+				FromAddress: from,
+				ToAddress:   to,
+				Amount:      coins,
+			}
+
+			res, ok, err := cl.SendMsg(cmd.Context(), msg)
 			if err != nil || !ok {
 				if res != nil {
 					return fmt.Errorf("failed to send coins: code(%d) msg(%s)", res.Code, res.Logs)

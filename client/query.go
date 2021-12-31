@@ -12,7 +12,11 @@ import (
 
 // QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
 func (cc *ChainClient) QueryBalanceWithAddress(address sdk.AccAddress) (sdk.Coins, error) {
-	params := bankTypes.NewQueryAllBalancesRequest(address, DefaultPageRequest())
+	addr, err := cc.EncodeBech32AccAddr(address)
+	if err != nil {
+		return nil, err
+	}
+	params := &bankTypes.QueryAllBalancesRequest{Address: addr, Pagination: DefaultPageRequest()}
 	res, err := bankTypes.NewQueryClient(cc).AllBalances(context.Background(), params)
 	if err != nil {
 		return nil, err
