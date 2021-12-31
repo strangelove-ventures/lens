@@ -42,7 +42,7 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 			}
 
 			if cl.KeyExists(args[2]) {
-				delAddr, err = cl.GetKeyByName(args[2])
+				delAddr, err = cl.GetDefaultAddress()
 			} else {
 				delAddr, err = cl.DecodeBech32AccAddr(args[2])
 			}

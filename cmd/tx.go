@@ -12,6 +12,7 @@ func txCmd() *cobra.Command {
 	cmd.AddCommand(bankSendCmd())
 	cmd.AddCommand(stakingDelegateCmd())
 	cmd.AddCommand(stakingRedelegateCmd())
+	cmd.AddCommand(distributionWithdrawRewardsCmd())
 
 	return cmd
 }

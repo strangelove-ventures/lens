@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -12,27 +11,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// FlagCommission to withdraw validator's commission.
-var (
-	FlagCommission = "commission"
-	FlagAll        = "all"
-	FlagFrom       = "from"
-)
-
 func distributionWithdrawRewardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "withdraw-rewards [validator-addr]",
+		Use:   "withdraw-rewards [validator-addr] [from]",
 		Short: "Withdraw rewards from a given delegation address, and optionally withdraw validator commission if the delegation address given is a validator operator",
 		Long: strings.TrimSpace(
 			`Withdraw rewards from a given delegation address,
 and optionally withdraw validator commission if the delegation address given is a validator operator.
 Example:
-$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr --from mykey
-$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr --from mykey --commission
-$ lens tx withdraw-rewards --from mykey --all
+$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr mykey
+$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr mykey commission
+$ lens tx withdraw-rewards mykey all
 `,
 		),
-		Args: cobra.MaximumNArgs(1),
+		Args: cobra.MaximumNArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
 				delAddr sdk.AccAddress
@@ -41,26 +33,21 @@ $ lens tx withdraw-rewards --from mykey --all
 
 			cl := config.GetDefaultClient()
 
-			key, _ := cmd.Flags().GetString(FlagFrom)
-			if key != "" {
-				return errors.New("From key unset")
-			}
-
-			if key != cl.Config.Key {
-				cl.Config.Key = key
-			}
-
-			if cl.KeyExists(key) {
-				delAddr, err = cl.GetKeyByName(key)
-			} else {
-				delAddr, err = cl.DecodeBech32AccAddr(key)
-			}
-			if err != nil {
-				return err
-			}
-
 			msgs := []sdk.Msg{}
-			if all, _ := cmd.Flags().GetBool(FlagAll); all {
+
+			if args[1] == "all" {
+				if args[0] != cl.Config.Key {
+					cl.Config.Key = args[0]
+				}
+
+				if cl.KeyExists(args[0]) {
+					delAddr, err = cl.GetDefaultAddress()
+				} else {
+					delAddr, err = cl.DecodeBech32AccAddr(args[1])
+				}
+				if err != nil {
+					return err
+				}
 
 				validators, err := cl.QueryDelegatorValidators(delAddr)
 				if err != nil {
@@ -70,15 +57,28 @@ $ lens tx withdraw-rewards --from mykey --all
 				// build multi-message transaction
 				msgs := make([]sdk.Msg, 0, len(validators))
 				for _, valAddr := range validators {
-					val, err := sdk.ValAddressFromBech32(valAddr)
+					val, err := cl.DecodeBech32ValAddr(valAddr)
 					if err != nil {
 						return err
 					}
 
-					msg := types.NewMsgWithdrawDelegatorReward(delAddr, val)
+					msg := types.NewMsgWithdrawDelegatorReward(delAddr, sdk.ValAddress(val))
 					msgs = append(msgs, msg)
 				}
 			} else {
+				if args[1] != cl.Config.Key {
+					cl.Config.Key = args[1]
+				}
+
+				if cl.KeyExists(args[1]) {
+					delAddr, err = cl.GetDefaultAddress()
+				} else {
+					delAddr, err = cl.DecodeBech32AccAddr(args[1])
+				}
+				if err != nil {
+					return err
+				}
+
 				valAddr, err := cl.DecodeBech32ValAddr(args[0])
 				if err != nil {
 					return err
@@ -87,12 +87,14 @@ $ lens tx withdraw-rewards --from mykey --all
 				msgs = append(msgs, types.NewMsgWithdrawDelegatorReward(delAddr, sdk.ValAddress(valAddr)))
 			}
 
-			if commission, _ := cmd.Flags().GetBool(FlagCommission); commission {
-				valAddr, err := cl.DecodeBech32ValAddr(args[0])
-				if err != nil {
-					return err
+			if len(args) == 3 {
+				if args[2] == "commission" {
+					valAddr, err := cl.DecodeBech32ValAddr(args[0])
+					if err != nil {
+						return err
+					}
+					msgs = append(msgs, types.NewMsgWithdrawValidatorCommission(sdk.ValAddress(valAddr)))
 				}
-				msgs = append(msgs, types.NewMsgWithdrawValidatorCommission(sdk.ValAddress(valAddr)))
 			}
 
 			res, ok, err := cl.SendMsgs(cmd.Context(), msgs)
@@ -114,13 +116,8 @@ $ lens tx withdraw-rewards --from mykey --all
 			}
 			fmt.Println(out.String())
 			return nil
-
 		},
 	}
-
-	cmd.Flags().Bool(FlagCommission, false, "Withdraw the validator's commission in addition to the rewards")
-	cmd.Flags().Bool(FlagAll, false, "Withdraw all your accounts rewards")
-	cmd.Flags().String(FlagFrom, "", "Withdraw rewards from the given address")
 
 	return cmd
 }

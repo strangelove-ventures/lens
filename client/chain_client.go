@@ -73,17 +73,6 @@ func (cc *ChainClient) GetDefaultAddress() (sdk.AccAddress, error) {
 	return info.GetAddress(), nil
 }
 
-func (cc *ChainClient) GetKeyByName(name string) (sdk.AccAddress, error) {
-	if name == "" {
-		name = cc.Config.Key
-	}
-	info, err := cc.Keybase.Key(name)
-	if err != nil {
-		return nil, err
-	}
-	return info.GetAddress(), nil
-}
-
 func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 	httpClient, err := libclient.DefaultHTTPClient(addr)
 	if err != nil {
