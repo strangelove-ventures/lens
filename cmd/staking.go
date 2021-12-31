@@ -38,7 +38,7 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 			}
 
 			if cl.KeyExists(args[2]) {
-				delAddr, err = cl.GetKeyAddress()
+				delAddr, err = cl.GetKeyByName(args[2])
 			} else {
 				delAddr, err = cl.DecodeBech32AccAddr(args[2])
 			}
@@ -53,7 +53,7 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 
 			msg := types.NewMsgDelegate(delAddr, sdk.ValAddress(valAddr), amount)
 
-			res, ok, err := cl.SendMsg(cmd.Context(), msg)
+			res, ok, err := cl.SendMsg(cmd.Context(), msg, delAddr.String())
 			if err != nil || !ok {
 				if res != nil {
 					return fmt.Errorf("failed to delegate: code(%d) msg(%s)", res.Code, res.Logs)
@@ -100,7 +100,7 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 			cl := config.GetDefaultClient()
 
 			if cl.KeyExists(args[3]) {
-				delAddr, err = cl.GetKeyAddress()
+				delAddr, err = cl.GetDefaultAddress()
 			} else {
 				delAddr, err = cl.DecodeBech32AccAddr(args[3])
 			}
@@ -125,7 +125,7 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 
 			msg := types.NewMsgBeginRedelegate(delAddr, sdk.ValAddress(valSrcAddr), sdk.ValAddress(valDstAddr), amount)
 
-			res, ok, err := cl.SendMsg(cmd.Context(), msg)
+			res, ok, err := cl.SendMsg(cmd.Context(), msg, delAddr.String())
 			if err != nil || !ok {
 				if res != nil {
 					return fmt.Errorf("failed to redelegate: code(%d) msg(%s)", res.Code, res.Logs)

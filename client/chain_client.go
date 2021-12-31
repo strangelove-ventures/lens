@@ -65,8 +65,19 @@ func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, k
 	}, nil
 }
 
-func (cc *ChainClient) GetKeyAddress() (sdk.AccAddress, error) {
+func (cc *ChainClient) GetDefaultAddress() (sdk.AccAddress, error) {
 	info, err := cc.Keybase.Key(cc.Config.Key)
+	if err != nil {
+		return nil, err
+	}
+	return info.GetAddress(), nil
+}
+
+func (cc *ChainClient) GetKeyByName(name string) (sdk.AccAddress, error) {
+	if name == "" {
+		name = cc.Config.Key
+	}
+	info, err := cc.Keybase.Key(name)
 	if err != nil {
 		return nil, err
 	}

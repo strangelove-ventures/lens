@@ -22,7 +22,7 @@ func bankSendCmd() *cobra.Command {
 				err         error
 			)
 			if cl.KeyExists(args[0]) {
-				fromAddress, err = cl.GetKeyAddress()
+				fromAddress, err = cl.GetDefaultAddress()
 			} else {
 				fromAddress, err = cl.DecodeBech32AccAddr(args[0])
 			}
@@ -39,7 +39,7 @@ func bankSendCmd() *cobra.Command {
 				return err
 			}
 
-			res, ok, err := cl.SendMsg(cmd.Context(), types.NewMsgSend(fromAddress, toAddr, coins))
+			res, ok, err := cl.SendMsg(cmd.Context(), types.NewMsgSend(fromAddress, toAddr, coins), fromAddress.String())
 			if err != nil || !ok {
 				if res != nil {
 					return fmt.Errorf("failed to send coins: code(%d) msg(%s)", res.Code, res.Logs)

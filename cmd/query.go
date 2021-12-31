@@ -44,7 +44,7 @@ func queryBalanceCmd() *cobra.Command {
 			}
 			if cl.KeyExists(keyNameOrAddress) {
 				cl.Config.Key = keyNameOrAddress
-				address, err = cl.GetKeyAddress()
+				address, err = cl.GetDefaultAddress()
 			} else {
 				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)
 			}
@@ -86,7 +86,7 @@ func queryAccountCmd() *cobra.Command {
 			}
 			if cl.KeyExists(keyNameOrAddress) {
 				cl.Config.Key = keyNameOrAddress
-				address, err = cl.GetKeyAddress()
+				address, err = cl.GetDefaultAddress()
 			} else {
 				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)
 			}
