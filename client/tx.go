@@ -41,8 +41,8 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 	return signMode
 }
 
-func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg, keyName string) (*sdk.TxResponse, bool, error) {
-	return cc.SendMsgs(ctx, []sdk.Msg{msg}, keyName)
+func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, bool, error) {
+	return cc.SendMsgs(ctx, []sdk.Msg{msg})
 }
 
 // SendMsgs wraps the msgs in a StdTx, signs and sends it. An error is returned if there
@@ -50,8 +50,8 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg, keyName string)
 // not return an error. If a transaction is successfully sent, the result of the execution
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
-func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, keyName string) (*sdk.TxResponse, bool, error) {
-	txf, err := cc.PrepareFactory(cc.TxFactory(), keyName)
+func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxResponse, bool, error) {
+	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, false, err
 	}
@@ -106,8 +106,8 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, keyName str
 	return res, true, nil
 }
 
-func (cc *ChainClient) PrepareFactory(txf tx.Factory, keyName string) (tx.Factory, error) {
-	from, err := cc.GetKeyByName(keyName)
+func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
+	from, err := cc.GetDefaultAddress()
 	if err != nil {
 		return tx.Factory{}, err
 	}
