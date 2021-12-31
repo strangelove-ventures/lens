@@ -30,6 +30,9 @@ func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxR
 		return
 	}
 
+	// TODO: maybe we need to check if the node has tx indexing enabled?
+	// if not, we need to find a new way to block until inclusion in a block
+
 	// wait for tx to be included in a block
 	txid, _ := hex.DecodeString(res.TxHash)
 	for {
