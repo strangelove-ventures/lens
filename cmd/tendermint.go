@@ -360,8 +360,8 @@ func numUnconfirmedTxs() *cobra.Command {
 	// TODO: add example for parsing these txs
 	// _{*extraCredit*}_
 	cmd := &cobra.Command{
-		Use:     "num-unconfirmed-txs",
-		Aliases: []string{"count-unconf", "unconf-count"},
+		Use:     "mempool",
+		Aliases: []string{"unconfirmed", "mem"},
 		Short:   "query for number of unconfirmed txs",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -374,6 +374,9 @@ func numUnconfirmedTxs() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// for _, txbz := range block.Txs {
+			// 	fmt.Printf("%X\n", tmtypes.Tx(txbz).Hash())
+			// }
 			bz, err := json.MarshalIndent(block, "", "  ")
 			if err != nil {
 				return err

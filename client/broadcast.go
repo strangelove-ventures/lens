@@ -2,12 +2,17 @@ package client
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/avast/retry-go"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/tendermint/mempool"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -16,17 +21,79 @@ import (
 // an intermediate structure which is logged if the context has a logger
 // defined.
 func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxResponse, err error) {
-	switch cc.Config.BroadcastMode {
-	case "sync":
-		res, err = cc.BroadcastTxSync(ctx, tx)
-	case "async":
-		res, err = cc.BroadcastTxAsync(ctx, tx)
-	case "block":
-		res, err = cc.BroadcastTxCommit(ctx, tx)
-	default:
-		return nil, fmt.Errorf("unsupported return type %s; supported types: sync, async, block", cc.Config.BroadcastMode)
+	// broadcast tx sync waits for check tx to pass
+	// this will give us errors from
+	res, err = cc.BroadcastTxSync(ctx, tx)
+	// TODO: ensure we checking response error codes here
+	// and not just the error
+	if err != nil {
+		return
 	}
-	return res, err
+
+	for {
+		// TODO: wire up context cancellation
+		if cc.TxInMempool(ctx, res.TxHash) {
+			// break for loop once tx isn't in mempool
+			break
+		}
+		// TODO: make this configurable or just run it with no breaks or fewer breaks
+		time.Sleep(time.Millisecond * 100)
+	}
+
+	// TODO: add option to return early here?
+
+	txid, err := hex.DecodeString(res.TxHash)
+	if err != nil {
+		return
+	}
+	var resTx *ctypes.ResultTx
+	if err = retry.Do(func() error {
+		resTx, err = cc.RPCClient.Tx(ctx, txid, false)
+		// TODO: return error if tx is not found
+		return err
+		// TODO: retry options here
+	}); err != nil {
+		return
+	}
+	return cc.mkTxResult(resTx)
+}
+
+func (cc *ChainClient) mkTxResult(resTx *ctypes.ResultTx) (*sdk.TxResponse, error) {
+	txb, err := cc.Codec.TxConfig.TxDecoder()(resTx.Tx)
+	if err != nil {
+		return nil, err
+	}
+	p, ok := txb.(intoAny)
+	if !ok {
+		return nil, fmt.Errorf("expecting a type implementing intoAny, got: %T", txb)
+	}
+	any := p.AsAny()
+	// TODO: maybe don't make up the time here?
+	// we can fetch the block for the block time buts thats
+	// more round trips
+	return sdk.NewResponseResultTx(resTx, any, time.Now().Format(time.RFC3339)), nil
+}
+
+// Deprecated: this interface is used only internally for scenario we are
+// deprecating (StdTxConfig support)
+type intoAny interface {
+	AsAny() *codectypes.Any
+}
+
+func (cc *ChainClient) TxInMempool(ctx context.Context, txHash string) bool {
+	limit := 1000
+	// TODO: maybe retry this on error?
+	// would do this in the case of inconsistent errors from TM
+	res, err := cc.RPCClient.UnconfirmedTxs(ctx, &limit)
+	if err != nil {
+		return false
+	}
+	for _, txbz := range res.Txs {
+		if strings.EqualFold(txHash, fmt.Sprintf("%X", txbz.Hash())) {
+			return true
+		}
+	}
+	return false
 }
 
 func (cc *ChainClient) BroadcastTxSync(ctx context.Context, tx []byte) (*sdk.TxResponse, error) {
@@ -39,26 +106,26 @@ func (cc *ChainClient) BroadcastTxSync(ctx context.Context, tx []byte) (*sdk.TxR
 
 }
 
-func (cc *ChainClient) BroadcastTxAsync(ctx context.Context, tx []byte) (*sdk.TxResponse, error) {
-	res, err := cc.RPCClient.BroadcastTxAsync(ctx, tx)
-	if errRes := CheckTendermintError(err, tx); errRes != nil {
-		return errRes, nil
-	}
+// func (cc *ChainClient) BroadcastTxAsync(ctx context.Context, tx []byte) (*sdk.TxResponse, error) {
+// 	res, err := cc.RPCClient.BroadcastTxAsync(ctx, tx)
+// 	if errRes := CheckTendermintError(err, tx); errRes != nil {
+// 		return errRes, nil
+// 	}
 
-	return sdk.NewResponseFormatBroadcastTx(res), err
-}
+// 	return sdk.NewResponseFormatBroadcastTx(res), err
+// }
 
-func (cc *ChainClient) BroadcastTxCommit(ctx context.Context, txBytes []byte) (*sdk.TxResponse, error) {
-	res, err := cc.RPCClient.BroadcastTxCommit(ctx, txBytes)
-	// TODO: why this? need to figure that one out
-	if err == nil {
-		return sdk.NewResponseFormatBroadcastTxCommit(res), nil
-	}
-	if errRes := CheckTendermintError(err, txBytes); errRes != nil {
-		return errRes, nil
-	}
-	return sdk.NewResponseFormatBroadcastTxCommit(res), err
-}
+// func (cc *ChainClient) BroadcastTxCommit(ctx context.Context, txBytes []byte) (*sdk.TxResponse, error) {
+// 	res, err := cc.RPCClient.BroadcastTxCommit(ctx, txBytes)
+// 	// TODO: why this? need to figure that one out
+// 	if err == nil {
+// 		return sdk.NewResponseFormatBroadcastTxCommit(res), nil
+// 	}
+// 	if errRes := CheckTendermintError(err, txBytes); errRes != nil {
+// 		return errRes, nil
+// 	}
+// 	return sdk.NewResponseFormatBroadcastTxCommit(res), err
+// }
 
 // CheckTendermintError checks if the error returned from BroadcastTx is a
 // Tendermint error that is returned before the tx is submitted due to

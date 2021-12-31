@@ -7,7 +7,6 @@ import (
 	"path"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/spf13/cobra"
@@ -101,11 +100,7 @@ func (c Config) MustYAML() []byte {
 }
 
 func defaultConfig(keyHome string, debug bool) []byte {
-	modules := []module.AppModuleBasic{}
-	for _, v := range simapp.ModuleBasics {
-		modules = append(modules, v)
-	}
-	cfg := Config{
+	return Config{
 		DefaultChain: "cosmoshub",
 		Chains: map[string]*client.ChainClientConfig{
 			"cosmoshub": {
@@ -123,7 +118,6 @@ func defaultConfig(keyHome string, debug bool) []byte {
 				OutputFormat:   "json",
 				BroadcastMode:  "block",
 				SignModeStr:    "direct",
-				Modules:        modules,
 			},
 			"osmosis": {
 				Key:            "default",
@@ -140,11 +134,9 @@ func defaultConfig(keyHome string, debug bool) []byte {
 				OutputFormat:   "json",
 				BroadcastMode:  "block",
 				SignModeStr:    "direct",
-				Modules:        modules,
 			},
 		},
-	}
-	return cfg.MustYAML()
+	}.MustYAML()
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -192,12 +184,8 @@ func initConfig(cmd *cobra.Command) error {
 	// TODO: this is a bit of a hack, we should probably have a
 	// better way to inject modules into the client
 	config.cl = make(map[string]*client.ChainClient)
-	modules := []module.AppModuleBasic{}
-	for _, v := range simapp.ModuleBasics {
-		modules = append(modules, v)
-	}
 	for name, chain := range config.Chains {
-		chain.Modules = modules
+		chain.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
 		cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
 		if err != nil {
 			fmt.Println("Error creating chain client:", err)
