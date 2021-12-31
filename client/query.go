@@ -7,6 +7,7 @@ import (
 	querytypes "github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	transfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 )
 
@@ -96,6 +97,16 @@ func (cc *ChainClient) QueryBalance(address sdk.AccAddress, showDenoms bool) (sd
 		}
 	}
 	return out, nil
+}
+
+func (cc *ChainClient) QueryDelegatorValidators(address sdk.AccAddress) ([]string, error) {
+	res, err := distTypes.NewQueryClient(cc).DelegatorValidators(context.Background(), &distTypes.QueryDelegatorValidatorsRequest{
+		DelegatorAddress: address.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.Validators, nil
 }
 
 func DefaultPageRequest() *querytypes.PageRequest {
