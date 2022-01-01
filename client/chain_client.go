@@ -110,7 +110,7 @@ func (cc *ChainClient) PrintObject(res interface{}) error {
 	default:
 		return fmt.Errorf("unknown output type: %s", cc.Config.OutputFormat)
 	}
-	fmt.Fprint(cc.Output, string(bz))
+	fmt.Fprint(cc.Output, string(bz), "\n")
 	return nil
 }
 
