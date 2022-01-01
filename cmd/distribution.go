@@ -11,6 +11,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	FlagCommission = "commission"
+	FlagAll        = "all"
+)
+
 func distributionWithdrawRewardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "withdraw-rewards [validator-addr] [from]",
@@ -19,9 +24,9 @@ func distributionWithdrawRewardsCmd() *cobra.Command {
 			`Withdraw rewards from a given delegation address,
 and optionally withdraw validator commission if the delegation address given is a validator operator.
 Example:
-$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr mykey
-$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr mykey commission
-$ lens tx withdraw-rewards mykey all
+$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr --from mykey
+$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr --from mykey --commission
+$ lens tx withdraw-rewards --from mykey --all
 `,
 		),
 		Args: cobra.MaximumNArgs(4),
@@ -33,21 +38,25 @@ $ lens tx withdraw-rewards mykey all
 
 			cl := config.GetDefaultClient()
 
+			key, _ := cmd.Flags().GetString(FlagFrom)
+			if key != "" {
+				if key != cl.Config.Key {
+					cl.Config.Key = key
+				}
+			}
+
+			if cl.KeyExists(key) {
+				delAddr, err = cl.GetDefaultAddress()
+			} else {
+				delAddr, err = cl.DecodeBech32AccAddr(key)
+			}
+			if err != nil {
+				return err
+			}
+
 			msgs := []sdk.Msg{}
 
-			if args[1] == "all" {
-				if args[0] != cl.Config.Key {
-					cl.Config.Key = args[0]
-				}
-
-				if cl.KeyExists(args[0]) {
-					delAddr, err = cl.GetDefaultAddress()
-				} else {
-					delAddr, err = cl.DecodeBech32AccAddr(args[1])
-				}
-				if err != nil {
-					return err
-				}
+			if all, _ := cmd.Flags().GetBool(FlagAll); all {
 
 				validators, err := cl.QueryDelegatorValidators(delAddr)
 				if err != nil {
@@ -55,7 +64,6 @@ $ lens tx withdraw-rewards mykey all
 				}
 
 				// build multi-message transaction
-				msgs := make([]sdk.Msg, 0, len(validators))
 				for _, valAddr := range validators {
 					val, err := cl.DecodeBech32ValAddr(valAddr)
 					if err != nil {
@@ -63,21 +71,11 @@ $ lens tx withdraw-rewards mykey all
 					}
 
 					msg := types.NewMsgWithdrawDelegatorReward(delAddr, sdk.ValAddress(val))
+
 					msgs = append(msgs, msg)
 				}
-			} else {
-				if args[1] != cl.Config.Key {
-					cl.Config.Key = args[1]
-				}
 
-				if cl.KeyExists(args[1]) {
-					delAddr, err = cl.GetDefaultAddress()
-				} else {
-					delAddr, err = cl.DecodeBech32AccAddr(args[1])
-				}
-				if err != nil {
-					return err
-				}
+			} else if len(args) == 1 {
 
 				valAddr, err := cl.DecodeBech32ValAddr(args[0])
 				if err != nil {
@@ -87,14 +85,12 @@ $ lens tx withdraw-rewards mykey all
 				msgs = append(msgs, types.NewMsgWithdrawDelegatorReward(delAddr, sdk.ValAddress(valAddr)))
 			}
 
-			if len(args) == 3 {
-				if args[2] == "commission" {
-					valAddr, err := cl.DecodeBech32ValAddr(args[0])
-					if err != nil {
-						return err
-					}
-					msgs = append(msgs, types.NewMsgWithdrawValidatorCommission(sdk.ValAddress(valAddr)))
+			if commission, _ := cmd.Flags().GetBool(FlagCommission); commission {
+				valAddr, err := cl.DecodeBech32ValAddr(args[0])
+				if err != nil {
+					return err
 				}
+				msgs = append(msgs, types.NewMsgWithdrawValidatorCommission(sdk.ValAddress(valAddr)))
 			}
 
 			res, ok, err := cl.SendMsgs(cmd.Context(), msgs)
@@ -119,5 +115,8 @@ $ lens tx withdraw-rewards mykey all
 		},
 	}
 
+	cmd.Flags().Bool(FlagCommission, false, "Withdraw commission from a validator")
+	cmd.Flags().Bool(FlagAll, false, "Withdraw All rewards of a delegator")
+	AddTxFlagsToCmd(cmd)
 	return cmd
 }

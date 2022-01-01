@@ -14,13 +14,13 @@ import (
 
 func stakingDelegateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delegate [validator-addr] [amount] [from]",
-		Args:  cobra.ExactArgs(3),
+		Use:   "delegate [validator-addr] [amount] ",
+		Args:  cobra.ExactArgs(2),
 		Short: "Delegate liquid tokens to a validator",
 		Long: strings.TrimSpace(
 			`Delegate an amount of liquid coins to a validator from your wallet.
 Example:
-$ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 1000stake mykey`,
+$ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 1000stake --from mykey`,
 		),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -41,10 +41,17 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 				return err
 			}
 
-			if cl.KeyExists(args[2]) {
+			key, _ := cmd.Flags().GetString(FlagFrom)
+			if key != "" {
+				if key != cl.Config.Key {
+					cl.Config.Key = key
+				}
+			}
+
+			if cl.KeyExists(cl.Config.Key) {
 				delAddr, err = cl.GetDefaultAddress()
 			} else {
-				delAddr, err = cl.DecodeBech32AccAddr(args[2])
+				delAddr, err = cl.DecodeBech32AccAddr(key)
 			}
 			if err != nil {
 				return err
@@ -80,19 +87,21 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 		},
 	}
 
+	flags.AddTxFlagsToCmd(cmd)
+
 	return cmd
 }
 
 func stakingRedelegateCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "redelegate [src-validator-addr] [dst-validator-addr] [amount] [from]",
+		Use:   "redelegate [src-validator-addr] [dst-validator-addr] [amount]",
 		Short: "Redelegate illiquid tokens from one validator to another",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(3),
 		Long: strings.TrimSpace(
 			`Redelegate an amount of illiquid staking tokens from one validator to another.
 Example:
-$ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 cosmosvaloper1a3yjj7d3qnx4spgvjcwjq9cw9snrrrhu5h6jll 100stake mykey
+$ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 cosmosvaloper1a3yjj7d3qnx4spgvjcwjq9cw9snrrrhu5h6jll 100stake --from mykey
 `,
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -103,14 +112,17 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 
 			cl := config.GetDefaultClient()
 
-			if args[2] != cl.Config.Key {
-				cl.Config.Key = args[2]
+			key, _ := cmd.Flags().GetString(FlagFrom)
+			if key != "" {
+				if key != cl.Config.Key {
+					cl.Config.Key = key
+				}
 			}
 
-			if cl.KeyExists(args[3]) {
+			if cl.KeyExists(cl.Config.Key) {
 				delAddr, err = cl.GetDefaultAddress()
 			} else {
-				delAddr, err = cl.DecodeBech32AccAddr(args[3])
+				delAddr, err = cl.DecodeBech32AccAddr(key)
 			}
 			if err != nil {
 				return err

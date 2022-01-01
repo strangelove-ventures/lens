@@ -53,3 +53,12 @@ func skipConfirm(cmd *cobra.Command) *cobra.Command {
 	}
 	return cmd
 }
+
+var (
+	FlagFrom = "from"
+)
+
+// AddTxFlagsToCmd defines common flags to be reused across cmds
+func AddTxFlagsToCmd(cmd *cobra.Command) {
+	cmd.Flags().String(FlagFrom, "", "Name or address of private key with which to sign, if left empty, the default key will be used")
+}
