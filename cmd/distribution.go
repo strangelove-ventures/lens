@@ -11,12 +11,12 @@ func getDistributionQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		queryDistributionParamsCmd(),
+		queryDistributionCommissionCmd(),
 		queryDistributionCommunityPoolCmd(),
+		queryDistributionParamsCmd(),
 		queryDistributionRewardsCmd(),
 		queryDistributionSlashesCmd(),
 		queryDistributionValidatorRewardsCmd(),
-		queryDistributionCommissionCmd(),
 	)
 
 	return cmd
