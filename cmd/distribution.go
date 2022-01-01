@@ -64,7 +64,7 @@ func queryDistributionCommissionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "commission [validator]",
 		Args:  cobra.ExactArgs(1),
-		Short: "query a specific validator's comission",
+		Short: "query a specific validator's commission",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 			address := args[0]
