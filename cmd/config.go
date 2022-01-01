@@ -206,6 +206,17 @@ func initConfig(cmd *cobra.Command) error {
 		config.cl[name] = cl
 	}
 
+	// override chain if needed
+
+	if cmd.PersistentFlags().Changed("chain") {
+		defaultChain, err := cmd.PersistentFlags().GetString("chain")
+		if err != nil {
+			return err
+		}
+
+		config.DefaultChain = defaultChain
+	}
+
 	// validate configuration
 	if err = validateConfig(config); err != nil {
 		fmt.Println("Error parsing chain config:", err)
