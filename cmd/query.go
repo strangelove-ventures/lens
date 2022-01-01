@@ -19,6 +19,7 @@ func queryCmd() *cobra.Command {
 	cmd.AddCommand(
 		queryBalanceCmd(),
 		queryAccountCmd(),
+		getAuthQueryCmd(),
 	)
 
 	return cmd
@@ -44,6 +45,7 @@ func queryBalanceCmd() *cobra.Command {
 			}
 			if cl.KeyExists(keyNameOrAddress) {
 				cl.Config.Key = keyNameOrAddress
+
 				address, err = cl.GetKeyAddress()
 			} else {
 				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)

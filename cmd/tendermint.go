@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -418,10 +417,6 @@ func queryTxCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			log, err := cmd.Flags().GetBool("log")
-			if err != nil {
-				return err
-			}
 			prove, err := cmd.Flags().GetBool("prove")
 			if err != nil {
 				return err
@@ -434,23 +429,9 @@ func queryTxCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if log {
-				out := bytes.NewBuffer(nil)
-				if err := json.Indent(out, []byte(block.TxResult.Log), "", "  "); err != nil {
-					return err
-				}
-				fmt.Println(out.String())
-				return nil
-			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
+			return cl.PrintObject(block)
 
 		},
 	}
-	// TODO: add prove flag
-	return proveFlag(logFlag(cmd))
+	return proveFlag(cmd)
 }
