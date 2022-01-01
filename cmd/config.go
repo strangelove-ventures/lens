@@ -116,7 +116,6 @@ func defaultConfig(keyHome string, debug bool) []byte {
 				Debug:          debug,
 				Timeout:        "20s",
 				OutputFormat:   "json",
-				BroadcastMode:  "block",
 				SignModeStr:    "direct",
 			},
 			"osmosis": {
@@ -132,7 +131,6 @@ func defaultConfig(keyHome string, debug bool) []byte {
 				Debug:          debug,
 				Timeout:        "20s",
 				OutputFormat:   "json",
-				BroadcastMode:  "block",
 				SignModeStr:    "direct",
 			},
 		},

@@ -19,7 +19,6 @@ type ChainClientConfig struct {
 	Debug          bool                    `json:"debug" yaml:"debug"`
 	Timeout        string                  `json:"timeout" yaml:"timeout"`
 	OutputFormat   string                  `json:"output-format" yaml:"output-format"`
-	BroadcastMode  string                  `json:"broadcast-mode" yaml:"broadcast-mode"`
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
 }

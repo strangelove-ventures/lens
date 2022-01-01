@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -25,22 +24,21 @@ func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxR
 	// need to investigate if this will leave the tx
 	// in the mempool or we can retry the broadcast at that
 	// point
-	res, err = cc.BroadcastTxSync(ctx, tx)
-	if err != nil || res.Code != 0 {
-		return
+	syncRes, err := cc.RPCClient.BroadcastTxSync(ctx, tx)
+	if errRes := CheckTendermintError(err, tx); errRes != nil {
+		return errRes, nil
 	}
 
 	// TODO: maybe we need to check if the node has tx indexing enabled?
 	// if not, we need to find a new way to block until inclusion in a block
 
 	// wait for tx to be included in a block
-	txid, _ := hex.DecodeString(res.TxHash)
 	for {
 		select {
 		// TODO: this is potentially less than optimal and may
 		// be better as something configurable
 		case <-time.After(time.Millisecond * 100):
-			resTx, err := cc.RPCClient.Tx(ctx, txid, false)
+			resTx, err := cc.RPCClient.Tx(ctx, syncRes.Hash, false)
 			if err == nil {
 				return cc.mkTxResult(resTx)
 			}
@@ -63,6 +61,7 @@ func (cc *ChainClient) mkTxResult(resTx *ctypes.ResultTx) (*sdk.TxResponse, erro
 	// TODO: maybe don't make up the time here?
 	// we can fetch the block for the block time buts thats
 	// more round trips
+	// TODO: logs get rendered as base64 encoded, need to fix this somehow
 	return sdk.NewResponseResultTx(resTx, any, time.Now().Format(time.RFC3339)), nil
 }
 
@@ -70,33 +69,6 @@ func (cc *ChainClient) mkTxResult(resTx *ctypes.ResultTx) (*sdk.TxResponse, erro
 // deprecating (StdTxConfig support)
 type intoAny interface {
 	AsAny() *codectypes.Any
-}
-
-func (cc *ChainClient) TxInMempool(ctx context.Context, txHash string) bool {
-	limit := 1000
-	// TODO: maybe retry this on error?
-	// would do this in the case of inconsistent errors from TM
-	res, err := cc.RPCClient.UnconfirmedTxs(ctx, &limit)
-	if err != nil {
-		return false
-	}
-	for _, txbz := range res.Txs {
-		fmt.Println(txHash, fmt.Sprintf("%X", txbz.Hash()))
-		if strings.EqualFold(txHash, fmt.Sprintf("%X", txbz.Hash())) {
-			return true
-		}
-	}
-	return false
-}
-
-func (cc *ChainClient) BroadcastTxSync(ctx context.Context, tx []byte) (*sdk.TxResponse, error) {
-	res, err := cc.RPCClient.BroadcastTxSync(ctx, tx)
-	if errRes := CheckTendermintError(err, tx); errRes != nil {
-		return errRes, nil
-	}
-
-	return sdk.NewResponseFormatBroadcastTx(res), err
-
 }
 
 // CheckTendermintError checks if the error returned from BroadcastTx is a
