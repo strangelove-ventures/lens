@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
@@ -22,8 +23,9 @@ func (c CosmosGithubRegistry) ListChains() ([]string, error) {
 	client := github.NewClient(http.DefaultClient)
 	var chains []string
 
+	ctx, _ := context.WithTimeout(context.Background(), time.Minute*5)
 	tree, res, err := client.Git.GetTree(
-		context.Background(),
+		ctx,
 		"cosmos",
 		"chain-registry",
 		"master",

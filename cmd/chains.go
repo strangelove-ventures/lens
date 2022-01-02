@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 
 	log "github.com/sirupsen/logrus"
 
@@ -125,7 +126,7 @@ func cmdChainsEdit() *cobra.Command {
 		Short:   "edit a chain configuration value",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			home, _ := cmd.Flags().GetString("home")
-			c := exec.Command("vim", fmt.Sprintf(home+"/config.yaml"))
+			c := exec.Command("vim", path.Join(home, "config.yaml"))
 			c.Stdin = os.Stdin
 			c.Stdout = os.Stdout
 			return c.Run()

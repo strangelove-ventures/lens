@@ -73,24 +73,25 @@ func (c ChainInfo) GetAllRPCEndpoints() (out []string, err error) {
 	return
 }
 
-func IsHealthyRPC(endpoint string) (bool, error) {
+func IsHealthyRPC(endpoint string) error {
 	cl, err := client.NewRPCClient(endpoint, 5*time.Second)
 	if err != nil {
-		return false, err
+		return err
 	}
 	stat, err := cl.Status(context.Background())
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	if !stat.SyncInfo.CatchingUp {
-		return true, nil
+	if stat.SyncInfo.CatchingUp {
+		return errors.New("still catching up")
 	}
 
-	return false, errors.New("still catching up")
+	return nil
 }
 
 func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
+	log.SetLevel(log.DebugLevel)
 	allRPCEndpoints, err := c.GetAllRPCEndpoints()
 	if err != nil {
 		return nil, err
@@ -99,9 +100,10 @@ func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
 	var eg errgroup.Group
 	var endpoints []string
 	for _, endpoint := range allRPCEndpoints {
+		endpoint := endpoint
 		eg.Go(func() error {
-			healthy, err := IsHealthyRPC(endpoint)
-			if err != nil && healthy {
+			err := IsHealthyRPC(endpoint)
+			if err == nil {
 				log.Debugf("verified healthy endpoint %s", endpoint)
 				endpoints = append(endpoints, endpoint)
 				return nil
@@ -115,7 +117,7 @@ func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
 		return nil, err
 	}
 
-	return out, nil
+	return endpoints, nil
 }
 
 func (c ChainInfo) GetRandomRPCEndpoint() (string, error) {
