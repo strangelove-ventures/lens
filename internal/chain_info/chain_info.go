@@ -141,7 +141,12 @@ func (c ChainInfo) GetAssetList() (AssetList, error) {
 	cl := github.NewClient(http.DefaultClient)
 
 	chainFileName := fmt.Sprintf("%s/assetlist.json", c.ChainName)
-	ch, _, res, err := cl.Repositories.GetContents(context.Background(), "cosmos", "chain-registry", chainFileName, &github.RepositoryContentGetOptions{})
+	ch, _, res, err := cl.Repositories.GetContents(
+		context.Background(),
+		"cosmos",
+		"chain-registry",
+		chainFileName,
+		&github.RepositoryContentGetOptions{})
 	if err != nil || res.StatusCode != 200 {
 		return AssetList{}, err
 	}
