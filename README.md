@@ -54,7 +54,7 @@ Use "lens [command] --help" for more information about a command.
 ```
 #### Chains
 
-Lens comes with two defaulted configs, Cosmos Hub and Osmosis. Located at `~/.lens/config.toml` 
+Lens comes with two defaulted chains, Cosmos Hub and Osmosis. Located at `~/.lens/config.toml` 
 
 ```
 default_chain: osmosis
@@ -89,13 +89,14 @@ default_chain: osmosis
      sign-mode: direct
 	```
 
-To add more to your config you can run. 
+To add more chians to your config, run: 
 
 ```
-lens chains add juno
+lens chains add <chain_name>
 ```
 
-This command checks the chain registry located [here](https://github.com/cosmos/chain-registry), for the requested chain. After running the command your `config.toml` should look like
+
+This command checks the chain registry located [here](https://github.com/cosmos/chain-registry), for the requested chain. The chain name references the directory name in the chain registry. After running `lens chains add juno` your `config.toml` should look like
 
 ```
 default_chain: osmosis
@@ -154,10 +155,10 @@ lens chains set-default <chain_name>
 
 #### Keys
 
-Lens uses the keyring from the Cosmos-sdk. You can read more about it [here](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/keyring/doc.go). To add your key to lens run:
+Lens uses the keyring from the Cosmos-sdk. There is more information about it keyring [here](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/keyring/doc.go). To add a key to lens run:
 
 ``` 
 lens keys restore <key_name> '<mnemonic>'
 ```
 
-After this when running `lens keys list` you should see your defaulted chains address, if this is not changed you will see the cosmos-hub address. To see your key encoded for use on other chains run `lens keys enumerate <key_name>`. 
+After restoring a key, it should appear in your list by running: `lens keys list`, by default it will show the Cosmos Hub address. To see the key encoded for use on other chains run `lens keys enumerate <key_name>`. 
