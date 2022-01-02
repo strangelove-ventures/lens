@@ -7,10 +7,8 @@ import (
 	"path"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/strangelove-ventures/lens/internal/chain_registry"
-
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/internal/chain_registry"
 )
 
 func chainsCmd() *cobra.Command {
