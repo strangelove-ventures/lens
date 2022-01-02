@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -15,6 +14,10 @@ var (
 	FlagAll        = "all"
 )
 
+// TODO: should this be [from] [validator-address]?
+// if so then we should make the first arg manditory and further args be []sdk.ValAddr
+// and make the []sdk.ValAddr optional. This way we don't need any of the flags except
+// commission
 func distributionWithdrawRewardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "withdraw-rewards [validator-addr] [from]",
@@ -23,32 +26,22 @@ func distributionWithdrawRewardsCmd() *cobra.Command {
 			`Withdraw rewards from a given delegation address,
 and optionally withdraw validator commission if the delegation address given is a validator operator.
 Example:
-$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr --from mykey
-$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr --from mykey --commission
+$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr default
+$ lens tx withdraw-rewards cosmosvaloper1uyccnks6gn6g62fqmahf8eafkedq6xq400rjxr default --commission
 $ lens tx withdraw-rewards --from mykey --all
 `,
 		),
-		Args: cobra.MaximumNArgs(4),
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var (
-				delAddr sdk.AccAddress
-				err     error
-			)
-
 			cl := config.GetDefaultClient()
-
-			key, _ := cmd.Flags().GetString(FlagFrom)
-			if key != "" {
-				if key != cl.Config.Key {
-					cl.Config.Key = key
-				}
-			}
-
-			if cl.KeyExists(key) {
-				delAddr, err = cl.GetKeyAddress()
+			key := ""
+			if len(args) == 1 {
+				key = cl.Config.Key
 			} else {
-				delAddr, err = cl.DecodeBech32AccAddr(key)
+				key = args[1]
 			}
+
+			delAddr, err := cl.AccountFromKeyOrAddress(key)
 			if err != nil {
 				return err
 			}
@@ -68,19 +61,15 @@ $ lens tx withdraw-rewards --from mykey --all
 					if err != nil {
 						return err
 					}
-
 					msg := types.NewMsgWithdrawDelegatorReward(delAddr, sdk.ValAddress(val))
-
 					msgs = append(msgs, msg)
 				}
 
 			} else if len(args) == 1 {
-
 				valAddr, err := cl.DecodeBech32ValAddr(args[0])
 				if err != nil {
 					return err
 				}
-
 				msgs = append(msgs, types.NewMsgWithdrawDelegatorReward(delAddr, sdk.ValAddress(valAddr)))
 			}
 
@@ -92,106 +81,107 @@ $ lens tx withdraw-rewards --from mykey --all
 				msgs = append(msgs, types.NewMsgWithdrawValidatorCommission(sdk.ValAddress(valAddr)))
 			}
 
-			res, ok, err := cl.SendMsgs(cmd.Context(), msgs)
-			if err != nil || !ok {
-				if res != nil {
-					return fmt.Errorf("failed to withdraw rewards: code(%d) msg(%s)", res.Code, res.Logs)
-				}
-				return fmt.Errorf("failed to withdraw rewards: err(%w)", err)
-			}
-			return cl.PrintTxResponse(res)
+			return cl.HandleAndPrintMsgSend(cl.SendMsgs(cmd.Context(), msgs))
 		},
 	}
-	cmd.Flags().Bool(FlagCommission, false, "Withdraw commission from a validator")
-	cmd.Flags().Bool(FlagAll, false, "Withdraw All rewards of a delegator")
+	cmd.Flags().BoolP(FlagCommission, "c", false, "withdraw commission from a validator")
+	cmd.Flags().BoolP(FlagAll, "a", false, "withdraw all rewards of a delegator")
 	AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
-func getDistributionParamsCmd() *cobra.Command {
+func distributionParamsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "params",
 		Short: "query things about a chain's distribution params",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
+
 			params, err := cl.QueryDistributionParams()
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(params)
 
-			return nil
+			return cl.PrintObject(params)
 		},
 	}
 
 	return cmd
 }
 
-func getDistributionCommunityPoolCmd() *cobra.Command {
+func distributionCommunityPoolCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "community-pool",
 		Short: "query things about a chain's community pool",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
+
 			pool, err := cl.QueryDistributionCommunityPool()
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(pool)
 
-			return nil
+			return cl.PrintObject(pool)
 		},
 	}
 
 	return cmd
 }
 
-func getDistributionCommissionCmd() *cobra.Command {
+func distributionCommissionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "commission [validator]",
+		Use:   "commission [validator-address]",
 		Args:  cobra.ExactArgs(1),
 		Short: "query a specific validator's commission",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			address := args[0]
-			commission, err := cl.QueryDistributionCommission(address)
-
+			address, err := cl.DecodeBech32ValAddr(args[0])
 			if err != nil {
 				return err
 			}
-
-			cl.PrintObject(commission)
-			return nil
+      
+			commission, err := cl.QueryDistributionCommission(address)
+			if err != nil {
+				return err
+			}
+      
+			return cl.PrintObject(commission)
 		},
 	}
 
 	return cmd
 }
 
-func getDistributionRewardsCmd() *cobra.Command {
+func distributionRewardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rewards",
+		Use:   "rewards [key-or-delegator-address] [validator-address]",
 		Short: "query things about a delegator's rewards",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			delegatorAddress := args[0]
-			validatorAddress := args[1]
-
-			pool, err := cl.QueryDistributionRewards(delegatorAddress, validatorAddress)
+			delAddr, err := cl.AccountFromKeyOrAddress(args[0])
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(pool)
 
-			return nil
+			valAddr, err := cl.DecodeBech32ValAddr(args[1])
+			if err != nil {
+				return err
+			}
+
+			rewards, err := cl.QueryDistributionRewards(delAddr, valAddr)
+			if err != nil {
+				return err
+			}
+
+			return cl.PrintObject(rewards)
 		},
 	}
 
 	return cmd
 }
 
-func getDistributionSlashesCmd() *cobra.Command {
+func distributionSlashesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "slashes [validator-address] [start-height] [end-height]",
 		Short: "query things about a validator's slashes on a chain",
@@ -199,27 +189,27 @@ func getDistributionSlashesCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 
+			pageReq, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+
 			address, err := cl.DecodeBech32ValAddr(args[0])
 			if err != nil {
 				return err
 			}
 
-			pageReq, err := ReadPageRequest(cmd.Flags())
-			if err != nil {
-				return err
-			}
-			startHeight, err := strconv.ParseUint(args[0], 10, 64)
-			if err != nil {
-				return err
-			}
-			endHeight, err := strconv.ParseUint(args[1], 10, 64)
+			startHeight, err := strconv.ParseUint(args[1], 10, 64)
 			if err != nil {
 				return err
 			}
 
-			valAddr, _ := cl.EncodeBech32AccAddr(address)
+			endHeight, err := strconv.ParseUint(args[2], 10, 64)
+			if err != nil {
+				return err
+			}
 
-			slashes, err := cl.QueryDistributionSlashes(valAddr, startHeight, endHeight, pageReq)
+			slashes, err := cl.QueryDistributionSlashes(address, startHeight, endHeight, pageReq)
 			if err != nil {
 				return err
 			}
@@ -231,14 +221,18 @@ func getDistributionSlashesCmd() *cobra.Command {
 	return paginationFlags(cmd)
 }
 
-func getDistributionValidatorRewardsCmd() *cobra.Command {
+func distributionValidatorRewardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validator-outstanding-rewards [address]",
 		Short: "query things about a validator's (and all their delegators) outstanding rewards on a chain",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			address := args[0]
+
+			address, err := cl.DecodeBech32ValAddr(args[0])
+			if err != nil {
+				return err
+			}
 
 			rewards, err := cl.QueryDistributionValidatorRewards(address)
 			if err != nil {

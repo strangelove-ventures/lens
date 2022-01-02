@@ -267,8 +267,9 @@ $ %s k e key2`, appName, appName, appName)),
 			} else {
 				keyName = args[0]
 			}
-			if !cl.KeyExists(keyName) {
-				return errKeyDoesntExist(keyName)
+			account, err := cl.AccountFromKeyOrAddress(keyName)
+			if err != nil {
+				return err
 			}
 
 			var chains []string
@@ -277,31 +278,21 @@ $ %s k e key2`, appName, appName, appName)),
 			}
 			sort.Strings(chains)
 
-			result := &KeyEnumeration{
-				KeyName:   keyName,
-				Addresses: make(map[string]string),
-			}
-
+			addresses := make(map[string]string)
 			for _, chain := range chains {
 				client := config.GetClient(chain)
-
-				address, err := client.ShowAddress(keyName)
+				address, err := client.EncodeBech32AccAddr(account)
 				if err != nil {
 					return err
 				}
+				addresses[chain] = address
+			}
 
-				result.Addresses[chain] = address
-			}
-			rb, err := json.Marshal(&result)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(rb))
-			return nil
+			return cl.PrintObject(addresses)
 		},
 	}
 
-	cmd.Flags().StringVar(&FlagAccountPrefix, "prefix", "", "Encode the key with the user specified prefix")
+	// cmd.Flags().StringVar(&FlagAccountPrefix, "prefix", "", "Encode the key with the user specified prefix")
 
 	return cmd
 }

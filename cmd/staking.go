@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -62,27 +59,13 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 				return err
 			}
 
-			msg := types.NewMsgDelegate(delAddr, sdk.ValAddress(valAddr), amount)
-
-			res, ok, err := cl.SendMsg(cmd.Context(), msg)
-			if err != nil || !ok {
-				if res != nil {
-					return fmt.Errorf("failed to delegate: code(%d) msg(%s)", res.Code, res.Logs)
-				}
-				return fmt.Errorf("failed to delegate: err(%w)", err)
+			// msg := types.NewMsgDelegate(delAddr, valAddr, amount)
+			msg := &types.MsgDelegate{
+				DelegatorAddress: cl.MustEncodeAccAddr(delAddr),
+				ValidatorAddress: cl.MustEncodeValAddr(valAddr),
+				Amount:           amount,
 			}
-
-			bz, err := cl.Codec.Marshaler.MarshalJSON(res)
-			if err != nil {
-				return err
-			}
-
-			var out = bytes.NewBuffer([]byte{})
-			if err := json.Indent(out, bz, "", "  "); err != nil {
-				return err
-			}
-			fmt.Println(out.String())
-			return nil
+			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg))
 
 		},
 	}
@@ -95,7 +78,7 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 func stakingRedelegateCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "redelegate [src-validator-addr] [dst-validator-addr] [amount]",
+		Use:   "redelegate [from] [src-validator-addr] [dst-validator-addr] [amount]",
 		Short: "Redelegate illiquid tokens from one validator to another",
 		Args:  cobra.ExactArgs(3),
 		Long: strings.TrimSpace(
@@ -105,25 +88,9 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 `,
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var (
-				delAddr sdk.AccAddress
-				err     error
-			)
-
 			cl := config.GetDefaultClient()
-
 			key, _ := cmd.Flags().GetString(FlagFrom)
-			if key != "" {
-				if key != cl.Config.Key {
-					cl.Config.Key = key
-				}
-			}
-
-			if cl.KeyExists(cl.Config.Key) {
-				delAddr, err = cl.GetKeyAddress()
-			} else {
-				delAddr, err = cl.DecodeBech32AccAddr(key)
-			}
+			delAddr, err := cl.AccountFromKeyOrAddress(key)
 			if err != nil {
 				return err
 			}
@@ -143,28 +110,14 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 				return err
 			}
 
-			msg := types.NewMsgBeginRedelegate(delAddr, sdk.ValAddress(valSrcAddr), sdk.ValAddress(valDstAddr), amount)
-
-			res, ok, err := cl.SendMsg(cmd.Context(), msg)
-			if err != nil || !ok {
-				if res != nil {
-					return fmt.Errorf("failed to redelegate: code(%d) msg(%s)", res.Code, res.Logs)
-				}
-				return fmt.Errorf("failed to redelegate: err(%w)", err)
+			msg := &types.MsgBeginRedelegate{
+				DelegatorAddress:    cl.MustEncodeAccAddr(delAddr),
+				ValidatorSrcAddress: cl.MustEncodeValAddr(sdk.ValAddress(valSrcAddr)),
+				ValidatorDstAddress: cl.MustEncodeValAddr(sdk.ValAddress(valDstAddr)),
+				Amount:              amount,
 			}
 
-			bz, err := cl.Codec.Marshaler.MarshalJSON(res)
-			if err != nil {
-				return err
-			}
-
-			var out = bytes.NewBuffer([]byte{})
-			if err := json.Indent(out, bz, "", "  "); err != nil {
-				return err
-			}
-			fmt.Println(out.String())
-			return nil
-
+			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg))
 		},
 	}
 
@@ -172,5 +125,3 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 
 	return cmd
 }
-
-// withdraw-rewards command
