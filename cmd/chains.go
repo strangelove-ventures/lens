@@ -86,7 +86,7 @@ func cmdChainsAdd() *cobra.Command {
 		Aliases: []string{"a"},
 		Short:   "add configraion for a chain or a number of chains from the chain registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := cmd.Context()
 			ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
 			// get the chains from the registry for validation
