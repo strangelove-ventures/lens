@@ -95,7 +95,6 @@ func IsHealthyRPC(endpoint string) error {
 }
 
 func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
-	log.SetLevel(log.DebugLevel)
 	allRPCEndpoints, err := c.GetAllRPCEndpoints()
 	if err != nil {
 		return nil, err
@@ -162,7 +161,6 @@ func (c ChainInfo) GetAssetList() (AssetList, error) {
 		return AssetList{}, err
 	}
 	return assetList, nil
-
 }
 
 func (c ChainInfo) GetChainConfig() (*client.ChainClientConfig, error) {
