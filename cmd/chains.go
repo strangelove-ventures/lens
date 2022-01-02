@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/strangelove-ventures/lens/internal/chain_registry"
 )
@@ -72,7 +72,7 @@ func cmdChainsAdd() *cobra.Command {
 				}
 
 				if !found {
-					log.Warnf("unable to find chain %s in %s", chain, registry.SourceLink())
+					log.Printf("unable to find chain %s in %s", chain, registry.SourceLink())
 					continue
 				}
 

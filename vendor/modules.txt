@@ -483,7 +483,6 @@ github.com/regen-network/cosmos-proto
 github.com/sasha-s/go-deadlock
 # github.com/sirupsen/logrus v1.8.1
 ## explicit; go 1.13
-github.com/sirupsen/logrus
 # github.com/spf13/afero v1.6.0
 ## explicit; go 1.13
 github.com/spf13/afero

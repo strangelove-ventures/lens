@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/strangelove-ventures/lens/client"
 	"golang.org/x/sync/errgroup"
@@ -107,12 +107,12 @@ func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
 		eg.Go(func() error {
 			err := IsHealthyRPC(endpoint)
 			if err == nil {
-				log.Debugf("verified healthy endpoint %s", endpoint)
+				log.Printf("verified healthy endpoint %s", endpoint)
 				endpoints = append(endpoints, endpoint)
 				return nil
 			}
 
-			log.Warnf("ignoring endpoint %s due to error %s", endpoint, err)
+			log.Printf("ignoring endpoint %s due to error %s", endpoint, err)
 			return nil
 		})
 	}

@@ -3,10 +3,9 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -59,7 +58,7 @@ func overwriteConfig(cfg *Config) error {
 		return err
 	}
 
-	log.Infof("updated lens configuration at %s", cfgPath)
+	log.Printf("updated lens configuration at %s", cfgPath)
 	return nil
 }
 
