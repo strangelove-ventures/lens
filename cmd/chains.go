@@ -7,6 +7,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/github"
 	"github.com/spf13/cobra"
@@ -38,7 +39,7 @@ func cmdChainsRegistryList() *cobra.Command {
 		Use:     "registry-list",
 		Args:    cobra.NoArgs,
 		Aliases: []string{"rl"},
-		Short:   "list chains available for configuration from the regitry",
+		Short:   "list chains available for configuration from the registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chains, err := fetchRegistryChains(cmd.Context())
 			if err != nil {
@@ -69,6 +70,15 @@ func fetchRegistryChains(ctx context.Context) ([]string, error) {
 	return chains, nil
 }
 
+func isStringInSlice(chain string, chains []string) bool {
+	for _, c := range chains {
+		if c == chain {
+			return true
+		}
+	}
+	return false
+}
+
 func cmdChainsAdd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "add [[chain-name]]",
@@ -76,10 +86,20 @@ func cmdChainsAdd() *cobra.Command {
 		Aliases: []string{"a"},
 		Short:   "add configraion for a chain or a number of chains from the chain registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: input validation, maybe fetch the registry chains and validate the chain name
+			ctx := context.Background()
+			ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
+			// get the chains from the registry for validation
+			chainNames, err := fetchRegistryChains(ctxWithTimeout)
+			if err != nil {
+				return err
+			}
 			debug, _ := cmd.Flags().GetBool("debug")
 			home, _ := cmd.Flags().GetString("home")
 			for _, chain := range args {
+				if !isStringInSlice(chain, chainNames) {
+					return fmt.Errorf("chain %s not found in the registry", chain)
+				}
 				ch, err := getChainConfigFromRegistry(chain, path.Join(home, "keys"), debug)
 				if err != nil {
 					return err

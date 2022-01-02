@@ -15,8 +15,13 @@ limitations under the License.
 */
 package main
 
-import "github.com/strangelove-ventures/lens/cmd"
+import (
+	"log"
+
+	"github.com/strangelove-ventures/lens/cmd"
+)
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	cmd.Execute()
 }
