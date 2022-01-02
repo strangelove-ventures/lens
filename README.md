@@ -144,7 +144,7 @@ default_chain: osmosis
      timeout: 20s
      output-format: json
      sign-mode: direct
-	```
+```
 
 When running a command, it will run the command for the defaulted chain. The defaulted chain can be found at the top of `~/.lens/config.toml` or by running `lens`. 
 
