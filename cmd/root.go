@@ -77,6 +77,7 @@ func NewRootCmd() *cobra.Command {
 		keysCmd(),
 		queryCmd(),
 		tendermintCmd(),
+		crosschainCmd(),
 		txCmd(),
 	)
 
