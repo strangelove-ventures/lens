@@ -38,7 +38,6 @@ func getChainConfigFromRegistry(chainName, keyDirectory string, debug bool) (*cl
 		Debug:          debug,
 		Timeout:        "20s",
 		OutputFormat:   "json",
-		BroadcastMode:  "block",
 		SignModeStr:    "direct",
 	}, nil
 }

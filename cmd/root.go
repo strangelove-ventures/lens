@@ -25,11 +25,12 @@ import (
 )
 
 var (
-	homePath    string
-	debug       bool
-	config      *Config
-	defaultHome = os.ExpandEnv("$HOME/.lens")
-	appName     = "lens"
+	homePath       string
+	overridenChain string
+	debug          bool
+	config         *Config
+	defaultHome    = os.ExpandEnv("$HOME/.lens")
+	appName        = "lens"
 )
 
 // NewRootCmd returns the root command for relayer.
@@ -58,6 +59,11 @@ func NewRootCmd() *cobra.Command {
 	// --debug flag
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug output")
 	if err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
+		panic(err)
+	}
+
+	rootCmd.PersistentFlags().StringVar(&overridenChain, "chain", "", "override default chain")
+	if err := viper.BindPFlag("chain", rootCmd.PersistentFlags().Lookup("chain")); err != nil {
 		panic(err)
 	}
 

@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -360,8 +359,8 @@ func numUnconfirmedTxs() *cobra.Command {
 	// TODO: add example for parsing these txs
 	// _{*extraCredit*}_
 	cmd := &cobra.Command{
-		Use:     "num-unconfirmed-txs",
-		Aliases: []string{"count-unconf", "unconf-count"},
+		Use:     "mempool",
+		Aliases: []string{"unconfirmed", "mem"},
 		Short:   "query for number of unconfirmed txs",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -374,6 +373,9 @@ func numUnconfirmedTxs() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// for _, txbz := range block.Txs {
+			// 	fmt.Printf("%X\n", tmtypes.Tx(txbz).Hash())
+			// }
 			bz, err := json.MarshalIndent(block, "", "  ")
 			if err != nil {
 				return err
@@ -415,10 +417,6 @@ func queryTxCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			log, err := cmd.Flags().GetBool("log")
-			if err != nil {
-				return err
-			}
 			prove, err := cmd.Flags().GetBool("prove")
 			if err != nil {
 				return err
@@ -431,23 +429,9 @@ func queryTxCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if log {
-				out := bytes.NewBuffer(nil)
-				if err := json.Indent(out, []byte(block.TxResult.Log), "", "  "); err != nil {
-					return err
-				}
-				fmt.Println(out.String())
-				return nil
-			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
+			return cl.PrintObject(block)
 
 		},
 	}
-	// TODO: add prove flag
-	return proveFlag(logFlag(cmd))
+	return proveFlag(cmd)
 }

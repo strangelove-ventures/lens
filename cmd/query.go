@@ -1,10 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 )
 
@@ -17,93 +13,61 @@ func queryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		queryBalanceCmd(),
-		queryAccountCmd(),
+		authQueryCmd(),
+		bankQueryCmd(),
+		distributionQueryCmd(),
 	)
 
 	return cmd
 }
 
-func queryBalanceCmd() *cobra.Command {
+// authQueryCmd returns the transaction commands for this module
+func authQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "balance [key-or-address]",
-		Aliases: []string{"bal"},
-		Short:   "query the account balance for a key or address, if none is passed will query the balance of the default account",
-		Args:    cobra.RangeArgs(0, 1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
-			var (
-				keyNameOrAddress = ""
-				address          sdk.AccAddress
-				err              error
-			)
-			if len(args) == 0 {
-				keyNameOrAddress = cl.Config.Key
-			} else {
-				keyNameOrAddress = args[0]
-			}
-			if cl.KeyExists(keyNameOrAddress) {
-				cl.Config.Key = keyNameOrAddress
-				address, err = cl.GetKeyAddress()
-			} else {
-				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)
-			}
-			if err != nil {
-				return err
-			}
-			balance, err := cl.QueryBalance(address, false)
-			if err != nil {
-				return err
-			}
-			bz, err := json.MarshalIndent(balance, "", "  ")
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
-		},
+		Use:     "auth",
+		Aliases: []string{"a"},
+		Short:   "Querying commands for the auth module",
 	}
+
+	cmd.AddCommand(
+		getAccountCmd(),
+		getAccountsCmd(),
+		getParamsCmd(),
+	)
+
 	return cmd
 }
 
-func queryAccountCmd() *cobra.Command {
+// bankQueryCmd  returns the transaction commands for this module
+func bankQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "account [key-or-address]",
-		Aliases: []string{"acc"},
-		Short:   "query the account details for a key or address, if none is passed will query the balance of the default account",
-		Args:    cobra.RangeArgs(0, 1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
-			var (
-				keyNameOrAddress = ""
-				address          sdk.AccAddress
-				err              error
-			)
-			if len(args) == 0 {
-				keyNameOrAddress = cl.Config.Key
-			} else {
-				keyNameOrAddress = args[0]
-			}
-			if cl.KeyExists(keyNameOrAddress) {
-				cl.Config.Key = keyNameOrAddress
-				address, err = cl.GetKeyAddress()
-			} else {
-				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)
-			}
-			if err != nil {
-				return err
-			}
-			account, err := cl.QueryAccount(address)
-			if err != nil {
-				return err
-			}
-			bz, err := cl.Codec.Marshaler.MarshalInterfaceJSON(account)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
-		},
+		Use:     "bank",
+		Aliases: []string{"b"},
+		Short:   "Querying commands for the auth module",
 	}
+
+	cmd.AddCommand(
+		getBalanceCmd(),
+	)
+
+	return cmd
+}
+
+func distributionQueryCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "distribution",
+		Aliases: []string{"dist", "distr", "d"},
+		Short:   "Query things about a chain's distribution module",
+	}
+
+	cmd.AddCommand(
+		getDistributionCommissionCmd(),
+		getDistributionCommunityPoolCmd(),
+		getDistributionParamsCmd(),
+		getDistributionRewardsCmd(),
+		getDistributionSlashesCmd(),
+		getDistributionValidatorRewardsCmd(),
+	)
+
 	return cmd
 }

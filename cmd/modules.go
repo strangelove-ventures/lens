@@ -18,6 +18,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
+	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
+	ibc "github.com/cosmos/ibc-go/v2/modules/core"
 )
 
 // TODO: Import a bunch of custom modules like cosmwasm and osmosis
@@ -41,4 +43,6 @@ var ModuleBasics = []module.AppModuleBasic{
 	slashing.AppModuleBasic{},
 	staking.AppModuleBasic{},
 	upgrade.AppModuleBasic{},
+	transfer.AppModuleBasic{},
+	ibc.AppModuleBasic{},
 }
