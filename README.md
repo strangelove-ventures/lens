@@ -10,3 +10,135 @@ Intended use cases:
 - ...:atom::rocket::moon:
 
 This is the start of ideas around how to implement the cosmos client libraries in a seperate repo.
+
+## Tutorial
+
+### CMD Line
+
+Lens provides a cmd line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).
+
+#### Install
+
+```
+git clone https://github.com/strangelove-ventures/lens.git
+
+cd lens
+
+make install
+```
+
+After running the above commands, when running `lens` you should see
+
+```
+❯ lens            
+This is my lens, there are many like it, but this one is mine.
+
+Usage:
+  lens [command]
+
+Available Commands:
+  chains      manage local chain configurations
+  keys        manage keys held by the relayer for each chain
+  query       query things about a chain
+  tendermint  all tendermint query commands
+  tx          query things about a chain
+  help        Help about any command
+
+Flags:
+      --chain string   override default chain
+  -d, --debug          debug output
+  -h, --help           help for lens
+      --home string    set home directory (default "/Users/markobaricevic/.lens")
+
+Use "lens [command] --help" for more information about a command.
+```
+
+Lens comes with two defaulted configs, Cosmos Hub and Osmosis. Located at `~/.lens/config.toml` 
+
+```
+default_chain: osmosis
+ chains:
+   cosmoshub:
+     key: default
+     chain-id: cosmoshub-4
+     rpc-addr: https://cosmoshub-4.technofractal.com:443
+     grpc-addr: https://gprc.cosmoshub-4.technofractal.com:443
+     account-prefix: cosmos
+     keyring-backend: test
+     gas-adjustment: 1.2
+     gas-prices: 0.01uatom
+     key-directory: /Users/markobaricevic/.lens/keys
+     debug: false
+     timeout: 20s
+     output-format: json
+     sign-mode: direct
+   osmosis:
+     key: default
+     chain-id: osmosis-1
+     rpc-addr: https://osmosis-1.technofractal.com:443
+     grpc-addr: https://gprc.osmosis-1.technofractal.com:443
+     account-prefix: osmo
+     keyring-backend: test
+     gas-adjustment: 1.2
+     gas-prices: 0.01uosmo
+     key-directory: /Users/markobaricevic/.lens/keys
+     debug: false
+     timeout: 20s
+     output-format: json
+     sign-mode: direct
+	```
+
+To add more to your config you can run. 
+
+```
+lens chains add juno
+```
+
+This command checks the chain registry located [here](https://github.com/cosmos/chain-registry), for the requested chain. After running the command your `config.toml` should look like
+
+```
+default_chain: osmosis
+ chains:
+   cosmoshub:
+     key: default
+     chain-id: cosmoshub-4
+     rpc-addr: https://cosmoshub-4.technofractal.com:443
+     grpc-addr: https://gprc.cosmoshub-4.technofractal.com:443
+     account-prefix: cosmos
+     keyring-backend: test
+     gas-adjustment: 1.2
+     gas-prices: 0.01uatom
+     key-directory: /Users/markobaricevic/.lens/keys
+     debug: false
+     timeout: 20s
+     output-format: json
+     sign-mode: direct
+   juno:
+     key: default
+     chain-id: juno-1
+     rpc-addr: https://rpc-juno.itastakers.com:443
+     grpc-addr: ""
+     account-prefix: juno
+     keyring-backend: test
+     gas-adjustment: 1.2
+     gas-prices: 0.01ujuno
+     key-directory: /Users/markobaricevic/.lens/keys
+     debug: false
+     timeout: 20s
+     output-format: json
+     sign-mode: direct
+   osmosis:
+     key: default
+     chain-id: osmosis-1
+     rpc-addr: https://osmosis-1.technofractal.com:443
+     grpc-addr: https://gprc.osmosis-1.technofractal.com:443
+     account-prefix: osmo
+     keyring-backend: test
+     gas-adjustment: 1.2
+     gas-prices: 0.01uosmo
+     key-directory: /Users/markobaricevic/.lens/keys
+     debug: false
+     timeout: 20s
+     output-format: json
+     sign-mode: direct
+	```
