@@ -1,24 +1,18 @@
 package cmd
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
+import "github.com/spf13/cobra"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/spf13/cobra"
-)
-
-// queryCmd represents the keys command
+// TxCommand regesters a new tx command.
 func txCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "transact",
-		Aliases: []string{"tx"},
-		Short:   "query things about a chain",
+		Use:   "tx",
+		Short: "query things about a chain",
 	}
 
 	cmd.AddCommand(bankSendCmd())
+	cmd.AddCommand(stakingDelegateCmd())
+	cmd.AddCommand(stakingRedelegateCmd())
+	cmd.AddCommand(distributionWithdrawRewardsCmd())
 
 	return cmd
 }

@@ -13,9 +13,11 @@ LD_FLAGS = -X github.com/strangelove-ventures/lens/cmd/cmd.Version=$(VERSION) \
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
 build:
+	@echo "Building 20/20 vision"
 	@go build -mod readonly $(BUILD_FLAGS) -o build/lens main.go
 
 install:
+	@echo "Installing Lens"
 	@go install -mod readonly $(BUILD_FLAGS) ./...
 
 build-linux:

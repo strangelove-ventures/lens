@@ -103,6 +103,16 @@ func (cc *ChainClient) QueryBalance(address sdk.AccAddress, showDenoms bool) (sd
 	return out, nil
 }
 
+func (cc *ChainClient) QueryDelegatorValidators(address sdk.AccAddress) ([]string, error) {
+	res, err := distTypes.NewQueryClient(cc).DelegatorValidators(context.Background(), &distTypes.QueryDelegatorValidatorsRequest{
+		DelegatorAddress: address.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.Validators, nil
+}
+
 func (cc *ChainClient) QueryDistributionCommission(address string) (*disttypes.ValidatorAccumulatedCommission, error) {
 	request := disttypes.QueryValidatorCommissionRequest{
 		ValidatorAddress: address,
