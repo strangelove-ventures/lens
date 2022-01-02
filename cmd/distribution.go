@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -46,7 +45,7 @@ $ lens tx withdraw-rewards --from mykey --all
 			}
 
 			if cl.KeyExists(key) {
-				delAddr, err = cl.GetDefaultAddress()
+				delAddr, err = cl.GetKeyAddress()
 			} else {
 				delAddr, err = cl.DecodeBech32AccAddr(key)
 			}
@@ -100,45 +99,16 @@ $ lens tx withdraw-rewards --from mykey --all
 				}
 				return fmt.Errorf("failed to withdraw rewards: err(%w)", err)
 			}
-
-			bz, err := cl.Codec.Marshaler.MarshalJSON(res)
-			if err != nil {
-				return err
-			}
-
-			var out = bytes.NewBuffer([]byte{})
-			if err := json.Indent(out, bz, "", "  "); err != nil {
-				return err
-			}
-			fmt.Println(out.String())
-      			return nil
+			return cl.PrintTxResponse(res)
 		},
 	}
-  cmd.Flags().Bool(FlagCommission, false, "Withdraw commission from a validator")
+	cmd.Flags().Bool(FlagCommission, false, "Withdraw commission from a validator")
 	cmd.Flags().Bool(FlagAll, false, "Withdraw All rewards of a delegator")
 	AddTxFlagsToCmd(cmd)
 	return cmd
 }
 
-func getDistributionQueryCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "distribution",
-		Short: "Query things about a chain's distribution module",
-	}
-
-	cmd.AddCommand(
-		queryDistributionCommissionCmd(),
-		queryDistributionCommunityPoolCmd(),
-		queryDistributionParamsCmd(),
-		queryDistributionRewardsCmd(),
-		queryDistributionSlashesCmd(),
-		queryDistributionValidatorRewardsCmd(),
-	)
-
-	return cmd
-}
-
-func queryDistributionParamsCmd() *cobra.Command {
+func getDistributionParamsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "params",
 		Short: "query things about a chain's distribution params",
@@ -157,7 +127,7 @@ func queryDistributionParamsCmd() *cobra.Command {
 	return cmd
 }
 
-func queryDistributionCommunityPoolCmd() *cobra.Command {
+func getDistributionCommunityPoolCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "community-pool",
 		Short: "query things about a chain's community pool",
@@ -176,7 +146,7 @@ func queryDistributionCommunityPoolCmd() *cobra.Command {
 	return cmd
 }
 
-func queryDistributionCommissionCmd() *cobra.Command {
+func getDistributionCommissionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "commission [validator]",
 		Args:  cobra.ExactArgs(1),
@@ -198,7 +168,7 @@ func queryDistributionCommissionCmd() *cobra.Command {
 	return cmd
 }
 
-func queryDistributionRewardsCmd() *cobra.Command {
+func getDistributionRewardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rewards",
 		Short: "query things about a delegator's rewards",
@@ -221,29 +191,47 @@ func queryDistributionRewardsCmd() *cobra.Command {
 	return cmd
 }
 
-func queryDistributionSlashesCmd() *cobra.Command {
+func getDistributionSlashesCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "slashes",
+		Use:   "slashes [validator-address] [start-height] [end-height]",
 		Short: "query things about a validator's slashes on a chain",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			address := args[0]
 
-			slashes, err := cl.QueryDistributionSlashes(address)
+			address, err := cl.DecodeBech32ValAddr(args[0])
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(slashes)
 
-			return nil
+			pageReq, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			startHeight, err := strconv.ParseUint(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+			endHeight, err := strconv.ParseUint(args[1], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			valAddr, _ := cl.EncodeBech32AccAddr(address)
+
+			slashes, err := cl.QueryDistributionSlashes(valAddr, startHeight, endHeight, pageReq)
+			if err != nil {
+				return err
+			}
+
+			return cl.PrintObject(slashes)
 		},
 	}
 
-	return cmd
+	return paginationFlags(cmd)
 }
 
-func queryDistributionValidatorRewardsCmd() *cobra.Command {
+func getDistributionValidatorRewardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validator-outstanding-rewards [address]",
 		Short: "query things about a validator's (and all their delegators) outstanding rewards on a chain",
@@ -256,8 +244,9 @@ func queryDistributionValidatorRewardsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(rewards)
 
-			return nil
+			return cl.PrintObject(rewards)
 		},
 	}
+	return cmd
+}

@@ -6,22 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// getAuthQueryCmd returns the transaction commands for this module
-func getAuthQueryCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "auth",
-		Short: "Querying commands for the auth module",
-	}
-
-	cmd.AddCommand(
-		getAccountCmd(),
-		getAccountsCmd(),
-		queryParamsCmd(),
-	)
-
-	return cmd
-}
-
 func getAccountCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "account [address]",
@@ -83,7 +67,8 @@ func getAccountsCmd() *cobra.Command {
 	}
 	return paginationFlags(cmd)
 }
-func queryParamsCmd() *cobra.Command {
+
+func getParamsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "parameters",
 		Aliases: []string{"param", "params", "p"},

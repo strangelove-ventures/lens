@@ -70,6 +70,12 @@ func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, k
 	}, nil
 }
 
+// TODO: actually do something different here have a couple of levels of
+// verbosity
+func (cc *ChainClient) PrintTxResponse(res *sdk.TxResponse) error {
+	return cc.PrintObject(res)
+}
+
 func (cc *ChainClient) PrintObject(res interface{}) error {
 	var (
 		bz  []byte

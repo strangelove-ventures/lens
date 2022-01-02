@@ -4,20 +4,21 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	querytypes "github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	transfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 )
 
 // QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
-func (cc *ChainClient) QueryBalanceWithAddress(address sdk.AccAddress) (sdk.Coins, error) {
+func (cc *ChainClient) QueryBalanceWithAddress(address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
 	addr, err := cc.EncodeBech32AccAddr(address)
 	if err != nil {
 		return nil, err
 	}
-	params := &bankTypes.QueryAllBalancesRequest{Address: addr, Pagination: DefaultPageRequest()}
+	params := &bankTypes.QueryAllBalancesRequest{Address: addr, Pagination: pageReq}
 	res, err := bankTypes.NewQueryClient(cc).AllBalances(context.Background(), params)
 	if err != nil {
 		return nil, err
@@ -60,7 +61,7 @@ func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI,
 
 // QueryBalance is a helper function for query balance
 func (cc *ChainClient) QueryBalance(address sdk.AccAddress, showDenoms bool) (sdk.Coins, error) {
-	coins, err := cc.QueryBalanceWithAddress(address)
+	coins, err := cc.QueryBalanceWithAddress(address, DefaultPageRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -113,11 +114,11 @@ func (cc *ChainClient) QueryDelegatorValidators(address sdk.AccAddress) ([]strin
 	return res.Validators, nil
 }
 
-func (cc *ChainClient) QueryDistributionCommission(address string) (*disttypes.ValidatorAccumulatedCommission, error) {
-	request := disttypes.QueryValidatorCommissionRequest{
+func (cc *ChainClient) QueryDistributionCommission(address string) (*distTypes.ValidatorAccumulatedCommission, error) {
+	request := distTypes.QueryValidatorCommissionRequest{
 		ValidatorAddress: address,
 	}
-	res, err := disttypes.NewQueryClient(cc).ValidatorCommission(context.Background(), &request)
+	res, err := distTypes.NewQueryClient(cc).ValidatorCommission(context.Background(), &request)
 
 	if err != nil {
 		return nil, err
@@ -127,9 +128,9 @@ func (cc *ChainClient) QueryDistributionCommission(address string) (*disttypes.V
 }
 
 func (cc *ChainClient) QueryDistributionCommunityPool() (sdk.DecCoins, error) {
-	request := disttypes.QueryCommunityPoolRequest{}
+	request := distTypes.QueryCommunityPoolRequest{}
 
-	res, err := disttypes.NewQueryClient(cc).CommunityPool(context.Background(), &request)
+	res, err := distTypes.NewQueryClient(cc).CommunityPool(context.Background(), &request)
 
 	if err != nil {
 		return nil, err
@@ -138,8 +139,8 @@ func (cc *ChainClient) QueryDistributionCommunityPool() (sdk.DecCoins, error) {
 	return res.Pool, err
 }
 
-func (cc *ChainClient) QueryDistributionParams() (*disttypes.Params, error) {
-	res, err := disttypes.NewQueryClient(cc).Params(context.Background(), &disttypes.QueryParamsRequest{})
+func (cc *ChainClient) QueryDistributionParams() (*distTypes.Params, error) {
+	res, err := distTypes.NewQueryClient(cc).Params(context.Background(), &distTypes.QueryParamsRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -148,11 +149,11 @@ func (cc *ChainClient) QueryDistributionParams() (*disttypes.Params, error) {
 }
 
 func (cc *ChainClient) QueryDistributionRewards(delegatorAddress string, validatorAddress string) (sdk.DecCoins, error) {
-	request := disttypes.QueryDelegationRewardsRequest{
+	request := distTypes.QueryDelegationRewardsRequest{
 		DelegatorAddress: delegatorAddress,
 		ValidatorAddress: validatorAddress,
 	}
-	res, err := disttypes.NewQueryClient(cc).DelegationRewards(context.Background(), &request)
+	res, err := distTypes.NewQueryClient(cc).DelegationRewards(context.Background(), &request)
 
 	if err != nil {
 		return nil, err
@@ -161,13 +162,15 @@ func (cc *ChainClient) QueryDistributionRewards(delegatorAddress string, validat
 	return res.Rewards, nil
 }
 
-func (cc *ChainClient) QueryDistributionSlashes(validatorAddress string) ([]disttypes.ValidatorSlashEvent, error) {
-	request := disttypes.QueryValidatorSlashesRequest{
+func (cc *ChainClient) QueryDistributionSlashes(validatorAddress string, startHeight, endHeight uint64, pageReq *querytypes.PageRequest) ([]distTypes.ValidatorSlashEvent, error) {
+	request := distTypes.QueryValidatorSlashesRequest{
 		ValidatorAddress: validatorAddress,
+		StartingHeight:   startHeight,
+		EndingHeight:     endHeight,
+		Pagination:       pageReq,
 	}
 
-	res, err := disttypes.NewQueryClient(cc).ValidatorSlashes(context.Background(), &request)
-
+	res, err := distTypes.NewQueryClient(cc).ValidatorSlashes(context.Background(), &request)
 	if err != nil {
 		return nil, err
 	}
@@ -175,12 +178,12 @@ func (cc *ChainClient) QueryDistributionSlashes(validatorAddress string) ([]dist
 	return res.Slashes, nil
 }
 
-func (cc *ChainClient) QueryDistributionValidatorRewards(validatorAddress string) (*disttypes.ValidatorOutstandingRewards, error) {
-	request := disttypes.QueryValidatorOutstandingRewardsRequest{
+func (cc *ChainClient) QueryDistributionValidatorRewards(validatorAddress string) (*distTypes.ValidatorOutstandingRewards, error) {
+	request := distTypes.QueryValidatorOutstandingRewardsRequest{
 		ValidatorAddress: validatorAddress,
 	}
 
-	res, err := disttypes.NewQueryClient(cc).ValidatorOutstandingRewards(context.Background(), &request)
+	res, err := distTypes.NewQueryClient(cc).ValidatorOutstandingRewards(context.Background(), &request)
 
 	if err != nil {
 		return nil, err

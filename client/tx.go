@@ -109,7 +109,7 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 }
 
 func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
-	from, err := cc.GetDefaultAddress()
+	from, err := cc.GetKeyAddress()
 	if err != nil {
 		return tx.Factory{}, err
 	}

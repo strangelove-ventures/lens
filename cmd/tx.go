@@ -9,80 +9,46 @@ func txCmd() *cobra.Command {
 		Short: "query things about a chain",
 	}
 
-	cmd.AddCommand(bankSendCmd())
-	cmd.AddCommand(stakingDelegateCmd())
-	cmd.AddCommand(stakingRedelegateCmd())
-	cmd.AddCommand(distributionWithdrawRewardsCmd())
+	cmd.AddCommand(bankTxCmd())
+	cmd.AddCommand(stakingTxCmd())
+	cmd.AddCommand(distributionTxCmd())
 
 	return cmd
 }
 
-func bankSendCmd() *cobra.Command {
+func bankTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "send [from] [to] [amount]",
-		Short: "send coins from one address to another",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
-			var (
-				fromAddress sdk.AccAddress
-				err         error
-			)
-			if cl.KeyExists(args[0]) {
-				fromAddress, err = cl.GetKeyAddress()
-			} else {
-				fromAddress, err = cl.DecodeBech32AccAddr(args[0])
-			}
-			if err != nil {
-				return err
-			}
-			toAddr, err := cl.DecodeBech32AccAddr(args[1])
-			if err != nil {
-				return err
-			}
-
-			coins, err := sdk.ParseCoinsNormalized(args[2])
-			if err != nil {
-				return err
-			}
-
-			from, err := cl.EncodeBech32AccAddr(fromAddress)
-			if err != nil {
-				return err
-			}
-
-			to, err := cl.EncodeBech32AccAddr(toAddr)
-			if err != nil {
-				return err
-			}
-
-			msg := &types.MsgSend{
-				FromAddress: from,
-				ToAddress:   to,
-				Amount:      coins,
-			}
-
-			res, ok, err := cl.SendMsg(cmd.Context(), msg)
-			if err != nil || !ok {
-				if res != nil {
-					return fmt.Errorf("failed to send coins: code(%d) msg(%s)", res.Code, res.Logs)
-				}
-				return fmt.Errorf("failed to send coins: err(%w)", err)
-			}
-
-			bz, err := cl.Codec.Marshaler.MarshalJSON(res)
-			if err != nil {
-				return err
-			}
-
-			var out = bytes.NewBuffer([]byte{})
-			if err := json.Indent(out, bz, "", "  "); err != nil {
-				return err
-			}
-			fmt.Println(out.String())
-			return nil
-
-		},
+		Use:     "bank",
+		Aliases: []string{"b"},
+		Short:   "bank things",
 	}
+
+	cmd.AddCommand(bankSendCmd())
+
+	return cmd
+}
+
+func stakingTxCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "staking",
+		Aliases: []string{"stake", "stk"},
+		Short:   "staking things",
+	}
+
+	cmd.AddCommand(stakingDelegateCmd())
+	cmd.AddCommand(stakingRedelegateCmd())
+
+	return cmd
+}
+
+func distributionTxCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "distribution",
+		Aliases: []string{"dist", "distr", "d"},
+		Short:   "distribution things",
+	}
+
+	cmd.AddCommand(distributionWithdrawRewardsCmd())
+
 	return cmd
 }

@@ -49,7 +49,7 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 			}
 
 			if cl.KeyExists(cl.Config.Key) {
-				delAddr, err = cl.GetDefaultAddress()
+				delAddr, err = cl.GetKeyAddress()
 			} else {
 				delAddr, err = cl.DecodeBech32AccAddr(key)
 			}
@@ -120,7 +120,7 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 			}
 
 			if cl.KeyExists(cl.Config.Key) {
-				delAddr, err = cl.GetDefaultAddress()
+				delAddr, err = cl.GetKeyAddress()
 			} else {
 				delAddr, err = cl.DecodeBech32AccAddr(key)
 			}
