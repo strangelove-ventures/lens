@@ -194,9 +194,13 @@ func (cc *ChainClient) QueryDistributionSlashes(validatorAddress sdk.ValAddress,
 	return res.Slashes, nil
 }
 
-func (cc *ChainClient) QueryDistributionValidatorRewards(validatorAddress string) (*distTypes.ValidatorOutstandingRewards, error) {
+func (cc *ChainClient) QueryDistributionValidatorRewards(validatorAddress sdk.ValAddress) (*distTypes.ValidatorOutstandingRewards, error) {
+	valAddr, err := cc.EncodeBech32ValAddr(validatorAddress)
+	if err != nil {
+		return nil, err
+	}
 	request := distTypes.QueryValidatorOutstandingRewardsRequest{
-		ValidatorAddress: validatorAddress,
+		ValidatorAddress: valAddr,
 	}
 
 	res, err := distTypes.NewQueryClient(cc).ValidatorOutstandingRewards(context.Background(), &request)

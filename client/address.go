@@ -22,6 +22,13 @@ func (cc *ChainClient) EncodeBech32AccPub(addr sdk.AccAddress) (string, error) {
 func (cc *ChainClient) EncodeBech32ValAddr(addr sdk.ValAddress) (string, error) {
 	return sdk.Bech32ifyAddressBytes(fmt.Sprintf("%s%s", cc.Config.AccountPrefix, "valoper"), addr)
 }
+func (cc *ChainClient) MustEncodeValAddr(addr sdk.ValAddress) string {
+	enc, err := cc.EncodeBech32ValAddr(addr)
+	if err != nil {
+		panic(err)
+	}
+	return enc
+}
 func (cc *ChainClient) EncodeBech32ValPub(addr sdk.AccAddress) (string, error) {
 	return sdk.Bech32ifyAddressBytes(fmt.Sprintf("%s%s", cc.Config.AccountPrefix, "valoperpub"), addr)
 }

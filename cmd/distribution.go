@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -82,14 +81,7 @@ $ lens tx withdraw-rewards --from mykey --all
 				msgs = append(msgs, types.NewMsgWithdrawValidatorCommission(sdk.ValAddress(valAddr)))
 			}
 
-			res, ok, err := cl.SendMsgs(cmd.Context(), msgs)
-			if err != nil || !ok {
-				if res != nil {
-					return fmt.Errorf("failed to withdraw rewards: code(%d) msg(%s)", res.Code, res.Logs)
-				}
-				return fmt.Errorf("failed to withdraw rewards: err(%w)", err)
-			}
-			return cl.PrintTxResponse(res)
+			return cl.HandleAndPrintMsgSend(cl.SendMsgs(cmd.Context(), msgs))
 		},
 	}
 	cmd.Flags().BoolP(FlagCommission, "c", false, "withdraw commission from a validator")
@@ -104,10 +96,12 @@ func distributionParamsCmd() *cobra.Command {
 		Short: "query things about a chain's distribution params",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
+
 			params, err := cl.QueryDistributionParams()
 			if err != nil {
 				return err
 			}
+
 			return cl.PrintObject(params)
 		},
 	}
@@ -121,10 +115,12 @@ func distributionCommunityPoolCmd() *cobra.Command {
 		Short: "query things about a chain's community pool",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
+
 			pool, err := cl.QueryDistributionCommunityPool()
 			if err != nil {
 				return err
 			}
+
 			return cl.PrintObject(pool)
 		},
 	}
@@ -156,7 +152,7 @@ func distributionCommissionCmd() *cobra.Command {
 
 func distributionRewardsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rewards [delegator-address] [validator-address]",
+		Use:   "rewards [key-or-delegator-address] [validator-address]",
 		Short: "query things about a delegator's rewards",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -191,20 +187,22 @@ func distributionSlashesCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 
+			pageReq, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+
 			address, err := cl.DecodeBech32ValAddr(args[0])
 			if err != nil {
 				return err
 			}
 
-			pageReq, err := ReadPageRequest(cmd.Flags())
+			startHeight, err := strconv.ParseUint(args[1], 10, 64)
 			if err != nil {
 				return err
 			}
-			startHeight, err := strconv.ParseUint(args[0], 10, 64)
-			if err != nil {
-				return err
-			}
-			endHeight, err := strconv.ParseUint(args[1], 10, 64)
+
+			endHeight, err := strconv.ParseUint(args[2], 10, 64)
 			if err != nil {
 				return err
 			}
@@ -228,7 +226,11 @@ func distributionValidatorRewardsCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			address := args[0]
+
+			address, err := cl.DecodeBech32ValAddr(args[0])
+			if err != nil {
+				return err
+			}
 
 			rewards, err := cl.QueryDistributionValidatorRewards(address)
 			if err != nil {

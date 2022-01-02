@@ -36,8 +36,8 @@ func bankSendCmd() *cobra.Command {
 				Amount:      coins,
 			}
 
-			res, ok, err := cl.SendMsg(cmd.Context(), req)
-			if err != nil || !ok {
+			res, err := cl.SendMsg(cmd.Context(), req)
+			if err != nil {
 				if res != nil {
 					return fmt.Errorf("failed to send coins: code(%d) msg(%s)", res.Code, res.Logs)
 				}

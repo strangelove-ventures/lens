@@ -76,6 +76,16 @@ func (cc *ChainClient) PrintTxResponse(res *sdk.TxResponse) error {
 	return cc.PrintObject(res)
 }
 
+func (cc *ChainClient) HandleAndPrintMsgSend(res *sdk.TxResponse, err error) error {
+	if err != nil {
+		if res != nil {
+			return fmt.Errorf("failed to withdraw rewards: code(%d) msg(%s)", res.Code, res.Logs)
+		}
+		return fmt.Errorf("failed to withdraw rewards: err(%w)", err)
+	}
+	return cc.PrintTxResponse(res)
+}
+
 func (cc *ChainClient) PrintObject(res interface{}) error {
 	var (
 		bz  []byte
