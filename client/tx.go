@@ -79,10 +79,12 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	for _, msg := range msgs {
 		cc.Codec.Marshaler.MustMarshalJSON(msg)
 	}
-	err = tx.Sign(txf, cc.Config.Key, txb, false)
-	if err != nil {
+
+	done := cc.SetSDKContext()
+	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
 		return nil, false, err
 	}
+	done()
 
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
