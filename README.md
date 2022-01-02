@@ -48,10 +48,11 @@ Flags:
       --chain string   override default chain
   -d, --debug          debug output
   -h, --help           help for lens
-      --home string    set home directory (default "/Users/markobaricevic/.lens")
+      --home string    set home directory (default "/Users/lenscrafters/.lens")
 
 Use "lens [command] --help" for more information about a command.
 ```
+#### Chains
 
 Lens comes with two defaulted configs, Cosmos Hub and Osmosis. Located at `~/.lens/config.toml` 
 
@@ -67,7 +68,7 @@ default_chain: osmosis
      keyring-backend: test
      gas-adjustment: 1.2
      gas-prices: 0.01uatom
-     key-directory: /Users/markobaricevic/.lens/keys
+     key-directory: /Users/lenscrafters/.lens/keys
      debug: false
      timeout: 20s
      output-format: json
@@ -81,7 +82,7 @@ default_chain: osmosis
      keyring-backend: test
      gas-adjustment: 1.2
      gas-prices: 0.01uosmo
-     key-directory: /Users/markobaricevic/.lens/keys
+     key-directory: /Users/lenscrafters/.lens/keys
      debug: false
      timeout: 20s
      output-format: json
@@ -108,7 +109,7 @@ default_chain: osmosis
      keyring-backend: test
      gas-adjustment: 1.2
      gas-prices: 0.01uatom
-     key-directory: /Users/markobaricevic/.lens/keys
+     key-directory: /Users/lenscrafters/.lens/keys
      debug: false
      timeout: 20s
      output-format: json
@@ -122,7 +123,7 @@ default_chain: osmosis
      keyring-backend: test
      gas-adjustment: 1.2
      gas-prices: 0.01ujuno
-     key-directory: /Users/markobaricevic/.lens/keys
+     key-directory: /Users/lenscrafters/.lens/keys
      debug: false
      timeout: 20s
      output-format: json
@@ -136,9 +137,27 @@ default_chain: osmosis
      keyring-backend: test
      gas-adjustment: 1.2
      gas-prices: 0.01uosmo
-     key-directory: /Users/markobaricevic/.lens/keys
+     key-directory: /Users/lenscrafters/.lens/keys
      debug: false
      timeout: 20s
      output-format: json
      sign-mode: direct
 	```
+
+When running a command, it will run the command for the defaulted chain. The defaulted chain can be found at the top of `~/.lens/config.toml` or by running `lens`. 
+
+To change your default, run: 
+
+``` 
+lens chains set-default <chain_name>
+```
+
+#### Keys
+
+Lens uses the keyring from the Cosmos-sdk. You can read more about it [here](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/keyring/doc.go). To add your key to lens run:
+
+``` 
+lens keys restore <key_name> '<mnemonic>'
+```
+
+After this when running `lens keys list` you should see your defaulted chains address, if this is not changed you will see the cosmos-hub address. To see your key encoded for use on other chains run `lens keys enumerate <key_name>`. 
