@@ -8,10 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
-	"github.com/strangelove-ventures/lens/internal/asset_list"
-
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
 	"github.com/strangelove-ventures/lens/internal/chain_info"
@@ -67,41 +63,6 @@ func (c CosmosGithubRegistry) GetChain(name string) (chain_info.ChainInfo, error
 	}
 
 	return result, nil
-}
-
-func (c CosmosGithubRegistry) GetAssets(name string) (asset_list.AssetList, error) {
-	cl := github.NewClient(http.DefaultClient)
-
-	chainFileName := fmt.Sprintf("%s/assetlist.json", name)
-	ch, _, res, err := cl.Repositories.GetContents(context.Background(), "cosmos", "chain-registry", chainFileName, &github.RepositoryContentGetOptions{})
-	if err != nil || res.StatusCode != 200 {
-		return asset_list.AssetList{}, errors.Wrap(err, fmt.Sprintf("error fetching %s", chainFileName))
-	}
-
-	f, err := ch.GetContent()
-	if err != nil {
-		return asset_list.AssetList{}, err
-	}
-
-	var assetList asset_list.AssetList
-	if err := json.Unmarshal([]byte(f), &assetList); err != nil {
-		return asset_list.AssetList{}, err
-	}
-	return assetList, nil
-}
-
-func (c CosmosGithubRegistry) getChainFiles(name string) (rc chain_info.ChainInfo, al asset_list.AssetList, err error) {
-	eg := errgroup.Group{}
-	eg.Go(func() (err error) {
-		rc, err = c.GetChain(name)
-		return err
-	})
-	eg.Go(func() (err error) {
-		al, err = c.GetAssets(name)
-		return err
-	})
-	err = eg.Wait()
-	return
 }
 
 func (c CosmosGithubRegistry) SourceLink() string {

@@ -2,12 +2,15 @@ package chain_info
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/google/go-github/github"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/strangelove-ventures/lens/client"
@@ -134,14 +137,41 @@ func (c ChainInfo) GetRandomRPCEndpoint() (string, error) {
 	return rpcs[randomGenerator.Intn(len(rpcs))], nil
 }
 
+func (c ChainInfo) GetAssetList() (AssetList, error) {
+	cl := github.NewClient(http.DefaultClient)
+
+	chainFileName := fmt.Sprintf("%s/assetlist.json", c.ChainName)
+	ch, _, res, err := cl.Repositories.GetContents(context.Background(), "cosmos", "chain-registry", chainFileName, &github.RepositoryContentGetOptions{})
+	if err != nil || res.StatusCode != 200 {
+		return AssetList{}, err
+	}
+
+	content, err := ch.GetContent()
+	if err != nil {
+		return AssetList{}, err
+	}
+
+	var assetList AssetList
+	if err := json.Unmarshal([]byte(content), &assetList); err != nil {
+		return AssetList{}, err
+	}
+	return assetList, nil
+
+}
+
 func (c ChainInfo) GetChainConfig() (*client.ChainClientConfig, error) {
 	debug := viper.GetBool("debug")
 	home := viper.GetString("home")
 
-	//var gasPrices string
-	//if len(al.Assets) > 0 {
-	//	gasPrices = fmt.Sprintf("%.2f%s", 0.01, al.Assets[0].Base)
-	//}
+	assetList, err := c.GetAssetList()
+	if err != nil {
+		return nil, err
+	}
+
+	var gasPrices string
+	if len(assetList.Assets) > 0 {
+		gasPrices = fmt.Sprintf("%.2f%s", 0.01, assetList.Assets[0].Base)
+	}
 
 	rpc, err := c.GetRandomRPCEndpoint()
 	if err != nil {
@@ -155,7 +185,7 @@ func (c ChainInfo) GetChainConfig() (*client.ChainClientConfig, error) {
 		AccountPrefix:  c.Bech32Prefix,
 		KeyringBackend: "test",
 		GasAdjustment:  1.2,
-		GasPrices:      "",
+		GasPrices:      gasPrices,
 		KeyDirectory:   home,
 		Debug:          debug,
 		Timeout:        "20s",
