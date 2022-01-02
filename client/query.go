@@ -114,9 +114,13 @@ func (cc *ChainClient) QueryDelegatorValidators(address sdk.AccAddress) ([]strin
 	return res.Validators, nil
 }
 
-func (cc *ChainClient) QueryDistributionCommission(address string) (*distTypes.ValidatorAccumulatedCommission, error) {
+func (cc *ChainClient) QueryDistributionCommission(address sdk.ValAddress) (*distTypes.ValidatorAccumulatedCommission, error) {
+	valAddr, err := cc.EncodeBech32ValAddr(address)
+	if err != nil {
+		return nil, err
+	}
 	request := distTypes.QueryValidatorCommissionRequest{
-		ValidatorAddress: address,
+		ValidatorAddress: valAddr,
 	}
 	res, err := distTypes.NewQueryClient(cc).ValidatorCommission(context.Background(), &request)
 
@@ -148,10 +152,18 @@ func (cc *ChainClient) QueryDistributionParams() (*distTypes.Params, error) {
 	return &res.Params, nil
 }
 
-func (cc *ChainClient) QueryDistributionRewards(delegatorAddress string, validatorAddress string) (sdk.DecCoins, error) {
+func (cc *ChainClient) QueryDistributionRewards(delegatorAddress sdk.AccAddress, validatorAddress sdk.ValAddress) (sdk.DecCoins, error) {
+	delAddr, err := cc.EncodeBech32AccAddr(delegatorAddress)
+	if err != nil {
+		return nil, err
+	}
+	valAddr, err := cc.EncodeBech32ValAddr(validatorAddress)
+	if err != nil {
+		return nil, err
+	}
 	request := distTypes.QueryDelegationRewardsRequest{
-		DelegatorAddress: delegatorAddress,
-		ValidatorAddress: validatorAddress,
+		DelegatorAddress: delAddr,
+		ValidatorAddress: valAddr,
 	}
 	res, err := distTypes.NewQueryClient(cc).DelegationRewards(context.Background(), &request)
 
@@ -162,9 +174,13 @@ func (cc *ChainClient) QueryDistributionRewards(delegatorAddress string, validat
 	return res.Rewards, nil
 }
 
-func (cc *ChainClient) QueryDistributionSlashes(validatorAddress string, startHeight, endHeight uint64, pageReq *querytypes.PageRequest) ([]distTypes.ValidatorSlashEvent, error) {
+func (cc *ChainClient) QueryDistributionSlashes(validatorAddress sdk.ValAddress, startHeight, endHeight uint64, pageReq *querytypes.PageRequest) ([]distTypes.ValidatorSlashEvent, error) {
+	valAddr, err := cc.EncodeBech32ValAddr(validatorAddress)
+	if err != nil {
+		return nil, err
+	}
 	request := distTypes.QueryValidatorSlashesRequest{
-		ValidatorAddress: validatorAddress,
+		ValidatorAddress: valAddr,
 		StartingHeight:   startHeight,
 		EndingHeight:     endHeight,
 		Pagination:       pageReq,

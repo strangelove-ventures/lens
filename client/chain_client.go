@@ -144,3 +144,18 @@ func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 	}
 	return rpcClient, nil
 }
+
+// AccountFromKeyOrAddress returns an account from either a key or an address
+// if empty string is passed in this returns the default key's address
+func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.AccAddress, err error) {
+	switch {
+	case keyOrAddress == "":
+		out, err = cc.GetKeyAddress()
+	case cc.KeyExists(keyOrAddress):
+		cc.Config.Key = keyOrAddress
+		out, err = cc.GetKeyAddress()
+	default:
+		out, err = cc.DecodeBech32AccAddr(keyOrAddress)
+	}
+	return
+}
