@@ -139,10 +139,12 @@ func distributionCommissionCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+      
 			commission, err := cl.QueryDistributionCommission(address)
 			if err != nil {
 				return err
 			}
+      
 			return cl.PrintObject(commission)
 		},
 	}
