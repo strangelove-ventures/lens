@@ -20,6 +20,7 @@ func queryCmd() *cobra.Command {
 		queryBalanceCmd(),
 		queryAccountCmd(),
 		getAuthQueryCmd(),
+		getDistributionQueryCmd(),
 	)
 
 	return cmd
