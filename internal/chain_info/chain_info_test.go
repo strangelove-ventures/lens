@@ -34,10 +34,6 @@ func TestGetAllRPCEndpoints(t *testing.T) {
 	}
 }
 
-// too lazy to mock out an RPC instance that can simulate
-// healthy/non-healthy behavior but that would be dope.
-// one day...
-
 func ChainInfoWithRPCEndpoint(endpoint string) ChainInfo {
 	return ChainInfo{
 		Apis: struct {

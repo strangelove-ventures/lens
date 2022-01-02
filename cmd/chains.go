@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -46,12 +45,7 @@ func cmdChainsRegistryList() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.Marshal(chains)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
+			return config.GetDefaultClient().PrintObject(chains)
 		},
 	}
 	return cmd
