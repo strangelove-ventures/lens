@@ -90,7 +90,7 @@ default_chain: osmosis
      sign-mode: direct
 ```
 
-To add more chians to your config, run: 
+To add more chains to your config, run: 
 
 ```
 lens chains add <chain_name>
