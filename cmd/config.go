@@ -6,6 +6,8 @@ import (
 	"os"
 	"path"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
@@ -56,6 +58,8 @@ func overwriteConfig(cfg *Config) error {
 	if _, err := f.Write(cfg.MustYAML()); err != nil {
 		return err
 	}
+
+	log.Infof("updated lens configuration at %s", cfgPath)
 	return nil
 }
 
