@@ -193,7 +193,6 @@ func initConfig(cmd *cobra.Command) error {
 	}
 
 	// override chain if needed
-
 	if cmd.PersistentFlags().Changed("chain") {
 		defaultChain, err := cmd.PersistentFlags().GetString("chain")
 		if err != nil {
@@ -201,6 +200,18 @@ func initConfig(cmd *cobra.Command) error {
 		}
 
 		config.DefaultChain = defaultChain
+	}
+
+	if cmd.PersistentFlags().Changed("output") {
+		output, err := cmd.PersistentFlags().GetString("output")
+		if err != nil {
+			return err
+		}
+
+		// Should output be a global configuration item?
+		for chain, _ := range config.Chains {
+			config.Chains[chain].OutputFormat = output
+		}
 	}
 
 	// validate configuration

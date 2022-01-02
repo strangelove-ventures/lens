@@ -118,9 +118,8 @@ func getDistributionParamsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(params)
 
-			return nil
+			return cl.PrintObject(params)
 		},
 	}
 
@@ -137,9 +136,8 @@ func getDistributionCommunityPoolCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(pool)
 
-			return nil
+			return cl.PrintObject(pool)
 		},
 	}
 
@@ -154,14 +152,13 @@ func getDistributionCommissionCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 			address := args[0]
-			commission, err := cl.QueryDistributionCommission(address)
 
+			commission, err := cl.QueryDistributionCommission(address)
 			if err != nil {
 				return err
 			}
 
-			cl.PrintObject(commission)
-			return nil
+			return cl.PrintObject(commission)
 		},
 	}
 
@@ -182,9 +179,8 @@ func getDistributionRewardsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(pool)
 
-			return nil
+			return cl.PrintObject(pool)
 		},
 	}
 

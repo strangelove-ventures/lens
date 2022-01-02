@@ -2,11 +2,11 @@ package cmd
 
 import "github.com/spf13/cobra"
 
-// TxCommand regesters a new tx command.
+// TxCommand registers a new tx command.
 func txCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tx",
-		Short: "query things about a chain",
+		Short: "broadcast transactions to a chain",
 	}
 
 	cmd.AddCommand(bankTxCmd())
