@@ -45,7 +45,8 @@ func createConfig(home string, debug bool) error {
 	return nil
 }
 
-func overwriteConfig(home string, cfg *Config) error {
+func overwriteConfig(cfg *Config) error {
+	home := viper.GetString("home")
 	cfgPath := path.Join(home, "config.yaml")
 	f, err := os.Create(cfgPath)
 	if err != nil {
