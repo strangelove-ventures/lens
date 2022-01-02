@@ -6,5 +6,7 @@ Intended use cases:
 - Trading Bots
 - Server side query integrations for alerting or other automation
 - Indexers and search engines
+- Transaction automation (`x/authz` for security) for farming applications
+- ...:atom::rocket::moon:
 
 This is the start of ideas around how to implement the cosmos client libraries in a seperate repo.
