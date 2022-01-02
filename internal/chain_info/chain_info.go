@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"path"
 	"time"
 
 	"github.com/google/go-github/github"
@@ -140,7 +141,7 @@ func (c ChainInfo) GetRandomRPCEndpoint() (string, error) {
 func (c ChainInfo) GetAssetList() (AssetList, error) {
 	cl := github.NewClient(http.DefaultClient)
 
-	chainFileName := fmt.Sprintf("%s/assetlist.json", c.ChainName)
+	chainFileName := path.Join(c.ChainName, "chain.json")
 	ch, _, res, err := cl.Repositories.GetContents(
 		context.Background(),
 		"cosmos",

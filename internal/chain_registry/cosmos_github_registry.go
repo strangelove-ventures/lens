@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -41,7 +42,7 @@ func (c CosmosGithubRegistry) ListChains() ([]string, error) {
 func (c CosmosGithubRegistry) GetChain(name string) (chain_info.ChainInfo, error) {
 	client := github.NewClient(http.DefaultClient)
 
-	chainFileName := fmt.Sprintf("%s/chain.json", name)
+	chainFileName := path.Join(name, "chain.json")
 	fileContent, _, res, err := client.Repositories.GetContents(
 		context.Background(),
 		"cosmos",
