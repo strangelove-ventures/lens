@@ -52,6 +52,7 @@ Flags:
 
 Use "lens [command] --help" for more information about a command.
 ```
+
 #### Chains
 
 Lens comes with two defaulted chains, Cosmos Hub and Osmosis. Located at `~/.lens/config.toml` 
@@ -87,7 +88,7 @@ default_chain: osmosis
      timeout: 20s
      output-format: json
      sign-mode: direct
-	```
+```
 
 To add more chians to your config, run: 
 
