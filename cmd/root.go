@@ -73,6 +73,7 @@ func NewRootCmd() *cobra.Command {
 		queryCmd(),
 		tendermintCmd(),
 		txCmd(),
+		versionCmd(),
 	)
 
 	return rootCmd
