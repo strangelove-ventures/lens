@@ -65,3 +65,8 @@ func GetOsmosisConfig(keyHome string, debug bool) (*ChainClientConfig) {
 		SignModeStr:    "direct",
 	}
 }
+
+func GetTestClient() (*ChainClient) {
+	cl, _ := NewChainClient(GetCosmosHubConfig("/tmp", true), nil, nil)
+	return cl
+}
