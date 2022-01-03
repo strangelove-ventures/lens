@@ -17,11 +17,11 @@ func getGovernanceProposalsCmd() *cobra.Command {
 				return err
 			}
 
-			params, err := cl.QueryGovernanceProposals(types.StatusVotingPeriod, "", "", pageReq)
+			proposalsResponse, err := cl.QueryGovernanceProposals(types.StatusVotingPeriod, "", "", pageReq)
 			if err != nil {
 				return err
 			}
-			return cl.PrintObject(params)
+			return cl.PrintObject(proposalsResponse)
 		},
 	}
 

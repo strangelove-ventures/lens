@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -194,7 +193,7 @@ func (cc *ChainClient) QueryDistributionValidatorRewards(validatorAddress string
 	return &res.Rewards, nil
 }
 
-func (cc *ChainClient) QueryGovernanceProposals(proposalStatus govTypes.ProposalStatus, voter string, depositor string, pageReq *querytypes.PageRequest) ([]govTypes.Proposal, error) {
+func (cc *ChainClient) QueryGovernanceProposals(proposalStatus govTypes.ProposalStatus, voter string, depositor string, pageReq *querytypes.PageRequest) (*govTypes.QueryProposalsResponse, error) {
 	request := govTypes.QueryProposalsRequest{
 		ProposalStatus: proposalStatus,
 		Voter:          voter,
@@ -208,9 +207,7 @@ func (cc *ChainClient) QueryGovernanceProposals(proposalStatus govTypes.Proposal
 		return nil, err
 	}
 
-	fmt.Printf("%v\n", res.Proposals)
-
-	return res.Proposals, nil
+	return res, nil
 }
 
 func DefaultPageRequest() *querytypes.PageRequest {
