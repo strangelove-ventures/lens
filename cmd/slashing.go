@@ -40,11 +40,7 @@ $ <appd> query slashing signing-info '{"@type":"/cosmos.crypto.ed25519.PubKey","
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := config.GetDefaultClient()
-			pageReq, err := sdkclient.ReadPageRequest(cmd.Flags())
-			if err != nil {
-				return err
-			}
-			result, err := client.QuerySlashingSigningInfo(args[0], pageReq)
+			result, err := client.QuerySlashingSigningInfo(args[0])
 			if err != nil {
 				return err
 			}
