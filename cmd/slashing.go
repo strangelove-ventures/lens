@@ -3,6 +3,8 @@ package cmd
 import (
 	"strings"
 
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
@@ -40,7 +42,13 @@ $ <appd> query slashing signing-info '{"@type":"/cosmos.crypto.ed25519.PubKey","
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := config.GetDefaultClient()
-			result, err := client.QuerySlashingSigningInfo(args[0])
+
+			var pk cryptotypes.PubKey
+			if err := client.Codec.Marshaler.UnmarshalInterfaceJSON([]byte(args[0]), &pk); err != nil {
+				return err
+			}
+
+			result, err := client.QuerySlashingSigningInfo(pk)
 			if err != nil {
 				return err
 			}

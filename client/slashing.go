@@ -9,14 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
-func (cc *ChainClient) QuerySlashingSigningInfo(publicKey string) (*types.QuerySigningInfoResponse, error) {
-	var pk cryptotypes.PubKey
-	if err := cc.Codec.Marshaler.UnmarshalInterfaceJSON([]byte(publicKey), &pk); err != nil {
-		return nil, err
-	}
-
-	consAddr := sdk.ConsAddress(pk.Address())
-	params := &types.QuerySigningInfoRequest{ConsAddress: consAddr.String()}
+func (cc *ChainClient) QuerySlashingSigningInfo(publicKey cryptotypes.PubKey) (*types.QuerySigningInfoResponse, error) {
+	params := &types.QuerySigningInfoRequest{ConsAddress: sdk.ConsAddress(publicKey.Address()).String()}
 	res, err := types.NewQueryClient(cc).SigningInfo(context.Background(), params)
 	if err != nil {
 		return nil, err
