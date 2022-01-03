@@ -235,7 +235,10 @@ an editor in your path that can be called using $LENS_EDITOR <file-path>.`,
 
 			editor := os.Getenv("LENS_EDITOR")
 			if editor == "" {
-				editor = "vim"
+				editor = os.Getenv("EDITOR") // Should hold system default
+				if editor == "" {
+					editor = "vi"
+				}
 			}
 
 			c := exec.Command(editor, path.Join(home, "config.yaml"))
