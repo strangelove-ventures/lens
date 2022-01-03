@@ -3,9 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/exec"
-	"path"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/strangelove-ventures/lens/internal/chain_registry"
@@ -116,12 +114,42 @@ func cmdChainsEdit() *cobra.Command {
 		Use:     "edit [chain-name] [key] [value]",
 		Aliases: []string{"e"},
 		Short:   "edit a chain configuration value",
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			home, _ := cmd.Flags().GetString("home")
-			c := exec.Command("vim", path.Join(home, "config.yaml"))
-			c.Stdin = os.Stdin
-			c.Stdout = os.Stdout
-			return c.Run()
+			if _, ok := config.Chains[args[0]]; !ok {
+				return fmt.Errorf("chain %s not found in configuration", args[0])
+			}
+			switch args[1] {
+			case "key":
+				config.Chains[args[0]].Key = args[2]
+			case "chain-id":
+				config.Chains[args[0]].ChainID = args[2]
+			case "rpc-addr":
+				config.Chains[args[0]].RPCAddr = args[2]
+			case "grpc-addr":
+				config.Chains[args[0]].GRPCAddr = args[2]
+			case "account-prefix":
+				config.Chains[args[0]].AccountPrefix = args[2]
+			case "gas-adjustment":
+				fl, err := strconv.ParseFloat(args[2], 64)
+				if err != nil {
+					return err
+				}
+				config.Chains[args[0]].GasAdjustment = fl
+			case "gas-prices":
+				config.Chains[args[0]].GasPrices = args[2]
+			case "debug":
+				b, err := strconv.ParseBool(args[2])
+				if err != nil {
+					return err
+				}
+				config.Chains[args[0]].Debug = b
+			case "timeout":
+				config.Chains[args[0]].Timeout = args[2]
+			default:
+				return fmt.Errorf("unknown key %s, try 'key', 'chain-id', 'rpc-addr', 'grpc-addr', 'account-prefix', 'gas-adjustment', 'gas-prices', 'debug', or 'timeout'", args[1])
+			}
+			return overwriteConfig(config)
 		},
 	}
 	return cmd
