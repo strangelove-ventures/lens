@@ -19,7 +19,7 @@ func getGovernanceProposalsCmd() *cobra.Command {
 		Use:   "proposals",
 		Short: "query things about a chain's proposals",
 		Long: strings.TrimSpace(
-			`Query for a paginated proposals that match optional filters:
+			`Query for paginated proposals that match optional filters:
 Example:
 $ lens query gov proposals --depositor cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
 $ lens query gov proposals --voter cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
