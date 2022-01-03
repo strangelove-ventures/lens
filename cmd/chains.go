@@ -80,12 +80,14 @@ func cmdChainsAdd() *cobra.Command {
 
 				chainInfo, err := registry.GetChain(chain)
 				if err != nil {
-					return err
+					log.Printf("error getting chain: %s", err)
+					continue
 				}
 
 				chainConfig, err := chainInfo.GetChainConfig()
 				if err != nil {
-					return err
+					log.Printf("error generating chain config: %s", err)
+					continue
 				}
 
 				config.Chains[chain] = chainConfig
