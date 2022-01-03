@@ -142,9 +142,9 @@ func slashingQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-	// slashingSigningInfoCmd(),
-	// slashingParamsCmd(),
-	// slashingSigningInfosCmd(),
+		slashingSigningInfoCmd(),
+		slashingSigningInfosCmd(),
+		slashingParamsCmd(),
 	)
 
 	return cmd
