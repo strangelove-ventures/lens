@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
-func (cc *ChainClient) QuerySlashingSigningInfo(publicKey string, _ *querytypes.PageRequest) (*types.QuerySigningInfoResponse, error) {
+func (cc *ChainClient) QuerySlashingSigningInfo(publicKey string) (*types.QuerySigningInfoResponse, error) {
 	var pk cryptotypes.PubKey
 	if err := cc.Codec.Marshaler.UnmarshalInterfaceJSON([]byte(publicKey), &pk); err != nil {
 		return nil, err
