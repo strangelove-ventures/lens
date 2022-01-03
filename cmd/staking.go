@@ -118,7 +118,6 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 			}
 
 			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg))
-
 		},
 	}
 
@@ -126,5 +125,3 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 
 	return cmd
 }
-
-// withdraw-rewards command
