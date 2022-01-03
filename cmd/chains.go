@@ -233,10 +233,9 @@ an editor in your path that can be called using $LENS_EDITOR <file-path>.`,
 				return err
 			}
 
-			editor := os.Getenv("LENS_EDITOR")
-			if editor == "" {
-				editor = os.Getenv("EDITOR") // Should hold system default
-				if editor == "" {
+			if editor := os.Getenv("LENS_EDITOR"); editor == "" {
+				// 'EDITOR' should hold the system default
+				if editor = os.Getenv("EDITOR"); editor == "" {
 					editor = "vi"
 				}
 			}
