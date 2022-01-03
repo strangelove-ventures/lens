@@ -53,15 +53,6 @@ func feegrantQueryGrantsCmd() *cobra.Command {
 				return err
 			}
 
-			// FIXME: if anyone can tell me why JSON output without this doesn't work gets a 5 OSMO tip
-			// FIXME: seems like there should be no side effects with using the MarshalProto function, but thats not the
-			for grant := range grants {
-				_, err := cl.MarshalProto(grants[grant])
-				if err != nil {
-					return err
-				}
-			}
-
 			return cl.PrintObject(grants)
 		},
 	}
@@ -116,24 +107,25 @@ func feegrantQueryGrantCmd() *cobra.Command {
 
 func feegrantFeeGrantCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "grant grantee",
+		Use:   "grant grantee [granter] spend-limit ",
 		Short: "Grant fee allowance to an address",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.RangeArgs(1, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
-				granterAddr sdk.AccAddress
-				granteeAddr sdk.AccAddress
+				granterAddr types.AccAddress
+				granteeAddr types.AccAddress
 				err         error
 			)
 
 			cl := config.GetDefaultClient()
-			key, _ := cmd.Flags().GetString(FlagFrom)
-			granterAddr, err = cl.AccountFromKeyOrAddress(key)
+
+			granterAddr, err = cl.AccountFromKeyOrAddress(args[0])
+
 			if err != nil {
-				return err
+				return fmt.Errorf("did not find wallet %s", args[0])
 			}
 
-			granteeAddr, err = cl.DecodeBech32AccAddr(args[0])
+			granteeAddr, err = cl.DecodeBech32AccAddr(args[1])
 			if err != nil {
 				return err
 			}
