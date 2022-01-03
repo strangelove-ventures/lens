@@ -159,7 +159,7 @@ lens chains set-default <chain_name>
 Lens uses the keyring from the Cosmos-sdk. There is more information about it keyring [here](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/keyring/doc.go). To add a key to lens run:
 
 ``` 
-lens keys restore <key_name> '<mnemonic>'
+lens keys restore <key_name>
 ```
 
 After restoring a key, it should appear in your list by running: `lens keys list`, by default it will show the Cosmos Hub address. To see the key encoded for use on other chains run `lens keys enumerate <key_name>`. 
