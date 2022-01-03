@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/version"
 	govClient "github.com/cosmos/cosmos-sdk/x/gov/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
@@ -21,14 +19,12 @@ func getGovernanceProposalsCmd() *cobra.Command {
 		Use:   "proposals",
 		Short: "query things about a chain's proposals",
 		Long: strings.TrimSpace(
-			fmt.Sprintf(`Query for a paginated proposals that match optional filters:
+			`Query for a paginated proposals that match optional filters:
 Example:
-$ %s query gov proposals --depositor cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
-$ %s query gov proposals --voter cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
-$ %s query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
-$ %s query gov proposals --page=2 --limit=100
-`, version.AppName, version.AppName, version.AppName, version.AppName,
-			),
+$ lens query gov proposals --depositor cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
+$ lens query gov proposals --voter cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9nf39lk
+$ lens query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
+$ lens query gov proposals --page=2 --limit=100`,
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
