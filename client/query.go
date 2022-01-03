@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -9,6 +10,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	transfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 )
 
@@ -190,6 +192,25 @@ func (cc *ChainClient) QueryDistributionValidatorRewards(validatorAddress string
 	}
 
 	return &res.Rewards, nil
+}
+
+func (cc *ChainClient) QueryGovernanceProposals(proposalStatus govTypes.ProposalStatus, voter string, depositor string, pageReq *querytypes.PageRequest) ([]govTypes.Proposal, error) {
+	request := govTypes.QueryProposalsRequest{
+		ProposalStatus: proposalStatus,
+		Voter:          voter,
+		Depositor:      depositor,
+		Pagination:     pageReq,
+	}
+
+	res, err := govTypes.NewQueryClient(cc).Proposals(context.Background(), &request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("%v\n", res.Proposals)
+
+	return res.Proposals, nil
 }
 
 func DefaultPageRequest() *querytypes.PageRequest {

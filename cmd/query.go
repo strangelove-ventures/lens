@@ -16,6 +16,7 @@ func queryCmd() *cobra.Command {
 		authQueryCmd(),
 		bankQueryCmd(),
 		distributionQueryCmd(),
+		governanceQueryCmd(),
 	)
 
 	return cmd
@@ -67,6 +68,20 @@ func distributionQueryCmd() *cobra.Command {
 		getDistributionRewardsCmd(),
 		getDistributionSlashesCmd(),
 		getDistributionValidatorRewardsCmd(),
+	)
+
+	return cmd
+}
+
+func governanceQueryCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "governance",
+		Aliases: []string{"gov", "govern", "g"},
+		Short:   "Query things about a chain's governance module",
+	}
+
+	cmd.AddCommand(
+		getGovernanceProposalsCmd(),
 	)
 
 	return cmd
