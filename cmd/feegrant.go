@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -96,8 +95,6 @@ func feegrantQueryGrantCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("did not find wallet %s", keyNameOrAddress)
 			}
-
-			fmt.Println(args[0])
 
 			granteeAddr, err = cl.DecodeBech32AccAddr(args[0])
 			if err != nil {
@@ -251,7 +248,6 @@ func feegrantRevokeFeeGrantCmd() *cobra.Command {
 		Short: "Grant fee allowance to an address",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("a")
 			var (
 				granterAddr sdk.AccAddress
 				granteeAddr sdk.AccAddress
@@ -271,7 +267,6 @@ func feegrantRevokeFeeGrantCmd() *cobra.Command {
 			}
 
 			msg := feegrant.NewMsgRevokeAllowance(granterAddr, granteeAddr)
-			fmt.Println(reflect.TypeOf(msg))
 
 			// sends tx but fails due to gas
 
