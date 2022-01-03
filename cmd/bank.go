@@ -83,16 +83,12 @@ func bankBalanceCmd() *cobra.Command {
 
 func bankTotalSupplyCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "total-supply [denom]?",
+		Use:     "total-supply",
 		Aliases: []string{"totalsupply", "tot", "ts", "totsupplys"},
 		Short:   "query the total supply of coins",
-		Args:    cobra.RangeArgs(0, 1),
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			denom := ""
-			if len(args) == 1 {
-				denom = args[0]
-			}
 			pageReq, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
@@ -106,6 +102,25 @@ func bankTotalSupplyCmd() *cobra.Command {
 	}
 	return cmd
 }
-func bankDenomsMetadataCmd() *cobra.Command {
 
+func bankDenomsMetadataCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "denoms-metadata",
+		Aliases: []string{"denoms", "d"},
+		Short:   "query the denoms metadata",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
+			pageReq, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			denoms, err := cl.QueryDenomsMetadata(cmd.Context(), pageReq)
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(denoms)
+		},
+	}
+	return cmd
 }

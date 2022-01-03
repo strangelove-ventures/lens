@@ -50,7 +50,7 @@ $ lens tx withdraw-rewards --from mykey --all
 
 			if all, _ := cmd.Flags().GetBool(FlagAll); all {
 
-				validators, err := cl.QueryDelegatorValidators(delAddr)
+				validators, err := cl.QueryDelegatorValidators(cmd.Context(), delAddr)
 				if err != nil {
 					return err
 				}
@@ -97,7 +97,7 @@ func distributionParamsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 
-			params, err := cl.QueryDistributionParams()
+			params, err := cl.QueryDistributionParams(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -116,7 +116,7 @@ func distributionCommunityPoolCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 
-			pool, err := cl.QueryDistributionCommunityPool()
+			pool, err := cl.QueryDistributionCommunityPool(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -139,12 +139,12 @@ func distributionCommissionCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-      
-			commission, err := cl.QueryDistributionCommission(address)
+
+			commission, err := cl.QueryDistributionCommission(cmd.Context(), address)
 			if err != nil {
 				return err
 			}
-      
+
 			return cl.PrintObject(commission)
 		},
 	}
@@ -169,7 +169,7 @@ func distributionRewardsCmd() *cobra.Command {
 				return err
 			}
 
-			rewards, err := cl.QueryDistributionRewards(delAddr, valAddr)
+			rewards, err := cl.QueryDistributionRewards(cmd.Context(), delAddr, valAddr)
 			if err != nil {
 				return err
 			}
@@ -209,7 +209,7 @@ func distributionSlashesCmd() *cobra.Command {
 				return err
 			}
 
-			slashes, err := cl.QueryDistributionSlashes(address, startHeight, endHeight, pageReq)
+			slashes, err := cl.QueryDistributionSlashes(cmd.Context(), address, startHeight, endHeight, pageReq)
 			if err != nil {
 				return err
 			}
@@ -234,7 +234,7 @@ func distributionValidatorRewardsCmd() *cobra.Command {
 				return err
 			}
 
-			rewards, err := cl.QueryDistributionValidatorRewards(address)
+			rewards, err := cl.QueryDistributionValidatorRewards(cmd.Context(), address)
 			if err != nil {
 				return err
 			}

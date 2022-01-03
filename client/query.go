@@ -201,6 +201,10 @@ func (cc *ChainClient) QueryTotalSupply(ctx context.Context, pageReq *query.Page
 	return bankTypes.NewQueryClient(cc).TotalSupply(ctx, &bankTypes.QueryTotalSupplyRequest{Pagination: pageReq})
 }
 
+func (cc *ChainClient) QueryDenomsMetadata(ctx context.Context, pageReq *query.PageRequest) (*bankTypes.QueryDenomsMetadataResponse, error) {
+	return bankTypes.NewQueryClient(cc).DenomsMetadata(ctx, &bankTypes.QueryDenomsMetadataRequest{Pagination: pageReq})
+}
+
 func DefaultPageRequest() *querytypes.PageRequest {
 	return &querytypes.PageRequest{
 		Key:        []byte(""),

@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/client"
 )
 
 // crosschainCmd represents the command to get balances across chains
@@ -82,7 +83,7 @@ func getEnabledChainbalancesCmd() *cobra.Command {
 			// end: copied from bank.go
 			for _, chain := range enabledChains {
 				cl := config.GetClient(chain)
-				balance, err := cl.QueryBalance(address, false)
+				balance, err := cl.QueryBalanceWithDenomTraces(cmd.Context(), address, client.DefaultPageRequest())
 				if err != nil {
 					return err
 				}
