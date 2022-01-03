@@ -1,16 +1,15 @@
 package cmd
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"os/exec"
 	"path"
 	"strconv"
-	"strings"
-	"time"
 
-	"github.com/google/go-github/github"
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/internal/chain_registry"
 )
 
 func chainsCmd() *cobra.Command {
@@ -29,6 +28,7 @@ func chainsCmd() *cobra.Command {
 		cmdChainsSetDefault(),
 		cmdChainsRegistryList(),
 		cmdChainsShowDefault(),
+		cmdChainsEditorDefault(),
 	)
 
 	return cmd
@@ -41,42 +41,14 @@ func cmdChainsRegistryList() *cobra.Command {
 		Aliases: []string{"rl"},
 		Short:   "list chains available for configuration from the registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chains, err := fetchRegistryChains(cmd.Context())
+			chains, err := chain_registry.DefaultChainRegistry().ListChains()
 			if err != nil {
 				return err
 			}
-			bz, err := json.Marshal(chains)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
+			return config.GetDefaultClient().PrintObject(chains)
 		},
 	}
 	return cmd
-}
-
-func fetchRegistryChains(ctx context.Context) ([]string, error) {
-	chains := []string{}
-	tree, res, err := github.NewClient(nil).Git.GetTree(ctx, "cosmos", "chain-registry", "master", true)
-	if err != nil || res.StatusCode != 200 {
-		return chains, err
-	}
-	for _, entry := range tree.Entries {
-		if *entry.Type == "tree" && !strings.Contains(*entry.Path, ".github") {
-			chains = append(chains, *entry.Path)
-		}
-	}
-	return chains, nil
-}
-
-func isStringInSlice(chain string, chains []string) bool {
-	for _, c := range chains {
-		if c == chain {
-			return true
-		}
-	}
-	return false
 }
 
 func cmdChainsAdd() *cobra.Command {
@@ -84,29 +56,44 @@ func cmdChainsAdd() *cobra.Command {
 		Use:     "add [[chain-name]]",
 		Args:    cobra.MinimumNArgs(1),
 		Aliases: []string{"a"},
-		Short:   "add configraion for a chain or a number of chains from the chain registry",
+		Short:   "add configuration for a chain or a number of chains from the chain registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
-			defer cancel()
-			// get the chains from the registry for validation
-			chainNames, err := fetchRegistryChains(ctxWithTimeout)
+			registry := chain_registry.DefaultChainRegistry()
+			allChains, err := registry.ListChains()
 			if err != nil {
 				return err
 			}
-			debug, _ := cmd.Flags().GetBool("debug")
-			home, _ := cmd.Flags().GetString("home")
+
 			for _, chain := range args {
-				if !isStringInSlice(chain, chainNames) {
-					return fmt.Errorf("chain %s not found in the registry", chain)
+
+				found := false
+				for _, possibleChain := range allChains {
+					if chain == possibleChain {
+						found = true
+					}
 				}
-				ch, err := getChainConfigFromRegistry(chain, path.Join(home, "keys"), debug)
+
+				if !found {
+					log.Printf("unable to find chain %s in %s", chain, registry.SourceLink())
+					continue
+				}
+
+				chainInfo, err := registry.GetChain(chain)
 				if err != nil {
-					return err
+					log.Printf("error getting chain: %s", err)
+					continue
 				}
-				config.Chains[chain] = ch
+
+				chainConfig, err := chainInfo.GetChainConfig()
+				if err != nil {
+					log.Printf("error generating chain config: %s", err)
+					continue
+				}
+
+				config.Chains[chain] = chainConfig
 			}
-			return overwriteConfig(home, config)
+
+			return overwriteConfig(config)
 		},
 	}
 	return cmd
@@ -119,11 +106,10 @@ func cmdChainsDelete() *cobra.Command {
 		Short:   "delete a chain from the configuration",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			home, _ := cmd.Flags().GetString("home")
 			for _, arg := range args {
 				delete(config.Chains, arg)
 			}
-			return overwriteConfig(home, config)
+			return overwriteConfig(config)
 		},
 	}
 	return cmd
@@ -136,7 +122,6 @@ func cmdChainsEdit() *cobra.Command {
 		Short:   "edit a chain configuration value",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			home, _ := cmd.Flags().GetString("home")
 			if _, ok := config.Chains[args[0]]; !ok {
 				return fmt.Errorf("chain %s not found in configuration", args[0])
 			}
@@ -170,7 +155,7 @@ func cmdChainsEdit() *cobra.Command {
 			default:
 				return fmt.Errorf("unknown key %s, try 'key', 'chain-id', 'rpc-addr', 'grpc-addr', 'account-prefix', 'gas-adjustment', 'gas-prices', 'debug', or 'timeout'", args[1])
 			}
-			return overwriteConfig(home, config)
+			return overwriteConfig(config)
 		},
 	}
 	return cmd
@@ -183,12 +168,7 @@ func cmdChainsList() *cobra.Command {
 		Short:   "List all chains in the configuration",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			bz, err := json.Marshal(config.Chains)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
+			return config.GetDefaultClient().PrintObject(config.Chains)
 		},
 	}
 	return cmd
@@ -201,16 +181,11 @@ func cmdChainsShow() *cobra.Command {
 		Short:   "show an individual chain configuration",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ch, ok := config.Chains[args[0]]
-			if !ok {
-				return fmt.Errorf("chain %s not found", args[0])
+			if ch, ok := config.Chains[args[0]]; ok {
+				return config.GetDefaultClient().PrintObject(ch)
+
 			}
-			bz, err := json.Marshal(ch)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
+			return fmt.Errorf("chain %s not found", args[0])
 		},
 	}
 	return cmd
@@ -223,13 +198,11 @@ func cmdChainsSetDefault() *cobra.Command {
 		Short:   "set the default chain",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			home, _ := cmd.Flags().GetString("home")
-			_, ok := config.Chains[args[0]]
-			if !ok {
-				return fmt.Errorf("chain %s not found", args[0])
+			if _, ok := config.Chains[args[0]]; ok {
+				config.DefaultChain = args[0]
+				return overwriteConfig(config)
 			}
-			config.DefaultChain = args[0]
-			return overwriteConfig(home, config)
+			return fmt.Errorf("chain %s not found", args[0])
 		},
 	}
 	return cmd
@@ -242,8 +215,38 @@ func cmdChainsShowDefault() *cobra.Command {
 		Short:   "show the configured default chain",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println(config.DefaultChain)
-			return nil
+			return config.GetDefaultClient().PrintObject(config.DefaultChain)
+		},
+	}
+	return cmd
+}
+
+func cmdChainsEditorDefault() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "editor",
+		Short: "Open Lens configuration in an editor",
+		Long: `Open Lens configuration in an editor. By default, command will spawn a vim window. You can 
+override the editor using the environment variable LENS_EDITOR. Please ensure $LENS_EDITOR points to 
+an editor in your path that can be called using $LENS_EDITOR <file-path>.`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			home, err := cmd.Flags().GetString("home")
+			if err != nil {
+				return err
+			}
+
+			editor := os.Getenv("LENS_EDITOR")
+			if editor == "" {
+				editor = os.Getenv("EDITOR") // Should hold system default
+				if editor == "" {
+					editor = "vi"
+				}
+			}
+
+			c := exec.Command(editor, path.Join(home, "config.yaml"))
+			c.Stdin = os.Stdin
+			c.Stdout = os.Stdout
+			return c.Run()
 		},
 	}
 	return cmd
