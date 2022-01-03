@@ -14,7 +14,7 @@ BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
 build:
 	@echo "Building 20/20 vision"
-	@go build $(BUILD_FLAGS) -o build/lens main.go
+	@go build -mod readonly $(BUILD_FLAGS) -o build/lens main.go
 
 install:
 	@echo "Installing Lens"
