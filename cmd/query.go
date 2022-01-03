@@ -51,7 +51,7 @@ func authzQueryCmd() *cobra.Command {
 		Short:   "Querying commands for the auth module",
 	}
 
-	// cmd.AddCommand(authzQueryGrants())
+	cmd.AddCommand(authzQueryGrants())
 
 	return cmd
 }
@@ -66,8 +66,8 @@ func bankQueryCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		bankBalanceCmd(),
-		// bankTotalSupplyCmd(),
-		// bankDenomsMetadataCmd(),
+		bankTotalSupplyCmd(),
+		bankDenomsMetadataCmd(),
 	)
 
 	return cmd

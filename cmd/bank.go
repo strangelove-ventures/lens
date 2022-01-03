@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/client"
 )
 
 func bankSendCmd() *cobra.Command {
@@ -70,7 +71,7 @@ func bankBalanceCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			balance, err := cl.QueryBalance(address, false)
+			balance, err := cl.QueryBalanceWithDenomTraces(cmd.Context(), address, client.DefaultPageRequest())
 			if err != nil {
 				return err
 			}
@@ -78,4 +79,33 @@ func bankBalanceCmd() *cobra.Command {
 		},
 	}
 	return cmd
+}
+
+func bankTotalSupplyCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "total-supply [denom]?",
+		Aliases: []string{"totalsupply", "tot", "ts", "totsupplys"},
+		Short:   "query the total supply of coins",
+		Args:    cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
+			denom := ""
+			if len(args) == 1 {
+				denom = args[0]
+			}
+			pageReq, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			totalSupply, err := cl.QueryTotalSupply(cmd.Context(), pageReq)
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(totalSupply)
+		},
+	}
+	return cmd
+}
+func bankDenomsMetadataCmd() *cobra.Command {
+
 }

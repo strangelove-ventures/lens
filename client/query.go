@@ -13,13 +13,13 @@ import (
 )
 
 // QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
-func (cc *ChainClient) QueryBalanceWithAddress(address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
+func (cc *ChainClient) QueryBalanceWithAddress(ctx context.Context, address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
 	addr, err := cc.EncodeBech32AccAddr(address)
 	if err != nil {
 		return nil, err
 	}
 	params := &bankTypes.QueryAllBalancesRequest{Address: addr, Pagination: pageReq}
-	res, err := bankTypes.NewQueryClient(cc).AllBalances(context.Background(), params)
+	res, err := bankTypes.NewQueryClient(cc).AllBalances(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -59,15 +59,11 @@ func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI,
 	return acc, nil
 }
 
-// QueryBalance is a helper function for query balance
-func (cc *ChainClient) QueryBalance(address sdk.AccAddress, showDenoms bool) (sdk.Coins, error) {
-	coins, err := cc.QueryBalanceWithAddress(address, DefaultPageRequest())
+// QueryBalanceWithDenomTraces is a helper function for query balance
+func (cc *ChainClient) QueryBalanceWithDenomTraces(ctx context.Context, address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
+	coins, err := cc.QueryBalanceWithAddress(ctx, address, pageReq)
 	if err != nil {
 		return nil, err
-	}
-
-	if showDenoms {
-		return coins, nil
 	}
 
 	h, err := cc.QueryLatestHeight()
@@ -75,7 +71,11 @@ func (cc *ChainClient) QueryBalance(address sdk.AccAddress, showDenoms bool) (sd
 		return nil, err
 	}
 
-	dts, err := cc.QueryDenomTraces(DefaultPageRequest(), h)
+	// TODO: figure out how to handle this
+	// we don't want to expose user to this
+	// so maybe we need a QueryAllDenomTraces function
+	// that will paginate the responses automatically
+	dts, err := cc.QueryDenomTraces(pageReq, h)
 	if err != nil {
 		return nil, err
 	}
@@ -104,9 +104,9 @@ func (cc *ChainClient) QueryBalance(address sdk.AccAddress, showDenoms bool) (sd
 	return out, nil
 }
 
-func (cc *ChainClient) QueryDelegatorValidators(address sdk.AccAddress) ([]string, error) {
-	res, err := distTypes.NewQueryClient(cc).DelegatorValidators(context.Background(), &distTypes.QueryDelegatorValidatorsRequest{
-		DelegatorAddress: address.String(),
+func (cc *ChainClient) QueryDelegatorValidators(ctx context.Context, address sdk.AccAddress) ([]string, error) {
+	res, err := distTypes.NewQueryClient(cc).DelegatorValidators(ctx, &distTypes.QueryDelegatorValidatorsRequest{
+		DelegatorAddress: cc.MustEncodeAccAddr(address),
 	})
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (cc *ChainClient) QueryDelegatorValidators(address sdk.AccAddress) ([]strin
 	return res.Validators, nil
 }
 
-func (cc *ChainClient) QueryDistributionCommission(address sdk.ValAddress) (*distTypes.ValidatorAccumulatedCommission, error) {
+func (cc *ChainClient) QueryDistributionCommission(ctx context.Context, address sdk.ValAddress) (sdk.DecCoins, error) {
 	valAddr, err := cc.EncodeBech32ValAddr(address)
 	if err != nil {
 		return nil, err
@@ -122,37 +122,30 @@ func (cc *ChainClient) QueryDistributionCommission(address sdk.ValAddress) (*dis
 	request := distTypes.QueryValidatorCommissionRequest{
 		ValidatorAddress: valAddr,
 	}
-	res, err := distTypes.NewQueryClient(cc).ValidatorCommission(context.Background(), &request)
-
+	res, err := distTypes.NewQueryClient(cc).ValidatorCommission(ctx, &request)
 	if err != nil {
 		return nil, err
 	}
-
-	return &res.Commission, nil
+	return res.Commission.Commission, nil
 }
 
-func (cc *ChainClient) QueryDistributionCommunityPool() (sdk.DecCoins, error) {
-	request := distTypes.QueryCommunityPoolRequest{}
-
-	res, err := distTypes.NewQueryClient(cc).CommunityPool(context.Background(), &request)
-
+func (cc *ChainClient) QueryDistributionCommunityPool(ctx context.Context) (sdk.DecCoins, error) {
+	res, err := distTypes.NewQueryClient(cc).CommunityPool(ctx, &distTypes.QueryCommunityPoolRequest{})
 	if err != nil {
 		return nil, err
 	}
-
 	return res.Pool, err
 }
 
-func (cc *ChainClient) QueryDistributionParams() (*distTypes.Params, error) {
-	res, err := distTypes.NewQueryClient(cc).Params(context.Background(), &distTypes.QueryParamsRequest{})
+func (cc *ChainClient) QueryDistributionParams(ctx context.Context) (*distTypes.Params, error) {
+	res, err := distTypes.NewQueryClient(cc).Params(ctx, &distTypes.QueryParamsRequest{})
 	if err != nil {
 		return nil, err
 	}
-
 	return &res.Params, nil
 }
 
-func (cc *ChainClient) QueryDistributionRewards(delegatorAddress sdk.AccAddress, validatorAddress sdk.ValAddress) (sdk.DecCoins, error) {
+func (cc *ChainClient) QueryDistributionRewards(ctx context.Context, delegatorAddress sdk.AccAddress, validatorAddress sdk.ValAddress) (sdk.DecCoins, error) {
 	delAddr, err := cc.EncodeBech32AccAddr(delegatorAddress)
 	if err != nil {
 		return nil, err
@@ -165,16 +158,15 @@ func (cc *ChainClient) QueryDistributionRewards(delegatorAddress sdk.AccAddress,
 		DelegatorAddress: delAddr,
 		ValidatorAddress: valAddr,
 	}
-	res, err := distTypes.NewQueryClient(cc).DelegationRewards(context.Background(), &request)
-
+	res, err := distTypes.NewQueryClient(cc).DelegationRewards(ctx, &request)
 	if err != nil {
 		return nil, err
 	}
-
 	return res.Rewards, nil
 }
 
-func (cc *ChainClient) QueryDistributionSlashes(validatorAddress sdk.ValAddress, startHeight, endHeight uint64, pageReq *querytypes.PageRequest) ([]distTypes.ValidatorSlashEvent, error) {
+// QueryDistributionSlashes returns all slashes of a validator, optionally pass the start and end height
+func (cc *ChainClient) QueryDistributionSlashes(ctx context.Context, validatorAddress sdk.ValAddress, startHeight, endHeight uint64, pageReq *querytypes.PageRequest) (*distTypes.QueryValidatorSlashesResponse, error) {
 	valAddr, err := cc.EncodeBech32ValAddr(validatorAddress)
 	if err != nil {
 		return nil, err
@@ -185,16 +177,11 @@ func (cc *ChainClient) QueryDistributionSlashes(validatorAddress sdk.ValAddress,
 		EndingHeight:     endHeight,
 		Pagination:       pageReq,
 	}
-
-	res, err := distTypes.NewQueryClient(cc).ValidatorSlashes(context.Background(), &request)
-	if err != nil {
-		return nil, err
-	}
-
-	return res.Slashes, nil
+	return distTypes.NewQueryClient(cc).ValidatorSlashes(ctx, &request)
 }
 
-func (cc *ChainClient) QueryDistributionValidatorRewards(validatorAddress sdk.ValAddress) (*distTypes.ValidatorOutstandingRewards, error) {
+// QueryDistributionValidatorRewards returns all the validator distribution rewards from a given height
+func (cc *ChainClient) QueryDistributionValidatorRewards(ctx context.Context, validatorAddress sdk.ValAddress) (sdk.DecCoins, error) {
 	valAddr, err := cc.EncodeBech32ValAddr(validatorAddress)
 	if err != nil {
 		return nil, err
@@ -202,14 +189,16 @@ func (cc *ChainClient) QueryDistributionValidatorRewards(validatorAddress sdk.Va
 	request := distTypes.QueryValidatorOutstandingRewardsRequest{
 		ValidatorAddress: valAddr,
 	}
-
-	res, err := distTypes.NewQueryClient(cc).ValidatorOutstandingRewards(context.Background(), &request)
-
+	res, err := distTypes.NewQueryClient(cc).ValidatorOutstandingRewards(ctx, &request)
 	if err != nil {
 		return nil, err
 	}
+	return res.Rewards.Rewards, nil
+}
 
-	return &res.Rewards, nil
+// QueryTotalSupply returns the total supply of coins on a chain
+func (cc *ChainClient) QueryTotalSupply(ctx context.Context, pageReq *query.PageRequest) (*bankTypes.QueryTotalSupplyResponse, error) {
+	return bankTypes.NewQueryClient(cc).TotalSupply(ctx, &bankTypes.QueryTotalSupplyRequest{Pagination: pageReq})
 }
 
 func DefaultPageRequest() *querytypes.PageRequest {

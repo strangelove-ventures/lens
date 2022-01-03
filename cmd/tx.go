@@ -30,9 +30,10 @@ func authTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "auth",
 		Aliases: []string{"a"},
-		Short:   "auth things",
+		Short:   "auth transaction commands",
 	}
 
+	// TODO: do we need this? I don't know if we do.
 	// cmd.AddCommand(authSignTxCmd())
 
 	return cmd
@@ -43,14 +44,14 @@ func authzTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "authz",
 		Aliases: []string{"az"},
-		Short:   "authz things",
+		Short:   "authz transaction commands",
 	}
 
-	// cmd.AddCommand(
-	// 	authzGrantAuthorization(),
-	// 	authzRevokeAuthorization(),
-	// 	authzExecAuthorization(),
-	// )
+	cmd.AddCommand(
+		authzGrantAuthorizationCmd(),
+		authzRevokeAuthorizationCmd(),
+		authzExecAuthorizationCmd(),
+	)
 
 	return cmd
 }
@@ -60,7 +61,7 @@ func bankTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "bank",
 		Aliases: []string{"b", "bnk"},
-		Short:   "bank things",
+		Short:   "bank transaction commands",
 	}
 
 	cmd.AddCommand(bankSendCmd())
@@ -73,7 +74,7 @@ func distributionTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "distribution",
 		Aliases: []string{"dist", "distr", "d"},
-		Short:   "distribution things",
+		Short:   "distribution transaction commands",
 	}
 
 	cmd.AddCommand(
@@ -90,7 +91,7 @@ func feegrantTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "feegrant",
 		Aliases: []string{"f", "fee"},
-		Short:   "fee grant things",
+		Short:   "fee grant transaction commands",
 	}
 
 	cmd.AddCommand(
@@ -106,7 +107,7 @@ func stakingTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "staking",
 		Aliases: []string{"stake", "stk"},
-		Short:   "staking things",
+		Short:   "staking transaction commands",
 	}
 
 	cmd.AddCommand(
@@ -125,7 +126,7 @@ func govTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "governance",
 		Aliases: []string{"gov", "g"},
-		Short:   "governance things",
+		Short:   "governance transaction commands",
 	}
 
 	cmd.AddCommand(
@@ -143,7 +144,7 @@ func slashingTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "slashing",
 		Aliases: []string{"sl", "slash"},
-		Short:   "slashing things",
+		Short:   "slashing transaction commands",
 	}
 
 	cmd.AddCommand(
