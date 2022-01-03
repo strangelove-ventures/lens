@@ -101,7 +101,7 @@ func (cc *ChainClient) PrintObject(res interface{}) error {
 		if err != nil {
 			return err
 		}
-	case "json-indent":
+	case "indent":
 		if m, ok := res.(proto.Message); ok {
 			bz, err = cc.MarshalProto(m)
 			if err != nil {

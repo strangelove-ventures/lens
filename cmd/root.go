@@ -62,7 +62,7 @@ func NewRootCmd() *cobra.Command {
 		panic(err)
 	}
 
-	rootCmd.PersistentFlags().StringP("output", "o", "json", "output format (json, json-indent, yaml)")
+	rootCmd.PersistentFlags().StringP("output", "o", "json", "output format (json, indent, yaml)")
 	if err := viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output")); err != nil {
 		panic(err)
 	}
