@@ -3,6 +3,9 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
+	"path"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -25,6 +28,7 @@ func chainsCmd() *cobra.Command {
 		cmdChainsSetDefault(),
 		cmdChainsRegistryList(),
 		cmdChainsShowDefault(),
+		cmdChainsEditorDefault(),
 	)
 
 	return cmd
@@ -195,7 +199,6 @@ func cmdChainsSetDefault() *cobra.Command {
 			if _, ok := config.Chains[args[0]]; ok {
 				config.DefaultChain = args[0]
 				return overwriteConfig(config)
-
 			}
 			return fmt.Errorf("chain %s not found", args[0])
 		},
@@ -211,6 +214,35 @@ func cmdChainsShowDefault() *cobra.Command {
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return config.GetDefaultClient().PrintObject(config.DefaultChain)
+		},
+	}
+	return cmd
+}
+
+func cmdChainsEditorDefault() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "editor",
+		Short: "Open Lens configuration in an editor",
+		Long: `Open Lens configuration in an editor. By default, command will spawn a vim window. You can 
+override the editor using the environment variable LENS_EDITOR. Please ensure $LENS_EDITOR points to 
+an editor in your path that can be called using $LENS_EDITOR <file-path>.
+`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			home, err := cmd.Flags().GetString("home")
+			if err != nil {
+				return err
+			}
+
+			editor := os.Getenv("LENS_EDITOR")
+			if editor == "" {
+				editor = "vim"
+			}
+
+			c := exec.Command(editor, path.Join(home, "config.yaml"))
+			c.Stdin = os.Stdin
+			c.Stdout = os.Stdout
+			return c.Run()
 		},
 	}
 	return cmd
