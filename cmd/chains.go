@@ -225,8 +225,7 @@ func cmdChainsEditorDefault() *cobra.Command {
 		Short: "Open Lens configuration in an editor",
 		Long: `Open Lens configuration in an editor. By default, command will spawn a vim window. You can 
 override the editor using the environment variable LENS_EDITOR. Please ensure $LENS_EDITOR points to 
-an editor in your path that can be called using $LENS_EDITOR <file-path>.
-`,
+an editor in your path that can be called using $LENS_EDITOR <file-path>.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			home, err := cmd.Flags().GetString("home")
