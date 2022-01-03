@@ -103,36 +103,8 @@ func defaultConfig(keyHome string, debug bool) []byte {
 	return Config{
 		DefaultChain: "cosmoshub",
 		Chains: map[string]*client.ChainClientConfig{
-			"cosmoshub": {
-				Key:            "default",
-				ChainID:        "cosmoshub-4",
-				RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
-				GRPCAddr:       "https://gprc.cosmoshub-4.technofractal.com:443",
-				AccountPrefix:  "cosmos",
-				KeyringBackend: "test",
-				GasAdjustment:  1.2,
-				GasPrices:      "0.01uatom",
-				KeyDirectory:   keyHome,
-				Debug:          debug,
-				Timeout:        "20s",
-				OutputFormat:   "json",
-				SignModeStr:    "direct",
-			},
-			"osmosis": {
-				Key:            "default",
-				ChainID:        "osmosis-1",
-				RPCAddr:        "https://osmosis-1.technofractal.com:443",
-				GRPCAddr:       "https://gprc.osmosis-1.technofractal.com:443",
-				AccountPrefix:  "osmo",
-				KeyringBackend: "test",
-				GasAdjustment:  1.2,
-				GasPrices:      "0.01uosmo",
-				KeyDirectory:   keyHome,
-				Debug:          debug,
-				Timeout:        "20s",
-				OutputFormat:   "json",
-				SignModeStr:    "direct",
-			},
+			"cosmoshub": client.GetCosmosHubConfig(keyHome, debug),
+			"osmosis": client.GetOsmosisConfig(keyHome, debug),
 		},
 	}.MustYAML()
 }
