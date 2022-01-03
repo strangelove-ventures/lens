@@ -94,8 +94,8 @@ func feegrantTxCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-	// feegrantFeeGrantCmd(),
-	// feegrantRevoteFeeGrantCmd(),
+		feegrantFeeGrantCmd(),
+		feegrantRevokeFeeGrantCmd(),
 	)
 
 	return cmd

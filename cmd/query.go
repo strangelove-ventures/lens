@@ -102,8 +102,8 @@ func feegrantQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-	// feegrantGrantsCmd(),
-	// feegrantFeeGrantsCmd(),
+		feegrantQueryGrantCmd(),
+		feegrantQueryGrantsCmd(),
 	)
 
 	return cmd
