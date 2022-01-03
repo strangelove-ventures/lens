@@ -5,10 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	FlagProposals = "proposals"
-)
-
 func getGovernanceProposalsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "proposals",
@@ -25,11 +21,9 @@ func getGovernanceProposalsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			cl.PrintObject(params)
-
-			return nil
+			return cl.PrintObject(params)
 		},
 	}
 
-	return cmd
+	return paginationFlags(cmd)
 }
