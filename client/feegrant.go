@@ -8,7 +8,7 @@ import (
 	feetypes "github.com/cosmos/cosmos-sdk/x/feegrant"
 )
 
-func (cc *ChainClient) QueryFeeGrants(address sdk.AccAddress, pageReq *querytypes.PageRequest) ([]*feetypes.Grant, error) {
+func (cc *ChainClient) QueryFeeGrants(address sdk.AccAddress, pageReq *querytypes.PageRequest) (*feetypes.QueryAllowancesResponse, error) {
 	addr, err := cc.EncodeBech32AccAddr(address)
 	if err != nil {
 		return nil, err
@@ -25,10 +25,10 @@ func (cc *ChainClient) QueryFeeGrants(address sdk.AccAddress, pageReq *querytype
 		return nil, err
 	}
 
-	return res.GetAllowances(), nil
+	return res, nil
 }
 
-func (cc *ChainClient) QueryFeeGrant(granteeAddress sdk.AccAddress, granterAddress sdk.AccAddress) (*feetypes.Grant, error) {
+func (cc *ChainClient) QueryFeeGrant(granteeAddress sdk.AccAddress, granterAddress sdk.AccAddress) (*feetypes.QueryAllowanceResponse, error) {
 	granteeAddr, err := cc.EncodeBech32AccAddr(granteeAddress)
 	if err != nil {
 		return nil, err
@@ -50,5 +50,5 @@ func (cc *ChainClient) QueryFeeGrant(granteeAddress sdk.AccAddress, granterAddre
 		return nil, err
 	}
 
-	return res.Allowance, nil
+	return res, nil
 }
