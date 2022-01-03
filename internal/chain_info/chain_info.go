@@ -106,13 +106,13 @@ func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
 		endpoint := endpoint
 		eg.Go(func() error {
 			err := IsHealthyRPC(endpoint)
-			if err == nil {
-				log.Printf("verified healthy endpoint %s", endpoint)
-				endpoints = append(endpoints, endpoint)
+			if err != nil {
+				log.Printf("ignoring endpoint %s due to error %s", endpoint, err)
 				return nil
 			}
 
-			log.Printf("ignoring endpoint %s due to error %s", endpoint, err)
+			log.Printf("verified healthy endpoint %s", endpoint)
+			endpoints = append(endpoints, endpoint)
 			return nil
 		})
 	}
