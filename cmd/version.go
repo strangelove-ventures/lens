@@ -3,8 +3,11 @@ package cmd
 import (
 	"fmt"
 	dbg "runtime/debug"
+
 	"github.com/spf13/cobra"
 )
+
+var Version string
 
 func versionCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -23,8 +26,8 @@ func versionCmd() *cobra.Command {
 			fmt.Printf(`Lens: %s
 Cosmos SDK: %s
 Tendermint: %s
-`, 
-				bi.Main.Version,
+`,
+				Version,
 				dependencyVersions["github.com/cosmos/cosmos-sdk"],
 				dependencyVersions["github.com/tendermint/tendermint"],
 			)
