@@ -1,4 +1,4 @@
-project_name: Lens
+project_name: lens
 
 env:
   # Require use of Go modules.
