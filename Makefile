@@ -1,14 +1,10 @@
-VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
-SDKVERSION := $(shell go list -m -u -f '{{.Version}}' github.com/cosmos/cosmos-sdk)
-TMVERSION := $(shell go list -m -u -f '{{.Version}}' github.com/tendermint/tendermint)
+VERSION := $(shell git describe --tags)
 COMMIT  := $(shell git log -1 --format='%H')
 
 all: install
 
 LD_FLAGS = -X github.com/strangelove-ventures/lens/cmd.Version=$(VERSION) \
 	-X github.com/strangelove-ventures/lens/cmd.Commit=$(COMMIT) \
-	-X github.com/strangelove-ventures/lens/cmd.SDKVersion=$(SDKVERSION) \
-	-X github.com/strangelove-ventures/lens/cmd.TMVersion=$(TMVERSION)
 
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
