@@ -29,3 +29,44 @@ func (ccc *ChainClientConfig) Validate() error {
 	}
 	return nil
 }
+
+func GetCosmosHubConfig(keyHome string, debug bool) (*ChainClientConfig) {
+	return &ChainClientConfig{
+		Key:            "default",
+		ChainID:        "cosmoshub-4",
+		RPCAddr:        "https://cosmoshub-4.technofractal.com:443",
+		GRPCAddr:       "https://gprc.cosmoshub-4.technofractal.com:443",
+		AccountPrefix:  "cosmos",
+		KeyringBackend: "test",
+		GasAdjustment:  1.2,
+		GasPrices:      "0.01uatom",
+		KeyDirectory:   keyHome,
+		Debug:          debug,
+		Timeout:        "20s",
+		OutputFormat:   "json",
+		SignModeStr:    "direct",
+	}
+}
+
+func GetOsmosisConfig(keyHome string, debug bool) (*ChainClientConfig) {
+	return &ChainClientConfig{
+		Key:            "default",
+		ChainID:        "osmosis-1",
+		RPCAddr:        "https://osmosis-1.technofractal.com:443",
+		GRPCAddr:       "https://gprc.osmosis-1.technofractal.com:443",
+		AccountPrefix:  "osmo",
+		KeyringBackend: "test",
+		GasAdjustment:  1.2,
+		GasPrices:      "0.01uosmo",
+		KeyDirectory:   keyHome,
+		Debug:          debug,
+		Timeout:        "20s",
+		OutputFormat:   "json",
+		SignModeStr:    "direct",
+	}
+}
+
+func GetTestClient() (*ChainClient) {
+	cl, _ := NewChainClient(GetCosmosHubConfig("/tmp", true), nil, nil)
+	return cl
+}

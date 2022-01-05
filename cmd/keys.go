@@ -6,6 +6,7 @@ import (
 	"log"
 	"sort"
 	"strings"
+	"golang.org/x/crypto/ssh/terminal"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
@@ -87,13 +88,13 @@ $ %s k a ibc-2 testkey`, appName, appName, appName)),
 // keysRestoreCmd respresents the `keys add` command
 func keysRestoreCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "restore [name] [mnemonic]",
+		Use:     "restore [name]",
 		Aliases: []string{"r"},
 		Short:   "restores a mnemonic to the keychain associated with a particular chain",
-		Args:    cobra.ExactArgs(2),
+		Args:    cobra.ExactArgs(1),
 		Example: strings.TrimSpace(fmt.Sprintf(`
-$ %s keys restore ibc-0 testkey "[mnemonic-words]"
-$ %s k r ibc-1 faucet-key "[mnemonic-words]"`, appName, appName)),
+$ %s keys restore --chain ibc-0 testkey
+$ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 			keyName := args[0]
@@ -101,7 +102,11 @@ $ %s k r ibc-1 faucet-key "[mnemonic-words]"`, appName, appName)),
 				return errKeyExists(keyName)
 			}
 
-			address, err := cl.RestoreKey(keyName, args[1])
+			fmt.Print("Enter mnemonic 🔑: ")
+			mnemonic, _ := terminal.ReadPassword(0)
+			fmt.Println()
+
+			address, err := cl.RestoreKey(keyName, string(mnemonic))
 			if err != nil {
 				return err
 			}
