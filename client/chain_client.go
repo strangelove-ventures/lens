@@ -76,6 +76,16 @@ func (cc *ChainClient) PrintTxResponse(res *sdk.TxResponse) error {
 	return cc.PrintObject(res)
 }
 
+func (cc *ChainClient) HandleAndPrintMsgSend(res *sdk.TxResponse, err error) error {
+	if err != nil {
+		if res != nil {
+			return fmt.Errorf("failed to withdraw rewards: code(%d) msg(%s)", res.Code, res.Logs)
+		}
+		return fmt.Errorf("failed to withdraw rewards: err(%w)", err)
+	}
+	return cc.PrintTxResponse(res)
+}
+
 func (cc *ChainClient) PrintObject(res interface{}) error {
 	var (
 		bz  []byte
@@ -91,7 +101,7 @@ func (cc *ChainClient) PrintObject(res interface{}) error {
 		if err != nil {
 			return err
 		}
-	case "json-indent":
+	case "indent":
 		if m, ok := res.(proto.Message); ok {
 			bz, err = cc.MarshalProto(m)
 			if err != nil {
@@ -143,4 +153,19 @@ func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 		return nil, err
 	}
 	return rpcClient, nil
+}
+
+// AccountFromKeyOrAddress returns an account from either a key or an address
+// if empty string is passed in this returns the default key's address
+func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.AccAddress, err error) {
+	switch {
+	case keyOrAddress == "":
+		out, err = cc.GetKeyAddress()
+	case cc.KeyExists(keyOrAddress):
+		cc.Config.Key = keyOrAddress
+		out, err = cc.GetKeyAddress()
+	default:
+		out, err = cc.DecodeBech32AccAddr(keyOrAddress)
+	}
+	return
 }

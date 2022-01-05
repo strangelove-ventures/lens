@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 )
 
-func getAccountCmd() *cobra.Command {
+func authAccountCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "account [address]",
 		Aliases: []string{},
@@ -14,30 +13,18 @@ func getAccountCmd() *cobra.Command {
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			var (
-				keyNameOrAddress = ""
-				address          sdk.AccAddress
-				err              error
-			)
+			keyNameOrAddress := ""
 			if len(args) == 0 {
 				keyNameOrAddress = cl.Config.Key
 			} else {
 				keyNameOrAddress = args[0]
 			}
-			if cl.KeyExists(keyNameOrAddress) {
-				cl.Config.Key = keyNameOrAddress
-				address, err = cl.GetKeyAddress()
-			} else {
-				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)
-			}
+			address, err := cl.AccountFromKeyOrAddress(keyNameOrAddress)
 			if err != nil {
 				return err
 			}
-			addr, err := cl.EncodeBech32AccAddr(address)
-			if err != nil {
-				return err
-			}
-			res, err := authtypes.NewQueryClient(cl).Account(cmd.Context(), &authtypes.QueryAccountRequest{Address: addr})
+			req := &authtypes.QueryAccountRequest{Address: cl.MustEncodeAccAddr(address)}
+			res, err := authtypes.NewQueryClient(cl).Account(cmd.Context(), req)
 			if err != nil {
 				return err
 			}
@@ -46,7 +33,7 @@ func getAccountCmd() *cobra.Command {
 	}
 	return cmd
 }
-func getAccountsCmd() *cobra.Command {
+func authAccountsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "accounts",
 		Aliases: []string{},
@@ -58,7 +45,8 @@ func getAccountsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			res, err := authtypes.NewQueryClient(cl).Accounts(cmd.Context(), &authtypes.QueryAccountsRequest{Pagination: pr})
+			req := &authtypes.QueryAccountsRequest{Pagination: pr}
+			res, err := authtypes.NewQueryClient(cl).Accounts(cmd.Context(), req)
 			if err != nil {
 				return err
 			}
@@ -68,7 +56,7 @@ func getAccountsCmd() *cobra.Command {
 	return paginationFlags(cmd)
 }
 
-func getParamsCmd() *cobra.Command {
+func authParamsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "parameters",
 		Aliases: []string{"param", "params", "p"},

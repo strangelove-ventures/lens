@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 
@@ -45,7 +46,8 @@ func createConfig(home string, debug bool) error {
 	return nil
 }
 
-func overwriteConfig(home string, cfg *Config) error {
+func overwriteConfig(cfg *Config) error {
+	home := viper.GetString("home")
 	cfgPath := path.Join(home, "config.yaml")
 	f, err := os.Create(cfgPath)
 	if err != nil {
@@ -55,6 +57,8 @@ func overwriteConfig(home string, cfg *Config) error {
 	if _, err := f.Write(cfg.MustYAML()); err != nil {
 		return err
 	}
+
+	log.Printf("updated lens configuration at %s", cfgPath)
 	return nil
 }
 
@@ -165,7 +169,6 @@ func initConfig(cmd *cobra.Command) error {
 	}
 
 	// override chain if needed
-
 	if cmd.PersistentFlags().Changed("chain") {
 		defaultChain, err := cmd.PersistentFlags().GetString("chain")
 		if err != nil {
@@ -173,6 +176,18 @@ func initConfig(cmd *cobra.Command) error {
 		}
 
 		config.DefaultChain = defaultChain
+	}
+
+	if cmd.PersistentFlags().Changed("output") {
+		output, err := cmd.PersistentFlags().GetString("output")
+		if err != nil {
+			return err
+		}
+
+		// Should output be a global configuration item?
+		for chain, _ := range config.Chains {
+			config.Chains[chain].OutputFormat = output
+		}
 	}
 
 	// validate configuration

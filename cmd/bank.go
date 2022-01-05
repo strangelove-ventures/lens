@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/client"
 )
 
 func bankSendCmd() *cobra.Command {
@@ -15,18 +16,11 @@ func bankSendCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			var (
-				fromAddress sdk.AccAddress
-				err         error
-			)
-			if cl.KeyExists(args[0]) {
-				fromAddress, err = cl.GetKeyAddress()
-			} else {
-				fromAddress, err = cl.DecodeBech32AccAddr(args[0])
-			}
+			fromAddr, err := cl.AccountFromKeyOrAddress(args[0])
 			if err != nil {
 				return err
 			}
+
 			toAddr, err := cl.DecodeBech32AccAddr(args[1])
 			if err != nil {
 				return err
@@ -37,11 +31,14 @@ func bankSendCmd() *cobra.Command {
 				return err
 			}
 
-			from, _ := cl.EncodeBech32AccAddr(fromAddress)
-			to, _ := cl.EncodeBech32AccAddr(toAddr)
+			req := &banktypes.MsgSend{
+				FromAddress: cl.MustEncodeAccAddr(fromAddr),
+				ToAddress:   cl.MustEncodeAccAddr(toAddr),
+				Amount:      coins,
+			}
 
-			res, ok, err := cl.SendMsg(cmd.Context(), &banktypes.MsgSend{FromAddress: from, ToAddress: to, Amount: coins})
-			if err != nil || !ok {
+			res, err := cl.SendMsg(cmd.Context(), req)
+			if err != nil {
 				if res != nil {
 					return fmt.Errorf("failed to send coins: code(%d) msg(%s)", res.Code, res.Logs)
 				}
@@ -56,7 +53,7 @@ func bankSendCmd() *cobra.Command {
 
 // ========== Query Functions ==========
 
-func getBalanceCmd() *cobra.Command {
+func bankBalanceCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "balance [key-or-address]",
 		Aliases: []string{"bal", "b"},
@@ -64,30 +61,65 @@ func getBalanceCmd() *cobra.Command {
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			var (
-				keyNameOrAddress = ""
-				address          sdk.AccAddress
-				err              error
-			)
+			keyNameOrAddress := ""
 			if len(args) == 0 {
 				keyNameOrAddress = cl.Config.Key
 			} else {
 				keyNameOrAddress = args[0]
 			}
-			if cl.KeyExists(keyNameOrAddress) {
-				cl.Config.Key = keyNameOrAddress
-				address, err = cl.GetKeyAddress()
-			} else {
-				address, err = cl.DecodeBech32AccAddr(keyNameOrAddress)
-			}
+			address, err := cl.AccountFromKeyOrAddress(keyNameOrAddress)
 			if err != nil {
 				return err
 			}
-			balance, err := cl.QueryBalance(address, false)
+			balance, err := cl.QueryBalanceWithDenomTraces(cmd.Context(), address, client.DefaultPageRequest())
 			if err != nil {
 				return err
 			}
 			return cl.PrintObject(balance)
+		},
+	}
+	return cmd
+}
+
+func bankTotalSupplyCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "total-supply",
+		Aliases: []string{"totalsupply", "tot", "ts", "totsupplys"},
+		Short:   "query the total supply of coins",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
+			pageReq, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			totalSupply, err := cl.QueryTotalSupply(cmd.Context(), pageReq)
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(totalSupply)
+		},
+	}
+	return cmd
+}
+
+func bankDenomsMetadataCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "denoms-metadata",
+		Aliases: []string{"denoms", "d"},
+		Short:   "query the denoms metadata",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := config.GetDefaultClient()
+			pageReq, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			denoms, err := cl.QueryDenomsMetadata(cmd.Context(), pageReq)
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(denoms)
 		},
 	}
 	return cmd

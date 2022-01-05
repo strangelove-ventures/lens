@@ -41,7 +41,7 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 	return signMode
 }
 
-func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, bool, error) {
+func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
 	return cc.SendMsgs(ctx, []sdk.Msg{msg})
 }
 
@@ -50,10 +50,10 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxRespons
 // not return an error. If a transaction is successfully sent, the result of the execution
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
-func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxResponse, bool, error) {
+func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxResponse, error) {
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	// TODO: Make this work with new CalculateGas method
@@ -61,7 +61,7 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
 	_, adjusted, err := cc.CalculateGas(txf, msgs...)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	// Set the gas amount on the transaction factory
@@ -70,7 +70,7 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	// Build the transaction builder
 	txb, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	// Attach the signature to the transaction
@@ -82,30 +82,30 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 
 	done := cc.SetSDKContext()
 	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	done()
 
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	// Broadcast those bytes
 	res, err := cc.BroadcastTx(ctx, txBytes)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	// transaction was executed, log the success or failure using the tx response code
 	// NOTE: error is nil, logic should use the returned error to determine if the
 	// transaction was successfully executed.
 	if res.Code != 0 {
-		return res, false, nil
+		return res, fmt.Errorf("transaction failed with code: %d", res.Code)
 	}
 
-	return res, true, nil
+	return res, nil
 }
 
 func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {

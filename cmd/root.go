@@ -62,6 +62,11 @@ func NewRootCmd() *cobra.Command {
 		panic(err)
 	}
 
+	rootCmd.PersistentFlags().StringP("output", "o", "json", "output format (json, indent, yaml)")
+	if err := viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output")); err != nil {
+		panic(err)
+	}
+
 	rootCmd.PersistentFlags().StringVar(&overridenChain, "chain", "", "override default chain")
 	if err := viper.BindPFlag("chain", rootCmd.PersistentFlags().Lookup("chain")); err != nil {
 		panic(err)
@@ -72,6 +77,7 @@ func NewRootCmd() *cobra.Command {
 		keysCmd(),
 		queryCmd(),
 		tendermintCmd(),
+		crosschainCmd(),
 		txCmd(),
 		versionCmd(),
 	)

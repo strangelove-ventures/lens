@@ -15,7 +15,9 @@ limitations under the License.
 */
 package main
 
-import "github.com/strangelove-ventures/lens/cmd"
+import (
+	"github.com/strangelove-ventures/lens/cmd"
+)
 
 func main() {
 	cmd.Execute()
