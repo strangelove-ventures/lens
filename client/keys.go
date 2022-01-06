@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	"github.com/cosmos/relayer/v2/relayer/provider"
 	"os"
 
 	ckeys "github.com/cosmos/cosmos-sdk/client/keys"
@@ -28,7 +29,7 @@ func (cc *ChainClient) KeystoreCreated(path string) bool {
 	return true
 }
 
-func (cc *ChainClient) AddKey(name string) (output *KeyOutput, err error) {
+func (cc *ChainClient) AddKey(name string) (output *provider.KeyOutput, err error) {
 	ko, err := cc.KeyAddOrRestore(name, 118)
 	if err != nil {
 		return nil, err
@@ -93,7 +94,7 @@ func (cc *ChainClient) ExportPrivKeyArmor(keyName string) (armor string, err err
 	return cc.Keybase.ExportPrivKeyArmor(keyName, ckeys.DefaultKeyPass)
 }
 
-func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, mnemonic ...string) (*KeyOutput, error) {
+func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, mnemonic ...string) (*provider.KeyOutput, error) {
 	var mnemonicStr string
 	var err error
 
@@ -115,7 +116,7 @@ func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, mnemonic
 	if err != nil {
 		return nil, err
 	}
-	return &KeyOutput{Mnemonic: mnemonicStr, Address: out}, nil
+	return &provider.KeyOutput{Mnemonic: mnemonicStr, Address: out}, nil
 }
 
 // KeyOutput contains mnemonic and address of key
