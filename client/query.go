@@ -240,7 +240,6 @@ func (cc *ChainClient) QueryClientState(height int64, clientid string) (ibcexpor
 func (cc *ChainClient) QueryClientConsensusState(chainHeight int64, clientid string, clientHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
 	key := host.FullConsensusStateKey(clientid, clientHeight)
 
-	// TODO do we want chain height or client height here?
 	value, proofBz, proofHeight, err := cc.QueryTendermintProof(chainHeight, key)
 	if err != nil {
 		return nil, err

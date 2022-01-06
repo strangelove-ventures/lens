@@ -1,9 +1,15 @@
 package client
 
 import (
+	"github.com/cosmos/relayer/v2/relayer/provider"
+	"os"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
+)
+
+var (
+	_ provider.ProviderConfig = &ChainClientConfig{}
 )
 
 type ChainClientConfig struct {
@@ -21,6 +27,17 @@ type ChainClientConfig struct {
 	OutputFormat   string                  `json:"output-format" yaml:"output-format"`
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
+}
+
+func (ccc *ChainClientConfig) NewProvider(homepath string, debug bool) (provider.ChainProvider, error) {
+	if err := ccc.Validate(); err != nil {
+		return nil, err
+	}
+	p, err := NewChainClient(ccc, os.Stdin, os.Stdout)
+	if err != nil {
+		return nil, err
+	}
+	return p, err
 }
 
 func (ccc *ChainClientConfig) Validate() error {

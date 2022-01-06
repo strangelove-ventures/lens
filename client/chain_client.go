@@ -34,40 +34,43 @@ type ChainClient struct {
 }
 
 func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {
-	if err := ccc.Validate(); err != nil {
-		return nil, err
-	}
-
 	// TODO: test key directory and return error if not created
 	keybase, err := keyring.New(ccc.ChainID, ccc.KeyringBackend, ccc.KeyDirectory, input, kro...)
 	if err != nil {
 		return nil, err
 	}
-
 	// TODO: figure out how to deal with input or maybe just make all keyring backends test?
-
-	timeout, _ := time.ParseDuration(ccc.Timeout)
-	rpcClient, err := NewRPCClient(ccc.RPCAddr, timeout)
-	if err != nil {
-		return nil, err
-	}
-
-	lightprovider, err := prov.New(ccc.ChainID, ccc.RPCAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ChainClient{
+	cc := &ChainClient{
 		Keybase:        keybase,
-		RPCClient:      rpcClient,
-		LightProvider:  lightprovider,
 		KeyringOptions: kro,
 		Config:         ccc,
 		Input:          input,
 		Output:         output,
 		Codec:          MakeCodec(ccc.Modules),
 		Logger:         log.NewTMLogger(log.NewSyncWriter(output)),
-	}, nil
+	}
+	if err := cc.Init(); err != nil {
+		return nil, err
+	}
+	return cc, nil
+}
+
+func (cc *ChainClient) Init() error {
+	timeout, _ := time.ParseDuration(cc.Config.Timeout)
+	rpcClient, err := NewRPCClient(cc.Config.RPCAddr, timeout)
+	if err != nil {
+		return err
+	}
+
+	lightprovider, err := prov.New(cc.Config.ChainID, cc.Config.RPCAddr)
+	if err != nil {
+		return err
+	}
+
+	cc.RPCClient = rpcClient
+	cc.LightProvider = lightprovider
+
+	return nil
 }
 
 // Log takes a string and logs the data
@@ -75,8 +78,7 @@ func (cc *ChainClient) Log(s string) {
 	cc.Logger.Info(s)
 }
 
-// TODO: actually do something different here have a couple of levels of
-// verbosity
+// TODO: actually do something different here have a couple of levels of verbosity
 func (cc *ChainClient) PrintTxResponse(res *sdk.TxResponse) error {
 	return cc.PrintObject(res)
 }
