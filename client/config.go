@@ -30,7 +30,7 @@ func (ccc *ChainClientConfig) Validate() error {
 	return nil
 }
 
-func GetCosmosHubConfig(keyHome string, debug bool) (*ChainClientConfig) {
+func GetCosmosHubConfig(keyHome string, debug bool) *ChainClientConfig {
 	return &ChainClientConfig{
 		Key:            "default",
 		ChainID:        "cosmoshub-4",
@@ -48,7 +48,7 @@ func GetCosmosHubConfig(keyHome string, debug bool) (*ChainClientConfig) {
 	}
 }
 
-func GetOsmosisConfig(keyHome string, debug bool) (*ChainClientConfig) {
+func GetOsmosisConfig(keyHome string, debug bool) *ChainClientConfig {
 	return &ChainClientConfig{
 		Key:            "default",
 		ChainID:        "osmosis-1",
@@ -66,7 +66,7 @@ func GetOsmosisConfig(keyHome string, debug bool) (*ChainClientConfig) {
 	}
 }
 
-func GetTestClient() (*ChainClient) {
+func GetTestClient() *ChainClient {
 	cl, _ := NewChainClient(GetCosmosHubConfig("/tmp", true), nil, nil)
 	return cl
 }

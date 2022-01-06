@@ -70,6 +70,11 @@ func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, k
 	}, nil
 }
 
+// Log takes a string and logs the data
+func (cc *ChainClient) Log(s string) {
+	cc.Logger.Info(s)
+}
+
 // TODO: actually do something different here have a couple of levels of
 // verbosity
 func (cc *ChainClient) PrintTxResponse(res *sdk.TxResponse) error {
