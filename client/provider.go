@@ -4,28 +4,26 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	transfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
-	conntypes "github.com/cosmos/ibc-go/v2/modules/core/03-connection/types"
-	chantypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
-	commitmenttypes "github.com/cosmos/ibc-go/v2/modules/core/23-commitment/types"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/avast/retry-go"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	transfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
+	conntypes "github.com/cosmos/ibc-go/v2/modules/core/03-connection/types"
+	chantypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
+	commitmenttypes "github.com/cosmos/ibc-go/v2/modules/core/23-commitment/types"
 	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
 	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	tmclient "github.com/cosmos/ibc-go/v2/modules/light-clients/07-tendermint/types"
-	tmtypes "github.com/tendermint/tendermint/types"
-
-	"reflect"
-	"time"
-
 	"github.com/cosmos/relayer/v2/relayer/provider"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -105,6 +103,9 @@ func (cc *ChainClient) Timeout() string {
 	return cc.Config.Timeout
 }
 
+// Address returns the chains configured address as a string
+// NOTE: we are returning an empty string when there are errors right now so the return value
+//		 needs to be checked before being used anywhere Address is called
 func (cc *ChainClient) Address() string {
 	var (
 		acc sdk.AccAddress
@@ -117,7 +118,7 @@ func (cc *ChainClient) Address() string {
 }
 
 func (cc *ChainClient) TrustingPeriod() string {
-	return ""
+	return cc.Config.TrustingPeriod
 }
 
 // CreateClient creates an sdk.Msg to update the client on src with consensus state from dst
