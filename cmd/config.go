@@ -108,7 +108,7 @@ func defaultConfig(keyHome string, debug bool) []byte {
 		DefaultChain: "cosmoshub",
 		Chains: map[string]*client.ChainClientConfig{
 			"cosmoshub": client.GetCosmosHubConfig(keyHome, debug),
-			"osmosis": client.GetOsmosisConfig(keyHome, debug),
+			"osmosis":   client.GetOsmosisConfig(keyHome, debug),
 		},
 	}.MustYAML()
 }
