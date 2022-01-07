@@ -47,6 +47,7 @@ func (cc *ChainClient) SendMessage(msg provider.RelayerMessage) (*provider.Relay
 }
 
 func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
+	fmt.Println("HERE IN LENS")
 	// Query account details
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
@@ -62,7 +63,6 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		return nil, false, err
 	}
 
-	fmt.Println("HERE IN LENS")
 	// Set the gas amount on the transaction factory
 	txf = txf.WithGas(adjusted)
 
