@@ -200,11 +200,12 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		return tx.Factory{}, err
 	}
 
-	fmt.Println("HERE IN LENS")
 	cliCtx := client.Context{}.WithClient(cc.RPCClient).
 		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
 		WithChainID(cc.Config.ChainID).
 		WithCodec(cc.Codec.Marshaler)
+
+	fmt.Println("HERE IN LENS")
 	// Set the account number and sequence on the transaction factory
 	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
 		return txf, err
