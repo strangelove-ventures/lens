@@ -200,6 +200,7 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		return tx.Factory{}, err
 	}
 
+	fmt.Println("HERE IN LENS")
 	cliCtx := client.Context{}.WithClient(cc.RPCClient).
 		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
 		WithChainID(cc.Config.ChainID).
