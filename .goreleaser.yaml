@@ -1,0 +1,25 @@
+project_name: lens
+
+env:
+  # Require use of Go modules.
+  - GO111MODULE=on
+
+builds:
+  - id: "lens"
+    main: ./main.go
+    ldflags:
+      - -X github.com/strangelove-ventures/lens/cmd.Version={{ .Tag }}
+      - -X github.com/strangelove-ventures/lens/cmd.Commit={{ .FullCommit }}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+checksum:
+  name_template: SHA256SUMS-{{.Version}}.txt
+  algorithm: sha256
+
+release:
+  name_template: "{{ .Version }} - (WARNING: ALPHA SOFTWARE)"

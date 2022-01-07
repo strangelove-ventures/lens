@@ -79,6 +79,7 @@ func NewRootCmd() *cobra.Command {
 		tendermintCmd(),
 		crosschainCmd(),
 		txCmd(),
+		versionCmd(),
 	)
 
 	return rootCmd
