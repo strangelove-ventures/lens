@@ -3,9 +3,8 @@ package client
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/cosmos/relayer/relayer/provider"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -63,6 +62,7 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		return nil, false, err
 	}
 
+	fmt.Println("HERE IN LENS")
 	// Set the gas amount on the transaction factory
 	txf = txf.WithGas(adjusted)
 
@@ -78,7 +78,6 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		cc.Codec.Marshaler.MustMarshalJSON(CosmosMsg(msg))
 	}
 
-	fmt.Println("HERE IN LENS")
 	done := cc.SetSDKContext()
 	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
 		return nil, false, err
