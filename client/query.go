@@ -962,6 +962,14 @@ func (cc *ChainClient) QueryDenomsMetadata(ctx context.Context, pageReq *query.P
 	return bankTypes.NewQueryClient(cc).DenomsMetadata(ctx, &bankTypes.QueryDenomsMetadataRequest{Pagination: pageReq})
 }
 
+func (cc *ChainClient) QueryStakingParams(ctx context.Context) (*stakingtypes.Params, error) {
+	res, err := stakingtypes.NewQueryClient(cc).Params(ctx, &stakingtypes.QueryParamsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return &res.Params, nil
+}
+
 func DefaultPageRequest() *querytypes.PageRequest {
 	return &querytypes.PageRequest{
 		Key:        []byte(""),

@@ -3,8 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/cosmos/relayer/v2/relayer/provider"
 	"strings"
+
+	"github.com/cosmos/relayer/relayer/provider"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"

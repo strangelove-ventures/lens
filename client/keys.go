@@ -2,13 +2,13 @@ package client
 
 import (
 	"errors"
-	"github.com/cosmos/relayer/v2/relayer/provider"
 	"os"
 
 	ckeys "github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/go-bip39"
+	"github.com/cosmos/relayer/relayer/provider"
 )
 
 func (cc *ChainClient) CreateKeystore(path string) error {

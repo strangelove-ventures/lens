@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/gogo/protobuf/proto"
 
 	"github.com/avast/retry-go"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -21,7 +24,7 @@ import (
 	host "github.com/cosmos/ibc-go/v2/modules/core/24-host"
 	ibcexported "github.com/cosmos/ibc-go/v2/modules/core/exported"
 	tmclient "github.com/cosmos/ibc-go/v2/modules/light-clients/07-tendermint/types"
-	"github.com/cosmos/relayer/v2/relayer/provider"
+	"github.com/cosmos/relayer/relayer/provider"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -83,6 +86,10 @@ func (cm CosmosMessage) Type() string {
 	return sdk.MsgTypeURL(cm.Msg)
 }
 
+func (cm CosmosMessage) MsgBytes() ([]byte, error) {
+	return proto.Marshal(cm.Msg)
+}
+
 func (cc *ChainClient) ProviderConfig() provider.ProviderConfig {
 	return cc.Config
 }
@@ -104,21 +111,29 @@ func (cc *ChainClient) Timeout() string {
 }
 
 // Address returns the chains configured address as a string
-// NOTE: we are returning an empty string when there are errors right now so the return value
-//		 needs to be checked before being used anywhere Address is called
-func (cc *ChainClient) Address() string {
+func (cc *ChainClient) Address() (string, error) {
 	var (
 		acc sdk.AccAddress
 		err error
 	)
 	if acc, err = cc.GetKeyAddress(); err != nil {
-		return ""
+		return "", err
 	}
-	return acc.String()
+	return acc.String(), nil
 }
 
-func (cc *ChainClient) TrustingPeriod() string {
-	return cc.Config.TrustingPeriod
+func (cc *ChainClient) TrustingPeriod() (time.Duration, error) {
+	res, err := cc.QueryStakingParams(context.Background())
+	if err != nil {
+		return 0, err
+	}
+	integer, _ := math.Modf(res.UnbondingTime.Hours() * 0.7)
+	trustingStr := fmt.Sprintf("%vh", integer)
+	tp, err := time.ParseDuration(trustingStr)
+	if err != nil {
+		return 0, nil
+	}
+	return tp, nil
 }
 
 // CreateClient creates an sdk.Msg to update the client on src with consensus state from dst
@@ -454,22 +469,19 @@ func (cc *ChainClient) ChannelOpenConfirm(dstQueryProvider provider.QueryProvide
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
 
-func (cc *ChainClient) ChannelCloseInit(srcPortId, srcChanId string) provider.RelayerMessage {
+func (cc *ChainClient) ChannelCloseInit(srcPortId, srcChanId string) (provider.RelayerMessage, error) {
 	var (
 		acc sdk.AccAddress
 		err error
 	)
 	if acc, err = cc.GetKeyAddress(); err != nil {
-		// TODO ChannelCloseInit should really also return an error instead of printing this line
-		// Change this on the Provider interface in the relayer & come back
-		fmt.Printf("Error getting key address in ChannelCloseInit. Err: %s\n", err.Error())
-		return nil
+		return nil, err
 	}
 	return NewCosmosMessage(chantypes.NewMsgChannelCloseInit(
 		srcPortId,
 		srcChanId,
 		acc.String(),
-	))
+	)), nil
 }
 
 func (cc *ChainClient) ChannelCloseConfirm(dstQueryProvider provider.QueryProvider, dsth int64, dstChanId, dstPortId, srcPortId, srcChanId string) (provider.RelayerMessage, error) {
@@ -622,16 +634,15 @@ func (cc *ChainClient) MsgRelayAcknowledgement(dst provider.ChainProvider, dstCh
 }
 
 // MsgTransfer creates a new transfer message
-func (cc *ChainClient) MsgTransfer(amount sdk.Coin, dstChainId, dstAddr, srcPortId, srcChanId string, timeoutHeight, timeoutTimestamp uint64) provider.RelayerMessage {
+func (cc *ChainClient) MsgTransfer(amount sdk.Coin, dstChainId, dstAddr, srcPortId, srcChanId string, timeoutHeight, timeoutTimestamp uint64) (provider.RelayerMessage, error) {
 	var (
 		acc sdk.AccAddress
 		err error
 	)
 	if acc, err = cc.GetKeyAddress(); err != nil {
-		// TODO should really be returning an error here
-		fmt.Printf("Error getting key address in MsgTransfer. Err: %s\n", err.Error())
-		return nil
+		return nil, err
 	}
+
 	version := clienttypes.ParseChainID(dstChainId)
 	return NewCosmosMessage(transfertypes.NewMsgTransfer(
 		srcPortId,
@@ -641,7 +652,7 @@ func (cc *ChainClient) MsgTransfer(amount sdk.Coin, dstChainId, dstAddr, srcPort
 		dstAddr,
 		clienttypes.NewHeight(version, timeoutHeight),
 		timeoutTimestamp,
-	))
+	)), nil
 }
 
 // MsgRelayTimeout constructs the MsgTimeout which is to be sent to the sending chain.
@@ -970,19 +981,17 @@ func acknowledgementsFromResultTx(dstChanId, dstPortId, srcChanId, srcPortId str
 	return nil, fmt.Errorf("no packet data found")
 }
 
-func (cc *ChainClient) MsgUpgradeClient(srcClientId string, consRes *clienttypes.QueryConsensusStateResponse, clientRes *clienttypes.QueryClientStateResponse) provider.RelayerMessage {
+func (cc *ChainClient) MsgUpgradeClient(srcClientId string, consRes *clienttypes.QueryConsensusStateResponse, clientRes *clienttypes.QueryClientStateResponse) (provider.RelayerMessage, error) {
 	var (
 		acc sdk.AccAddress
 		err error
 	)
 	if acc, err = cc.GetKeyAddress(); err != nil {
-		// TODO should really be returning an error here
-		fmt.Printf("Error getting key address in MsgUpgradeClient. Err: %s\n", err.Error())
-		return nil
+		return nil, err
 	}
 	return NewCosmosMessage(&clienttypes.MsgUpgradeClient{ClientId: srcClientId, ClientState: clientRes.ClientState,
 		ConsensusState: consRes.ConsensusState, ProofUpgradeClient: consRes.GetProof(),
-		ProofUpgradeConsensusState: consRes.ConsensusState.Value, Signer: acc.String()})
+		ProofUpgradeConsensusState: consRes.ConsensusState.Value, Signer: acc.String()}), nil
 }
 
 // AutoUpdateClient update client automatically to prevent expiry
