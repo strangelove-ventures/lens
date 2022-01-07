@@ -78,6 +78,7 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		cc.Codec.Marshaler.MustMarshalJSON(CosmosMsg(msg))
 	}
 
+	fmt.Println("HERE IN LENS")
 	done := cc.SetSDKContext()
 	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
 		return nil, false, err
