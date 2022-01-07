@@ -80,6 +80,7 @@ func NewRootCmd() *cobra.Command {
 		crosschainCmd(),
 		txCmd(),
 		versionCmd(),
+		airdropCmd(),
 	)
 
 	return rootCmd

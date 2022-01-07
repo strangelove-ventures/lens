@@ -8,7 +8,7 @@ import (
 func authAccountCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "account [address]",
-		Aliases: []string{},
+		Aliases: []string{"acc"},
 		Short:   "query an account for its number and sequence or pass no arguement to query default account",
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -36,7 +36,7 @@ func authAccountCmd() *cobra.Command {
 func authAccountsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "accounts",
-		Aliases: []string{},
+		Aliases: []string{"accs"},
 		Short:   "query all accounts on a given chain w/ pagination",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
