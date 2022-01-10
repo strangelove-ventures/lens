@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"math"
 	"reflect"
 	"strconv"
@@ -113,13 +114,25 @@ func (cc *ChainClient) Timeout() string {
 // Address returns the chains configured address as a string
 func (cc *ChainClient) Address() (string, error) {
 	var (
-		acc sdk.AccAddress
-		err error
+		//acc sdk.AccAddress
+		err  error
+		info keyring.Info
 	)
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	info, err = cc.Keybase.Key(cc.Config.Key)
+	if err != nil {
 		return "", err
 	}
-	return acc.String(), nil
+	out, err := cc.EncodeBech32AccAddr(info.GetAddress())
+	if err != nil {
+		return "", err
+	}
+
+	//if acc, err = cc.GetKeyAddress(); err != nil {
+	//	return "", err
+	//}
+	//fmt.Println(acc.String())
+	//return acc.String(), nil
+	return out, err
 }
 
 func (cc *ChainClient) TrustingPeriod() (time.Duration, error) {
@@ -139,7 +152,7 @@ func (cc *ChainClient) TrustingPeriod() (time.Duration, error) {
 // CreateClient creates an sdk.Msg to update the client on src with consensus state from dst
 func (cc *ChainClient) CreateClient(clientState ibcexported.ClientState, dstHeader ibcexported.Header) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	if err := dstHeader.ValidateBasic(); err != nil {
@@ -151,14 +164,14 @@ func (cc *ChainClient) CreateClient(clientState ibcexported.ClientState, dstHead
 		return nil, fmt.Errorf("got data of type %T but wanted tmclient.Header \n", dstHeader)
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 
 	msg, err := clienttypes.NewMsgCreateClient(
 		clientState,
 		tmHeader.ConsensusState(),
-		acc.String(),
+		acc,
 	)
 	if err != nil {
 		return nil, err
@@ -173,19 +186,19 @@ func (cc *ChainClient) SubmitMisbehavior( /*TBD*/ ) (provider.RelayerMessage, er
 
 func (cc *ChainClient) UpdateClient(srcClientId string, dstHeader ibcexported.Header) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	if err := dstHeader.ValidateBasic(); err != nil {
 		return nil, err
 	}
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	msg, err := clienttypes.NewMsgUpdateClient(
 		srcClientId,
 		dstHeader,
-		acc.String(),
+		acc,
 	)
 	if err != nil {
 		return nil, err
@@ -195,7 +208,7 @@ func (cc *ChainClient) UpdateClient(srcClientId string, dstHeader ibcexported.He
 
 func (cc *ChainClient) ConnectionOpenInit(srcClientId, dstClientId string, dstHeader ibcexported.Header) ([]provider.RelayerMessage, error) {
 	var (
-		acc     sdk.AccAddress
+		acc     string
 		err     error
 		version *conntypes.Version
 	)
@@ -204,7 +217,7 @@ func (cc *ChainClient) ConnectionOpenInit(srcClientId, dstClientId string, dstHe
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	msg := conntypes.NewMsgConnectionOpenInit(
@@ -213,7 +226,7 @@ func (cc *ChainClient) ConnectionOpenInit(srcClientId, dstClientId string, dstHe
 		defaultChainPrefix,
 		version,
 		defaultDelayPeriod,
-		acc.String(),
+		acc,
 	)
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
@@ -221,7 +234,7 @@ func (cc *ChainClient) ConnectionOpenInit(srcClientId, dstClientId string, dstHe
 
 func (cc *ChainClient) ConnectionOpenTry(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcClientId, dstClientId, srcConnId, dstConnId string) ([]provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	updateMsg, err := cc.UpdateClient(srcClientId, dstHeader)
@@ -239,7 +252,7 @@ func (cc *ChainClient) ConnectionOpenTry(dstQueryProvider provider.QueryProvider
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 
@@ -258,7 +271,7 @@ func (cc *ChainClient) ConnectionOpenTry(dstQueryProvider provider.QueryProvider
 		consensusStateProof,
 		clienttypes.NewHeight(proofHeight.GetRevisionNumber(), proofHeight.GetRevisionHeight()),
 		clientState.GetLatestHeight().(clienttypes.Height),
-		acc.String(),
+		acc,
 	)
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
@@ -266,7 +279,7 @@ func (cc *ChainClient) ConnectionOpenTry(dstQueryProvider provider.QueryProvider
 
 func (cc *ChainClient) ConnectionOpenAck(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcClientId, srcConnId, dstClientId, dstConnId string) ([]provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 
@@ -285,7 +298,7 @@ func (cc *ChainClient) ConnectionOpenAck(dstQueryProvider provider.QueryProvider
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	msg := conntypes.NewMsgConnectionOpenAck(
@@ -298,7 +311,7 @@ func (cc *ChainClient) ConnectionOpenAck(dstQueryProvider provider.QueryProvider
 		clienttypes.NewHeight(proofHeight.GetRevisionNumber(), proofHeight.GetRevisionHeight()),
 		clientState.GetLatestHeight().(clienttypes.Height),
 		conntypes.DefaultIBCVersion,
-		acc.String(),
+		acc,
 	)
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
@@ -306,7 +319,7 @@ func (cc *ChainClient) ConnectionOpenAck(dstQueryProvider provider.QueryProvider
 
 func (cc *ChainClient) ConnectionOpenConfirm(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, dstConnId, srcClientId, srcConnId string) ([]provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	updateMsg, err := cc.UpdateClient(srcClientId, dstHeader)
@@ -323,14 +336,14 @@ func (cc *ChainClient) ConnectionOpenConfirm(dstQueryProvider provider.QueryProv
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	msg := conntypes.NewMsgConnectionOpenConfirm(
 		srcConnId,
 		counterpartyConnState.Proof,
 		counterpartyConnState.ProofHeight,
-		acc.String(),
+		acc,
 	)
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
@@ -338,7 +351,7 @@ func (cc *ChainClient) ConnectionOpenConfirm(dstQueryProvider provider.QueryProv
 
 func (cc *ChainClient) ChannelOpenInit(srcClientId, srcConnId, srcPortId, srcVersion, dstPortId string, order chantypes.Order, dstHeader ibcexported.Header) ([]provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	updateMsg, err := cc.UpdateClient(srcClientId, dstHeader)
@@ -346,7 +359,7 @@ func (cc *ChainClient) ChannelOpenInit(srcClientId, srcConnId, srcPortId, srcVer
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	msg := chantypes.NewMsgChannelOpenInit(
@@ -355,7 +368,7 @@ func (cc *ChainClient) ChannelOpenInit(srcClientId, srcConnId, srcPortId, srcVer
 		order,
 		[]string{srcConnId},
 		dstPortId,
-		acc.String(),
+		acc,
 	)
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
@@ -363,7 +376,7 @@ func (cc *ChainClient) ChannelOpenInit(srcClientId, srcConnId, srcPortId, srcVer
 
 func (cc *ChainClient) ChannelOpenTry(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcPortId, dstPortId, srcChanId, dstChanId, srcVersion, srcConnectionId, srcClientId string) ([]provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	updateMsg, err := cc.UpdateClient(srcClientId, dstHeader)
@@ -380,7 +393,7 @@ func (cc *ChainClient) ChannelOpenTry(dstQueryProvider provider.QueryProvider, d
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	msg := chantypes.NewMsgChannelOpenTry(
@@ -394,7 +407,7 @@ func (cc *ChainClient) ChannelOpenTry(dstQueryProvider provider.QueryProvider, d
 		counterpartyChannelRes.Channel.Version,
 		counterpartyChannelRes.Proof,
 		counterpartyChannelRes.ProofHeight,
-		acc.String(),
+		acc,
 	)
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
@@ -402,7 +415,7 @@ func (cc *ChainClient) ChannelOpenTry(dstQueryProvider provider.QueryProvider, d
 
 func (cc *ChainClient) ChannelOpenAck(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcClientId, srcPortId, srcChanId, dstChanId, dstPortId string) ([]provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	updateMsg, err := cc.UpdateClient(srcClientId, dstHeader)
@@ -420,7 +433,7 @@ func (cc *ChainClient) ChannelOpenAck(dstQueryProvider provider.QueryProvider, d
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	msg := chantypes.NewMsgChannelOpenAck(
@@ -430,7 +443,7 @@ func (cc *ChainClient) ChannelOpenAck(dstQueryProvider provider.QueryProvider, d
 		counterpartyChannelRes.Channel.Version,
 		counterpartyChannelRes.Proof,
 		counterpartyChannelRes.ProofHeight,
-		acc.String(),
+		acc,
 	)
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
@@ -438,7 +451,7 @@ func (cc *ChainClient) ChannelOpenAck(dstQueryProvider provider.QueryProvider, d
 
 func (cc *ChainClient) ChannelOpenConfirm(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcClientId, srcPortId, srcChanId, dstPortId, dstChanId string) ([]provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	updateMsg, err := cc.UpdateClient(srcClientId, dstHeader)
@@ -455,7 +468,7 @@ func (cc *ChainClient) ChannelOpenConfirm(dstQueryProvider provider.QueryProvide
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	msg := chantypes.NewMsgChannelOpenConfirm(
@@ -463,7 +476,7 @@ func (cc *ChainClient) ChannelOpenConfirm(dstQueryProvider provider.QueryProvide
 		srcChanId,
 		counterpartyChanState.Proof,
 		counterpartyChanState.ProofHeight,
-		acc.String(),
+		acc,
 	)
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
@@ -471,22 +484,22 @@ func (cc *ChainClient) ChannelOpenConfirm(dstQueryProvider provider.QueryProvide
 
 func (cc *ChainClient) ChannelCloseInit(srcPortId, srcChanId string) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	return NewCosmosMessage(chantypes.NewMsgChannelCloseInit(
 		srcPortId,
 		srcChanId,
-		acc.String(),
+		acc,
 	)), nil
 }
 
 func (cc *ChainClient) ChannelCloseConfirm(dstQueryProvider provider.QueryProvider, dsth int64, dstChanId, dstPortId, srcPortId, srcChanId string) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	dstChanResp, err := dstQueryProvider.QueryChannel(dsth, dstChanId, dstPortId)
@@ -494,7 +507,7 @@ func (cc *ChainClient) ChannelCloseConfirm(dstQueryProvider provider.QueryProvid
 		return nil, err
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	return NewCosmosMessage(chantypes.NewMsgChannelCloseConfirm(
@@ -502,7 +515,7 @@ func (cc *ChainClient) ChannelCloseConfirm(dstQueryProvider provider.QueryProvid
 		srcChanId,
 		dstChanResp.Proof,
 		dstChanResp.ProofHeight,
-		acc.String(),
+		acc,
 	)), nil
 }
 
@@ -594,7 +607,7 @@ func (cc *ChainClient) InjectTrustedFields(header ibcexported.Header, dst provid
 // The counterparty represents the receiving chain where the acknowledgement would be stored.
 func (cc *ChainClient) MsgRelayAcknowledgement(dst provider.ChainProvider, dstChanId, dstPortId, srcChanId, srcPortId string, dsth int64, packet provider.RelayPacket) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
 	msgPacketAck, ok := packet.(*relayMsgPacketAck)
@@ -602,7 +615,7 @@ func (cc *ChainClient) MsgRelayAcknowledgement(dst provider.ChainProvider, dstCh
 		return nil, fmt.Errorf("got data of type %T but wanted relayMsgPacketAck \n", packet)
 	}
 
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 
@@ -629,17 +642,17 @@ func (cc *ChainClient) MsgRelayAcknowledgement(dst provider.ChainProvider, dstCh
 			msgPacketAck.ack,
 			ackRes.Proof,
 			ackRes.ProofHeight,
-			acc.String())), nil
+			acc)), nil
 	}
 }
 
 // MsgTransfer creates a new transfer message
 func (cc *ChainClient) MsgTransfer(amount sdk.Coin, dstChainId, dstAddr, srcPortId, srcChanId string, timeoutHeight, timeoutTimestamp uint64) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 
@@ -648,7 +661,7 @@ func (cc *ChainClient) MsgTransfer(amount sdk.Coin, dstChainId, dstAddr, srcPort
 		srcPortId,
 		srcChanId,
 		amount,
-		acc.String(),
+		acc,
 		dstAddr,
 		clienttypes.NewHeight(version, timeoutHeight),
 		timeoutTimestamp,
@@ -660,10 +673,10 @@ func (cc *ChainClient) MsgTransfer(amount sdk.Coin, dstChainId, dstAddr, srcPort
 // stored.
 func (cc *ChainClient) MsgRelayTimeout(dst provider.ChainProvider, dsth int64, packet provider.RelayPacket, dstChanId, dstPortId, srcChanId, srcPortId string) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 
@@ -690,7 +703,7 @@ func (cc *ChainClient) MsgRelayTimeout(dst provider.ChainProvider, dsth int64, p
 			packet.Seq(),
 			recvRes.Proof,
 			recvRes.ProofHeight,
-			acc.String(),
+			acc,
 		)), nil
 	}
 }
@@ -699,10 +712,10 @@ func (cc *ChainClient) MsgRelayTimeout(dst provider.ChainProvider, dsth int64, p
 // The counterparty represents the sending chain where the packet commitment would be stored.
 func (cc *ChainClient) MsgRelayRecvPacket(dst provider.ChainProvider, dsth int64, packet provider.RelayPacket, dstChanId, dstPortId, srcChanId, srcPortId string) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 
@@ -728,7 +741,7 @@ func (cc *ChainClient) MsgRelayRecvPacket(dst provider.ChainProvider, dsth int64
 			),
 			comRes.Proof,
 			comRes.ProofHeight,
-			acc.String(),
+			acc,
 		)), nil
 	}
 }
@@ -983,15 +996,15 @@ func acknowledgementsFromResultTx(dstChanId, dstPortId, srcChanId, srcPortId str
 
 func (cc *ChainClient) MsgUpgradeClient(srcClientId string, consRes *clienttypes.QueryConsensusStateResponse, clientRes *clienttypes.QueryClientStateResponse) (provider.RelayerMessage, error) {
 	var (
-		acc sdk.AccAddress
+		acc string
 		err error
 	)
-	if acc, err = cc.GetKeyAddress(); err != nil {
+	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
 	return NewCosmosMessage(&clienttypes.MsgUpgradeClient{ClientId: srcClientId, ClientState: clientRes.ClientState,
 		ConsensusState: consRes.ConsensusState, ProofUpgradeClient: consRes.GetProof(),
-		ProofUpgradeConsensusState: consRes.ConsensusState.Value, Signer: acc.String()}), nil
+		ProofUpgradeConsensusState: consRes.ConsensusState.Value, Signer: acc}), nil
 }
 
 // AutoUpdateClient update client automatically to prevent expiry

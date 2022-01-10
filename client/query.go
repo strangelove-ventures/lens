@@ -73,20 +73,20 @@ func (cc *ChainClient) QueryTxs(page, limit int, events []string) ([]*ctypes.Res
 // QueryBalance returns the amount of coins in the relayer account
 func (cc *ChainClient) QueryBalance(keyName string) (sdk.Coins, error) {
 	var (
-		addr sdk.AccAddress
+		addr string
 		err  error
 	)
 	if keyName == "" {
-		addr, err = cc.GetKeyAddress()
+		addr, err = cc.Address()
 	} else {
 		cc.Config.Key = keyName
-		addr, err = cc.GetKeyAddress()
+		addr, err = cc.Address()
 	}
 
 	if err != nil {
 		return nil, err
 	}
-	return cc.QueryBalanceWithAddress(addr.String())
+	return cc.QueryBalanceWithAddress(addr)
 }
 
 // QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
