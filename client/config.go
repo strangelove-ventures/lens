@@ -27,7 +27,28 @@ import (
 )
 
 var (
-	_ provider.ProviderConfig = &ChainClientConfig{}
+	_            provider.ProviderConfig = &ChainClientConfig{}
+	ModuleBasics                         = []module.AppModuleBasic{
+		auth.AppModuleBasic{},
+		authz.AppModuleBasic{},
+		bank.AppModuleBasic{},
+		capability.AppModuleBasic{},
+		// TODO: add osmosis governance proposal types here
+		// TODO: add other proposal types here
+		gov.NewAppModuleBasic(
+			paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
+		),
+		crisis.AppModuleBasic{},
+		distribution.AppModuleBasic{},
+		feegrant.AppModuleBasic{},
+		mint.AppModuleBasic{},
+		params.AppModuleBasic{},
+		slashing.AppModuleBasic{},
+		staking.AppModuleBasic{},
+		upgrade.AppModuleBasic{},
+		transfer.AppModuleBasic{},
+		ibc.AppModuleBasic{},
+	}
 )
 
 type ChainClientConfig struct {
@@ -52,7 +73,7 @@ func (ccc *ChainClientConfig) NewProvider(homepath string, debug bool) (provider
 		return nil, err
 	}
 	ccc.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
-	p, err := NewChainClient(ccc, os.Stdin, os.Stdout)
+	p, err := NewChainClient(ccc, homepath, os.Stdin, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
@@ -64,28 +85,6 @@ func (ccc *ChainClientConfig) Validate() error {
 		return err
 	}
 	return nil
-}
-
-var ModuleBasics = []module.AppModuleBasic{
-	auth.AppModuleBasic{},
-	authz.AppModuleBasic{},
-	bank.AppModuleBasic{},
-	capability.AppModuleBasic{},
-	// TODO: add osmosis governance proposal types here
-	// TODO: add other proposal types here
-	gov.NewAppModuleBasic(
-		paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
-	),
-	crisis.AppModuleBasic{},
-	distribution.AppModuleBasic{},
-	feegrant.AppModuleBasic{},
-	mint.AppModuleBasic{},
-	params.AppModuleBasic{},
-	slashing.AppModuleBasic{},
-	staking.AppModuleBasic{},
-	upgrade.AppModuleBasic{},
-	transfer.AppModuleBasic{},
-	ibc.AppModuleBasic{},
 }
 
 func GetCosmosHubConfig(keyHome string, debug bool) *ChainClientConfig {
@@ -125,6 +124,7 @@ func GetOsmosisConfig(keyHome string, debug bool) *ChainClientConfig {
 }
 
 func GetTestClient() *ChainClient {
-	cl, _ := NewChainClient(GetCosmosHubConfig("/tmp", true), nil, nil)
+	homepath := "/tmp"
+	cl, _ := NewChainClient(GetCosmosHubConfig(homepath, true), homepath, nil, nil)
 	return cl
 }

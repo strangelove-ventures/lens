@@ -160,7 +160,7 @@ func initConfig(cmd *cobra.Command) error {
 	config.cl = make(map[string]*client.ChainClient)
 	for name, chain := range config.Chains {
 		chain.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
-		cl, err := client.NewChainClient(chain, os.Stdin, os.Stdout)
+		cl, err := client.NewChainClient(chain, home, os.Stdin, os.Stdout)
 		if err != nil {
 			fmt.Println("Error creating chain client:", err)
 			os.Exit(1)

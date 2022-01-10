@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -33,9 +34,9 @@ type ChainClient struct {
 	Logger log.Logger
 }
 
-func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {
+func NewChainClient(ccc *ChainClientConfig, homepath string, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {
 	// TODO: test key directory and return error if not created
-	keybase, err := keyring.New(ccc.ChainID, ccc.KeyringBackend, ccc.KeyDirectory, input, kro...)
+	keybase, err := keyring.New(ccc.ChainID, ccc.KeyringBackend, keysDir(homepath, ccc.ChainID), input, kro...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,4 +176,8 @@ func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.Acc
 		out, err = cc.DecodeBech32AccAddr(keyOrAddress)
 	}
 	return
+}
+
+func keysDir(home, chainID string) string {
+	return path.Join(home, "keys", chainID)
 }
