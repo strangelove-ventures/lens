@@ -3,9 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/relayer/relayer/provider"
-	"os"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -16,7 +14,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"google.golang.org/grpc/codes"
@@ -56,7 +53,7 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		return nil, false, err
 	}
 
-	fmt.Println("HERE IN LENS 1")
+	fmt.Println("HERE IN LENS")
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
 	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
@@ -206,26 +203,14 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 	cliCtx := client.Context{}.WithClient(cc.RPCClient).
 		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
 		WithChainID(cc.Config.ChainID).
-		WithCodec(cc.Codec.Marshaler).
-		WithTxConfig(cc.Codec.TxConfig).
-		WithLegacyAmino(cc.Codec.Amino).
-		WithInput(os.Stdin).
-		WithNodeURI(cc.Config.RPCAddr).
-		WithAccountRetriever(authTypes.AccountRetriever{}).
-		WithBroadcastMode(flags.BroadcastBlock).
-		WithKeyring(cc.Keybase).
-		WithOutputFormat("json").
-		WithFrom(cc.Config.Key).
-		WithFromName(cc.Config.Key).
-		WithFromAddress(from).
-		WithSkipConfirmation(true)
+		WithCodec(cc.Codec.Marshaler)
 
 	// Set the account number and sequence on the transaction factory
 	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
 		return txf, err
 	}
 
-	fmt.Println("HERE IN LENS 2")
+	fmt.Println("HERE IN LENS")
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
