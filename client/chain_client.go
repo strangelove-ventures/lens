@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -33,15 +34,9 @@ type ChainClient struct {
 	Logger log.Logger
 }
 
-func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {
-	// TODO: test key directory and return error if not created
-	keybase, err := keyring.New(ccc.ChainID, ccc.KeyringBackend, ccc.KeyDirectory, input, kro...)
-	if err != nil {
-		return nil, err
-	}
-	// TODO: figure out how to deal with input or maybe just make all keyring backends test?
+func NewChainClient(ccc *ChainClientConfig, homepath string, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {
+	ccc.KeyDirectory = keysDir(homepath, ccc.ChainID)
 	cc := &ChainClient{
-		Keybase:        keybase,
 		KeyringOptions: kro,
 		Config:         ccc,
 		Input:          input,
@@ -56,6 +51,13 @@ func NewChainClient(ccc *ChainClientConfig, input io.Reader, output io.Writer, k
 }
 
 func (cc *ChainClient) Init() error {
+	// TODO: test key directory and return error if not created
+	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.KeyringOptions...)
+	if err != nil {
+		return err
+	}
+	// TODO: figure out how to deal with input or maybe just make all keyring backends test?
+
 	timeout, _ := time.ParseDuration(cc.Config.Timeout)
 	rpcClient, err := NewRPCClient(cc.Config.RPCAddr, timeout)
 	if err != nil {
@@ -69,6 +71,7 @@ func (cc *ChainClient) Init() error {
 
 	cc.RPCClient = rpcClient
 	cc.LightProvider = lightprovider
+	cc.Keybase = keybase
 
 	return nil
 }
@@ -175,4 +178,8 @@ func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.Acc
 		out, err = cc.DecodeBech32AccAddr(keyOrAddress)
 	}
 	return
+}
+
+func keysDir(home, chainID string) string {
+	return path.Join(home, "keys", chainID)
 }

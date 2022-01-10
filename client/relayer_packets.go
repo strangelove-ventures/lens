@@ -1,12 +1,11 @@
 package client
 
 import (
-	"errors"
 	"fmt"
 
 	clienttypes "github.com/cosmos/ibc-go/v2/modules/core/02-client/types"
 	chantypes "github.com/cosmos/ibc-go/v2/modules/core/04-channel/types"
-	"github.com/cosmos/relayer/v2/relayer/provider"
+	"github.com/cosmos/relayer/relayer/provider"
 )
 
 var (
@@ -58,9 +57,9 @@ func (rp relayMsgTimeout) Msg(src provider.ChainProvider, srcPortId, srcChanId, 
 	if rp.dstRecvRes == nil {
 		return nil, fmt.Errorf("timeout packet [%s]seq{%d} has no associated proofs", src.ChainId(), rp.seq)
 	}
-	addr := src.Address()
-	if addr == "" {
-		return nil, errors.New("")
+	addr, err := src.Address()
+	if err != nil {
+		return nil, err
 	}
 	msg := chantypes.NewMsgTimeout(
 		chantypes.NewPacket(
@@ -137,9 +136,9 @@ func (rp relayMsgRecvPacket) Msg(src provider.ChainProvider, srcPortId, srcChanI
 	if rp.dstComRes == nil {
 		return nil, fmt.Errorf("receive packet [%s]seq{%d} has no associated proofs", src.ChainId(), rp.seq)
 	}
-	addr := src.Address()
-	if addr == "" {
-		return nil, errors.New("error getting key address ")
+	addr, err := src.Address()
+	if err != nil {
+		return nil, err
 	}
 
 	packet := chantypes.NewPacket(
@@ -191,9 +190,9 @@ func (rp relayMsgPacketAck) Msg(src provider.ChainProvider, srcPortId, srcChanId
 		return nil, fmt.Errorf("ack packet [%s]seq{%d} has no associated proofs", src.ChainId(), rp.seq)
 	}
 
-	addr := src.Address()
-	if addr == "" {
-		return nil, errors.New("")
+	addr, err := src.Address()
+	if err != nil {
+		return nil, err
 	}
 
 	msg := chantypes.NewMsgAcknowledgement(

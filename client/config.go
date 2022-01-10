@@ -1,15 +1,54 @@
 package client
 
 import (
-	"github.com/cosmos/relayer/v2/relayer/provider"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	authz "github.com/cosmos/cosmos-sdk/x/authz/module"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/capability"
+	"github.com/cosmos/cosmos-sdk/x/crisis"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
+	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
+	feegrant "github.com/cosmos/cosmos-sdk/x/feegrant/module"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/x/mint"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
+	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
+	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
+	ibc "github.com/cosmos/ibc-go/v2/modules/core"
 	"os"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/relayer/relayer/provider"
 )
 
 var (
-	_ provider.ProviderConfig = &ChainClientConfig{}
+	_            provider.ProviderConfig = &ChainClientConfig{}
+	ModuleBasics                         = []module.AppModuleBasic{
+		auth.AppModuleBasic{},
+		authz.AppModuleBasic{},
+		bank.AppModuleBasic{},
+		capability.AppModuleBasic{},
+		// TODO: add osmosis governance proposal types here
+		// TODO: add other proposal types here
+		gov.NewAppModuleBasic(
+			paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
+		),
+		crisis.AppModuleBasic{},
+		distribution.AppModuleBasic{},
+		feegrant.AppModuleBasic{},
+		mint.AppModuleBasic{},
+		params.AppModuleBasic{},
+		slashing.AppModuleBasic{},
+		staking.AppModuleBasic{},
+		upgrade.AppModuleBasic{},
+		transfer.AppModuleBasic{},
+		ibc.AppModuleBasic{},
+	}
 )
 
 type ChainClientConfig struct {
@@ -21,7 +60,6 @@ type ChainClientConfig struct {
 	KeyringBackend string                  `json:"keyring-backend" yaml:"keyring-backend"`
 	GasAdjustment  float64                 `json:"gas-adjustment" yaml:"gas-adjustment"`
 	GasPrices      string                  `json:"gas-prices" yaml:"gas-prices"`
-	TrustingPeriod string                  `json:"omitempty" yaml:"omitempty"`
 	KeyDirectory   string                  `json:"key-directory" yaml:"key-directory"`
 	Debug          bool                    `json:"debug" yaml:"debug"`
 	Timeout        string                  `json:"timeout" yaml:"timeout"`
@@ -34,7 +72,8 @@ func (ccc *ChainClientConfig) NewProvider(homepath string, debug bool) (provider
 	if err := ccc.Validate(); err != nil {
 		return nil, err
 	}
-	p, err := NewChainClient(ccc, os.Stdin, os.Stdout)
+	ccc.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
+	p, err := NewChainClient(ccc, homepath, os.Stdin, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +97,6 @@ func GetCosmosHubConfig(keyHome string, debug bool) *ChainClientConfig {
 		KeyringBackend: "test",
 		GasAdjustment:  1.2,
 		GasPrices:      "0.01uatom",
-		TrustingPeriod: "336h",
 		KeyDirectory:   keyHome,
 		Debug:          debug,
 		Timeout:        "20s",
@@ -77,7 +115,6 @@ func GetOsmosisConfig(keyHome string, debug bool) *ChainClientConfig {
 		KeyringBackend: "test",
 		GasAdjustment:  1.2,
 		GasPrices:      "0.01uosmo",
-		TrustingPeriod: "300h",
 		KeyDirectory:   keyHome,
 		Debug:          debug,
 		Timeout:        "20s",
@@ -87,6 +124,7 @@ func GetOsmosisConfig(keyHome string, debug bool) *ChainClientConfig {
 }
 
 func GetTestClient() *ChainClient {
-	cl, _ := NewChainClient(GetCosmosHubConfig("/tmp", true), nil, nil)
+	homepath := "/tmp"
+	cl, _ := NewChainClient(GetCosmosHubConfig(homepath, true), homepath, nil, nil)
 	return cl
 }

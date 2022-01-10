@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/cosmos/relayer/v2/relayer/provider"
+	"github.com/cosmos/relayer/relayer/provider"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -203,6 +203,7 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
 		WithChainID(cc.Config.ChainID).
 		WithCodec(cc.Codec.Marshaler)
+
 	// Set the account number and sequence on the transaction factory
 	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
 		return txf, err
