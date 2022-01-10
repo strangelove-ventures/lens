@@ -53,7 +53,6 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		return nil, false, err
 	}
 
-	fmt.Println("HERE IN LENS")
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
 	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
@@ -210,7 +209,6 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		return txf, err
 	}
 
-	fmt.Println("HERE IN LENS")
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
