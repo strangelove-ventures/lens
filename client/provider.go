@@ -114,7 +114,6 @@ func (cc *ChainClient) Timeout() string {
 // Address returns the chains configured address as a string
 func (cc *ChainClient) Address() (string, error) {
 	var (
-		//acc sdk.AccAddress
 		err  error
 		info keyring.Info
 	)
@@ -127,11 +126,6 @@ func (cc *ChainClient) Address() (string, error) {
 		return "", err
 	}
 
-	//if acc, err = cc.GetKeyAddress(); err != nil {
-	//	return "", err
-	//}
-	//fmt.Println(acc.String())
-	//return acc.String(), nil
 	return out, err
 }
 
@@ -140,12 +134,14 @@ func (cc *ChainClient) TrustingPeriod() (time.Duration, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	integer, _ := math.Modf(res.UnbondingTime.Hours() * 0.7)
 	trustingStr := fmt.Sprintf("%vh", integer)
 	tp, err := time.ParseDuration(trustingStr)
 	if err != nil {
 		return 0, nil
 	}
+
 	return tp, nil
 }
 

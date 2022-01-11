@@ -92,7 +92,7 @@ func (cc *ChainClient) QueryBalance(keyName string) (sdk.Coins, error) {
 // QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
 // TODO add pagination support
 func (cc *ChainClient) QueryBalanceWithAddress(address string) (sdk.Coins, error) {
-	addr, err := sdk.AccAddressFromBech32(address)
+	addr, err := cc.DecodeBech32AccAddr(address)
 	if err != nil {
 		return nil, err
 	}
