@@ -92,13 +92,14 @@ func (cc *ChainClient) QueryBalance(keyName string) (sdk.Coins, error) {
 // QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
 // TODO add pagination support
 func (cc *ChainClient) QueryBalanceWithAddress(address string) (sdk.Coins, error) {
-	addr, err := cc.DecodeBech32AccAddr(address)
-	if err != nil {
-		return nil, err
-	}
+	//addr, err := cc.DecodeBech32AccAddr(address)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	p := bankTypes.NewQueryAllBalancesRequest(addr, DefaultPageRequest())
+	//p := bankTypes.NewQueryAllBalancesRequest(addr, DefaultPageRequest())
 
+	p := &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: DefaultPageRequest()}
 	queryClient := bankTypes.NewQueryClient(cc)
 
 	res, err := queryClient.AllBalances(context.Background(), p)
