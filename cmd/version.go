@@ -19,7 +19,10 @@ func versionCmd() *cobra.Command {
 		Aliases: []string{"v"},
 		Short:   "show version information for lens, sdk, and tendermint",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			bi, _ := dbg.ReadBuildInfo()
+			bi, ok := dbg.ReadBuildInfo()
+			if !ok {
+				return fmt.Errorf("didn't return build info")
+			}
 
 			dependencyVersions := map[string]string{}
 
