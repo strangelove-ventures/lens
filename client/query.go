@@ -92,13 +92,6 @@ func (cc *ChainClient) QueryBalance(keyName string) (sdk.Coins, error) {
 // QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
 // TODO add pagination support
 func (cc *ChainClient) QueryBalanceWithAddress(address string) (sdk.Coins, error) {
-	//addr, err := cc.DecodeBech32AccAddr(address)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//p := bankTypes.NewQueryAllBalancesRequest(addr, DefaultPageRequest())
-
 	p := &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: DefaultPageRequest()}
 	queryClient := bankTypes.NewQueryClient(cc)
 
@@ -110,25 +103,9 @@ func (cc *ChainClient) QueryBalanceWithAddress(address string) (sdk.Coins, error
 	return res.Balances, nil
 }
 
-// QueryBalanceWithAddress returns the amount of coins in the relayer account with address as input
-//func (cc *ChainClient) QueryBalanceWithAddress(ctx context.Context, address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
-//	addr, err := cc.EncodeBech32AccAddr(address)
-//	if err != nil {
-//		return nil, err
-//	}
-//	params := &bankTypes.QueryAllBalancesRequest{Address: addr, Pagination: pageReq}
-//	res, err := bankTypes.NewQueryClient(cc).AllBalances(ctx, params)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return res.Balances, nil
-//}
-
 // QueryUnbondingPeriod returns the unbonding period of the chain
 func (cc *ChainClient) QueryUnbondingPeriod() (time.Duration, error) {
 	req := stakingtypes.QueryParamsRequest{}
-
 	queryClient := stakingtypes.NewQueryClient(cc)
 
 	res, err := queryClient.Params(context.Background(), &req)
@@ -221,7 +198,7 @@ func (cc *ChainClient) QueryClientStateResponse(height int64, srcClientId string
 	return clientStateRes, nil
 }
 
-// QueryClientState retrevies the latest consensus state for a client in state at a given height
+// QueryClientState retrieves the latest consensus state for a client in state at a given height
 // and unpacks it to exported client state interface
 func (cc *ChainClient) QueryClientState(height int64, clientid string) (ibcexported.ClientState, error) {
 	clientStateRes, err := cc.QueryClientStateResponse(height, clientid)
@@ -263,7 +240,11 @@ func (cc *ChainClient) QueryClientConsensusState(chainHeight int64, clientid str
 		return nil, err
 	}
 
-	return clienttypes.NewQueryConsensusStateResponse(anyConsensusState, proofBz, proofHeight), nil
+	return &clienttypes.QueryConsensusStateResponse{
+		ConsensusState: anyConsensusState,
+		Proof:          proofBz,
+		ProofHeight:    proofHeight,
+	}, nil
 }
 
 //DefaultUpgradePath is the default IBC upgrade path set for an on-chain light client
@@ -274,19 +255,21 @@ func (cc *ChainClient) NewClientState(dstUpdateHeader ibcexported.Header, dstTru
 	if !ok {
 		return nil, fmt.Errorf("got data of type %T but wanted  tmclient.Header \n", dstUpdateHeader)
 	}
+
 	// Create the ClientState we want on 'c' tracking 'dst'
-	return tmclient.NewClientState(
-		dstTmHeader.GetHeader().GetChainID(),
-		tmclient.NewFractionFromTm(light.DefaultTrustLevel),
-		dstTrustingPeriod,
-		dstUbdPeriod,
-		time.Minute*10,
-		dstUpdateHeader.GetHeight().(clienttypes.Height),
-		committypes.GetSDKSpecs(),
-		defaultUpgradePath,
-		allowUpdateAfterExpiry,
-		allowUpdateAfterMisbehaviour,
-	), nil
+	return &tmclient.ClientState{
+		ChainId:                      dstTmHeader.GetHeader().GetChainID(),
+		TrustLevel:                   tmclient.NewFractionFromTm(light.DefaultTrustLevel),
+		TrustingPeriod:               dstTrustingPeriod,
+		UnbondingPeriod:              dstUbdPeriod,
+		MaxClockDrift:                time.Minute * 10,
+		FrozenHeight:                 clienttypes.ZeroHeight(),
+		LatestHeight:                 dstUpdateHeader.GetHeight().(clienttypes.Height),
+		ProofSpecs:                   committypes.GetSDKSpecs(),
+		UpgradePath:                  defaultUpgradePath,
+		AllowUpdateAfterExpiry:       allowUpdateAfterExpiry,
+		AllowUpdateAfterMisbehaviour: allowUpdateAfterMisbehaviour,
+	}, nil
 }
 
 // QueryUpgradeProof performs an abci query with the given key and returns the proto encoded merkle proof
@@ -317,7 +300,10 @@ func (cc *ChainClient) QueryUpgradeProof(key []byte, height uint64) ([]byte, cli
 	// proof height + 1 is returned as the proof created corresponds to the height the proof
 	// was created in the IAVL tree. Tendermint and subsequently the clients that rely on it
 	// have heights 1 above the IAVL tree. Thus we return proof height + 1
-	return proof, clienttypes.NewHeight(revision, uint64(res.Height+1)), nil
+	return proof, clienttypes.Height{
+		RevisionNumber: revision,
+		RevisionHeight: uint64(res.Height + 1),
+	}, nil
 }
 
 // QueryUpgradedClient returns upgraded client info
@@ -417,18 +403,21 @@ func (cc *ChainClient) QueryClients() (clienttypes.IdentifiedClientStates, error
 func (cc *ChainClient) QueryConnection(height int64, connectionid string) (*conntypes.QueryConnectionResponse, error) {
 	res, err := cc.queryConnectionABCI(height, connectionid)
 	if err != nil && strings.Contains(err.Error(), "not found") {
-		return conntypes.NewQueryConnectionResponse(
-			conntypes.NewConnectionEnd(
-				conntypes.UNINITIALIZED,
-				"client",
-				conntypes.NewCounterparty(
-					"client",
-					"connection",
-					committypes.NewMerklePrefix([]byte{}),
-				),
-				[]*conntypes.Version{},
-				0,
-			), []byte{}, clienttypes.NewHeight(0, 0)), nil
+		return &conntypes.QueryConnectionResponse{
+			Connection: &conntypes.ConnectionEnd{
+				ClientId: "client",
+				Versions: []*conntypes.Version{},
+				State:    conntypes.UNINITIALIZED,
+				Counterparty: conntypes.Counterparty{
+					ClientId:     "client",
+					ConnectionId: "connection",
+					Prefix:       committypes.MerklePrefix{KeyPrefix: []byte{}},
+				},
+				DelayPeriod: 0,
+			},
+			Proof:       []byte{},
+			ProofHeight: clienttypes.Height{RevisionNumber: 0, RevisionHeight: 0},
+		}, nil
 	} else if err != nil {
 		return nil, err
 	}
@@ -455,7 +444,11 @@ func (cc *ChainClient) queryConnectionABCI(height int64, connectionID string) (*
 		return nil, err
 	}
 
-	return conntypes.NewQueryConnectionResponse(connection, proofBz, proofHeight), nil
+	return &conntypes.QueryConnectionResponse{
+		Connection:  &connection,
+		Proof:       proofBz,
+		ProofHeight: proofHeight,
+	}, nil
 }
 
 // QueryConnections gets any connections on a chain
@@ -521,19 +514,24 @@ func (cc *ChainClient) GenerateConnHandshakeProof(height int64, clientId, connId
 func (cc *ChainClient) QueryChannel(height int64, channelid, portid string) (chanRes *chantypes.QueryChannelResponse, err error) {
 	res, err := cc.queryChannelABCI(height, portid, channelid)
 	if err != nil && strings.Contains(err.Error(), "not found") {
-		return chantypes.NewQueryChannelResponse(
-			chantypes.NewChannel(
-				chantypes.UNINITIALIZED,
-				chantypes.UNORDERED,
-				chantypes.NewCounterparty(
-					"port",
-					"channel",
-				),
-				[]string{},
-				"version",
-			),
-			[]byte{},
-			clienttypes.NewHeight(0, 0)), nil
+
+		return &chantypes.QueryChannelResponse{
+			Channel: &chantypes.Channel{
+				State:    chantypes.UNINITIALIZED,
+				Ordering: chantypes.UNORDERED,
+				Counterparty: chantypes.Counterparty{
+					PortId:    "port",
+					ChannelId: "channel",
+				},
+				ConnectionHops: []string{},
+				Version:        "version",
+			},
+			Proof: []byte{},
+			ProofHeight: clienttypes.Height{
+				RevisionNumber: 0,
+				RevisionHeight: 0,
+			},
+		}, nil
 	} else if err != nil {
 		return nil, err
 	}
@@ -560,7 +558,11 @@ func (cc *ChainClient) queryChannelABCI(height int64, portID, channelID string) 
 		return nil, err
 	}
 
-	return chantypes.NewQueryChannelResponse(channel, proofBz, proofHeight), nil
+	return &chantypes.QueryChannelResponse{
+		Channel:     &channel,
+		Proof:       proofBz,
+		ProofHeight: proofHeight,
+	}, nil
 }
 
 // QueryChannelClient returns the client state of the client supporting a given channel
@@ -676,7 +678,11 @@ func (cc *ChainClient) QueryNextSeqRecv(height int64, channelid, portid string) 
 
 	sequence := binary.BigEndian.Uint64(value)
 
-	return chantypes.NewQueryNextSequenceReceiveResponse(sequence, proofBz, proofHeight), nil
+	return &chantypes.QueryNextSequenceReceiveResponse{
+		NextSequenceReceive: sequence,
+		Proof:               proofBz,
+		ProofHeight:         proofHeight,
+	}, nil
 }
 
 // QueryPacketCommitment returns the packet commitment proof at a given height
@@ -693,7 +699,11 @@ func (cc *ChainClient) QueryPacketCommitment(height int64, channelid, portid str
 		return nil, sdkerrors.Wrapf(chantypes.ErrPacketCommitmentNotFound, "portID (%s), channelID (%s), sequence (%d)", portid, channelid, seq)
 	}
 
-	return chantypes.NewQueryPacketCommitmentResponse(value, proofBz, proofHeight), nil
+	return &chantypes.QueryPacketCommitmentResponse{
+		Commitment:  value,
+		Proof:       proofBz,
+		ProofHeight: proofHeight,
+	}, nil
 }
 
 // QueryPacketAcknowledgement returns the packet ack proof at a given height
@@ -709,7 +719,11 @@ func (cc *ChainClient) QueryPacketAcknowledgement(height int64, channelid, porti
 		return nil, sdkerrors.Wrapf(chantypes.ErrInvalidAcknowledgement, "portID (%s), channelID (%s), sequence (%d)", portid, channelid, seq)
 	}
 
-	return chantypes.NewQueryPacketAcknowledgementResponse(value, proofBz, proofHeight), nil
+	return &chantypes.QueryPacketAcknowledgementResponse{
+		Acknowledgement: value,
+		Proof:           proofBz,
+		ProofHeight:     proofHeight,
+	}, nil
 }
 
 // QueryPacketReceipt returns the packet receipt proof at a given height
@@ -721,7 +735,11 @@ func (cc *ChainClient) QueryPacketReceipt(height int64, channelid, portid string
 		return nil, err
 	}
 
-	return chantypes.NewQueryPacketReceiptResponse(value != nil, proofBz, proofHeight), nil
+	return &chantypes.QueryPacketReceiptResponse{
+		Received:    value != nil,
+		Proof:       proofBz,
+		ProofHeight: proofHeight,
+	}, nil
 }
 
 func (cc *ChainClient) QueryLatestHeight() (int64, error) {
