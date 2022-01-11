@@ -164,11 +164,21 @@ func (cc *ChainClient) CreateClient(clientState ibcexported.ClientState, dstHead
 		return nil, err
 	}
 
-	msg, err := clienttypes.NewMsgCreateClient(
-		clientState,
-		tmHeader.ConsensusState(),
-		acc,
-	)
+	anyClientState, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		return nil, err
+	}
+
+	anyConsensusState, err := clienttypes.PackConsensusState(tmHeader.ConsensusState())
+	if err != nil {
+		return nil, err
+	}
+
+	msg := &clienttypes.MsgCreateClient{
+		ClientState:    anyClientState,
+		ConsensusState: anyConsensusState,
+		Signer:         acc,
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -191,11 +201,18 @@ func (cc *ChainClient) UpdateClient(srcClientId string, dstHeader ibcexported.He
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	msg, err := clienttypes.NewMsgUpdateClient(
-		srcClientId,
-		dstHeader,
-		acc,
-	)
+
+	anyHeader, err := clienttypes.PackHeader(dstHeader)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := &clienttypes.MsgUpdateClient{
+		ClientId: srcClientId,
+		Header:   anyHeader,
+		Signer:   acc,
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -216,14 +233,19 @@ func (cc *ChainClient) ConnectionOpenInit(srcClientId, dstClientId string, dstHe
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	msg := conntypes.NewMsgConnectionOpenInit(
-		srcClientId,
-		dstClientId,
-		defaultChainPrefix,
-		version,
-		defaultDelayPeriod,
-		acc,
-	)
+
+	counterparty := conntypes.Counterparty{
+		ClientId:     dstClientId,
+		ConnectionId: "",
+		Prefix:       defaultChainPrefix,
+	}
+	msg := &conntypes.MsgConnectionOpenInit{
+		ClientId:     srcClientId,
+		Counterparty: counterparty,
+		Version:      version,
+		DelayPeriod:  defaultDelayPeriod,
+		Signer:       acc,
+	}
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
@@ -252,23 +274,35 @@ func (cc *ChainClient) ConnectionOpenTry(dstQueryProvider provider.QueryProvider
 		return nil, err
 	}
 
+	csAny, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		return nil, err
+	}
+
+	counterparty := conntypes.Counterparty{
+		ClientId:     dstClientId,
+		ConnectionId: dstConnId,
+		Prefix:       defaultChainPrefix,
+	}
+
 	// TODO: Get DelayPeriod from counterparty connection rather than using default value
-	msg := conntypes.NewMsgConnectionOpenTry(
-		srcConnId,
-		srcClientId,
-		dstConnId,
-		dstClientId,
-		clientState,
-		defaultChainPrefix,
-		conntypes.ExportedVersionsToProto(conntypes.GetCompatibleVersions()),
-		defaultDelayPeriod,
-		connStateProof,
-		clientStateProof,
-		consensusStateProof,
-		clienttypes.NewHeight(proofHeight.GetRevisionNumber(), proofHeight.GetRevisionHeight()),
-		clientState.GetLatestHeight().(clienttypes.Height),
-		acc,
-	)
+	msg := &conntypes.MsgConnectionOpenTry{
+		ClientId:             srcClientId,
+		PreviousConnectionId: srcConnId,
+		ClientState:          csAny,
+		Counterparty:         counterparty,
+		DelayPeriod:          defaultDelayPeriod,
+		CounterpartyVersions: conntypes.ExportedVersionsToProto(conntypes.GetCompatibleVersions()),
+		ProofHeight: clienttypes.Height{
+			RevisionNumber: proofHeight.GetRevisionNumber(),
+			RevisionHeight: proofHeight.GetRevisionHeight(),
+		},
+		ProofInit:       connStateProof,
+		ProofClient:     clientStateProof,
+		ProofConsensus:  consensusStateProof,
+		ConsensusHeight: clientState.GetLatestHeight().(clienttypes.Height),
+		Signer:          acc,
+	}
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
@@ -297,18 +331,27 @@ func (cc *ChainClient) ConnectionOpenAck(dstQueryProvider provider.QueryProvider
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	msg := conntypes.NewMsgConnectionOpenAck(
-		srcConnId,
-		dstConnId,
-		clientState,
-		connStateProof,
-		clientStateProof,
-		consensusStateProof,
-		clienttypes.NewHeight(proofHeight.GetRevisionNumber(), proofHeight.GetRevisionHeight()),
-		clientState.GetLatestHeight().(clienttypes.Height),
-		conntypes.DefaultIBCVersion,
-		acc,
-	)
+
+	csAny, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := &conntypes.MsgConnectionOpenAck{
+		ConnectionId:             srcConnId,
+		CounterpartyConnectionId: dstConnId,
+		Version:                  conntypes.DefaultIBCVersion,
+		ClientState:              csAny,
+		ProofHeight: clienttypes.Height{
+			RevisionNumber: proofHeight.GetRevisionNumber(),
+			RevisionHeight: proofHeight.GetRevisionHeight(),
+		},
+		ProofTry:        connStateProof,
+		ProofClient:     clientStateProof,
+		ProofConsensus:  consensusStateProof,
+		ConsensusHeight: clientState.GetLatestHeight().(clienttypes.Height),
+		Signer:          acc,
+	}
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
@@ -335,12 +378,13 @@ func (cc *ChainClient) ConnectionOpenConfirm(dstQueryProvider provider.QueryProv
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	msg := conntypes.NewMsgConnectionOpenConfirm(
-		srcConnId,
-		counterpartyConnState.Proof,
-		counterpartyConnState.ProofHeight,
-		acc,
-	)
+
+	msg := &conntypes.MsgConnectionOpenConfirm{
+		ConnectionId: srcConnId,
+		ProofAck:     counterpartyConnState.Proof,
+		ProofHeight:  counterpartyConnState.ProofHeight,
+		Signer:       acc,
+	}
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
@@ -358,14 +402,21 @@ func (cc *ChainClient) ChannelOpenInit(srcClientId, srcConnId, srcPortId, srcVer
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	msg := chantypes.NewMsgChannelOpenInit(
-		srcPortId,
-		srcVersion,
-		order,
-		[]string{srcConnId},
-		dstPortId,
-		acc,
-	)
+
+	msg := &chantypes.MsgChannelOpenInit{
+		PortId: srcPortId,
+		Channel: chantypes.Channel{
+			State:    chantypes.INIT,
+			Ordering: order,
+			Counterparty: chantypes.Counterparty{
+				PortId:    dstPortId,
+				ChannelId: "",
+			},
+			ConnectionHops: []string{srcConnId},
+			Version:        srcVersion,
+		},
+		Signer: acc,
+	}
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
@@ -392,19 +443,25 @@ func (cc *ChainClient) ChannelOpenTry(dstQueryProvider provider.QueryProvider, d
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	msg := chantypes.NewMsgChannelOpenTry(
-		srcPortId,
-		srcChanId,
-		srcVersion,
-		counterpartyChannelRes.Channel.Ordering,
-		[]string{srcConnectionId},
-		dstPortId,
-		dstChanId,
-		counterpartyChannelRes.Channel.Version,
-		counterpartyChannelRes.Proof,
-		counterpartyChannelRes.ProofHeight,
-		acc,
-	)
+
+	msg := &chantypes.MsgChannelOpenTry{
+		PortId:            srcPortId,
+		PreviousChannelId: srcChanId,
+		Channel: chantypes.Channel{
+			State:    chantypes.TRYOPEN,
+			Ordering: counterpartyChannelRes.Channel.Ordering,
+			Counterparty: chantypes.Counterparty{
+				PortId:    dstPortId,
+				ChannelId: dstChanId,
+			},
+			ConnectionHops: []string{srcConnectionId},
+			Version:        srcVersion,
+		},
+		CounterpartyVersion: counterpartyChannelRes.Channel.Version,
+		ProofInit:           counterpartyChannelRes.Proof,
+		ProofHeight:         counterpartyChannelRes.ProofHeight,
+		Signer:              acc,
+	}
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
@@ -432,15 +489,16 @@ func (cc *ChainClient) ChannelOpenAck(dstQueryProvider provider.QueryProvider, d
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	msg := chantypes.NewMsgChannelOpenAck(
-		srcPortId,
-		srcChanId,
-		dstChanId,
-		counterpartyChannelRes.Channel.Version,
-		counterpartyChannelRes.Proof,
-		counterpartyChannelRes.ProofHeight,
-		acc,
-	)
+
+	msg := &chantypes.MsgChannelOpenAck{
+		PortId:                srcPortId,
+		ChannelId:             srcChanId,
+		CounterpartyChannelId: dstChanId,
+		CounterpartyVersion:   counterpartyChannelRes.Channel.Version,
+		ProofTry:              counterpartyChannelRes.Proof,
+		ProofHeight:           counterpartyChannelRes.ProofHeight,
+		Signer:                acc,
+	}
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
@@ -467,13 +525,14 @@ func (cc *ChainClient) ChannelOpenConfirm(dstQueryProvider provider.QueryProvide
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	msg := chantypes.NewMsgChannelOpenConfirm(
-		srcPortId,
-		srcChanId,
-		counterpartyChanState.Proof,
-		counterpartyChanState.ProofHeight,
-		acc,
-	)
+
+	msg := &chantypes.MsgChannelOpenConfirm{
+		PortId:      srcPortId,
+		ChannelId:   srcChanId,
+		ProofAck:    counterpartyChanState.Proof,
+		ProofHeight: counterpartyChanState.ProofHeight,
+		Signer:      acc,
+	}
 
 	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
 }
@@ -486,11 +545,14 @@ func (cc *ChainClient) ChannelCloseInit(srcPortId, srcChanId string) (provider.R
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	return NewCosmosMessage(chantypes.NewMsgChannelCloseInit(
-		srcPortId,
-		srcChanId,
-		acc,
-	)), nil
+
+	msg := &chantypes.MsgChannelCloseInit{
+		PortId:    srcPortId,
+		ChannelId: srcChanId,
+		Signer:    acc,
+	}
+
+	return NewCosmosMessage(msg), nil
 }
 
 func (cc *ChainClient) ChannelCloseConfirm(dstQueryProvider provider.QueryProvider, dsth int64, dstChanId, dstPortId, srcPortId, srcChanId string) (provider.RelayerMessage, error) {
@@ -506,13 +568,16 @@ func (cc *ChainClient) ChannelCloseConfirm(dstQueryProvider provider.QueryProvid
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
-	return NewCosmosMessage(chantypes.NewMsgChannelCloseConfirm(
-		srcPortId,
-		srcChanId,
-		dstChanResp.Proof,
-		dstChanResp.ProofHeight,
-		acc,
-	)), nil
+
+	msg := &chantypes.MsgChannelCloseConfirm{
+		PortId:      srcPortId,
+		ChannelId:   srcChanId,
+		ProofInit:   dstChanResp.Proof,
+		ProofHeight: dstChanResp.ProofHeight,
+		Signer:      acc,
+	}
+
+	return NewCosmosMessage(msg), nil
 }
 
 // GetIBCUpdateHeader updates the off chain tendermint light client and
@@ -534,10 +599,12 @@ func (cc *ChainClient) GetLightSignedHeaderAtHeight(h int64) (ibcexported.Header
 	if h == 0 {
 		return nil, errors.New("height cannot be 0")
 	}
+
 	lightBlock, err := cc.LightProvider.LightBlock(context.Background(), h)
 	if err != nil {
 		return nil, err
 	}
+
 	protoVal, err := tmtypes.NewValidatorSet(lightBlock.ValidatorSet.Validators).ToProto()
 	if err != nil {
 		return nil, err
@@ -624,21 +691,24 @@ func (cc *ChainClient) MsgRelayAcknowledgement(dst provider.ChainProvider, dstCh
 	case ackRes == nil:
 		return nil, fmt.Errorf("ack packet [%s]seq{%d} has no associated proofs", dst.ChainId(), packet.Seq())
 	default:
-		return NewCosmosMessage(chantypes.NewMsgAcknowledgement(
-			chantypes.NewPacket(
-				packet.Data(),
-				packet.Seq(),
-				srcPortId,
-				srcChanId,
-				dstPortId,
-				dstChanId,
-				packet.Timeout(),
-				packet.TimeoutStamp(),
-			),
-			msgPacketAck.ack,
-			ackRes.Proof,
-			ackRes.ProofHeight,
-			acc)), nil
+		msg := &chantypes.MsgAcknowledgement{
+			Packet: chantypes.Packet{
+				Sequence:           packet.Seq(),
+				SourcePort:         srcPortId,
+				SourceChannel:      srcChanId,
+				DestinationPort:    dstPortId,
+				DestinationChannel: dstChanId,
+				Data:               packet.Data(),
+				TimeoutHeight:      packet.Timeout(),
+				TimeoutTimestamp:   packet.TimeoutStamp(),
+			},
+			Acknowledgement: msgPacketAck.ack,
+			ProofAcked:      ackRes.Proof,
+			ProofHeight:     ackRes.ProofHeight,
+			Signer:          acc,
+		}
+
+		return NewCosmosMessage(msg), nil
 	}
 }
 
@@ -653,15 +723,21 @@ func (cc *ChainClient) MsgTransfer(amount sdk.Coin, dstChainId, dstAddr, srcPort
 	}
 
 	version := clienttypes.ParseChainID(dstChainId)
-	return NewCosmosMessage(transfertypes.NewMsgTransfer(
-		srcPortId,
-		srcChanId,
-		amount,
-		acc,
-		dstAddr,
-		clienttypes.NewHeight(version, timeoutHeight),
-		timeoutTimestamp,
-	)), nil
+
+	msg := &transfertypes.MsgTransfer{
+		SourcePort:    srcPortId,
+		SourceChannel: srcChanId,
+		Token:         amount,
+		Sender:        acc,
+		Receiver:      dstAddr,
+		TimeoutHeight: clienttypes.Height{
+			RevisionNumber: version,
+			RevisionHeight: timeoutHeight,
+		},
+		TimeoutTimestamp: timeoutTimestamp,
+	}
+
+	return NewCosmosMessage(msg), nil
 }
 
 // MsgRelayTimeout constructs the MsgTimeout which is to be sent to the sending chain.
@@ -685,22 +761,24 @@ func (cc *ChainClient) MsgRelayTimeout(dst provider.ChainProvider, dsth int64, p
 	case recvRes == nil:
 		return nil, fmt.Errorf("timeout packet [%s]seq{%d} has no associated proofs", cc.Config.ChainID, packet.Seq())
 	default:
-		return NewCosmosMessage(chantypes.NewMsgTimeout(
-			chantypes.NewPacket(
-				packet.Data(),
-				packet.Seq(),
-				srcPortId,
-				srcChanId,
-				dstPortId,
-				dstChanId,
-				packet.Timeout(),
-				packet.TimeoutStamp(),
-			),
-			packet.Seq(),
-			recvRes.Proof,
-			recvRes.ProofHeight,
-			acc,
-		)), nil
+		msg := &chantypes.MsgTimeout{
+			Packet: chantypes.Packet{
+				Sequence:           packet.Seq(),
+				SourcePort:         srcPortId,
+				SourceChannel:      srcChanId,
+				DestinationPort:    dstPortId,
+				DestinationChannel: dstChanId,
+				Data:               packet.Data(),
+				TimeoutHeight:      packet.Timeout(),
+				TimeoutTimestamp:   packet.TimeoutStamp(),
+			},
+			ProofUnreceived:  recvRes.Proof,
+			ProofHeight:      recvRes.ProofHeight,
+			NextSequenceRecv: packet.Seq(),
+			Signer:           acc,
+		}
+
+		return NewCosmosMessage(msg), nil
 	}
 }
 
@@ -724,21 +802,23 @@ func (cc *ChainClient) MsgRelayRecvPacket(dst provider.ChainProvider, dsth int64
 	case comRes == nil:
 		return nil, fmt.Errorf("receive packet [%s]seq{%d} has no associated proofs", cc.Config.ChainID, packet.Seq())
 	default:
-		return NewCosmosMessage(chantypes.NewMsgRecvPacket(
-			chantypes.NewPacket(
-				packet.Data(),
-				packet.Seq(),
-				dstPortId,
-				dstChanId,
-				srcPortId,
-				srcChanId,
-				packet.Timeout(),
-				packet.TimeoutStamp(),
-			),
-			comRes.Proof,
-			comRes.ProofHeight,
-			acc,
-		)), nil
+		msg := &chantypes.MsgRecvPacket{
+			Packet: chantypes.Packet{
+				Sequence:           packet.Seq(),
+				SourcePort:         dstPortId,
+				SourceChannel:      dstChanId,
+				DestinationPort:    srcPortId,
+				DestinationChannel: srcChanId,
+				Data:               packet.Data(),
+				TimeoutHeight:      packet.Timeout(),
+				TimeoutTimestamp:   packet.TimeoutStamp(),
+			},
+			ProofCommitment: comRes.Proof,
+			ProofHeight:     comRes.ProofHeight,
+			Signer:          acc,
+		}
+
+		return NewCosmosMessage(msg), nil
 	}
 }
 
@@ -1205,7 +1285,11 @@ func (cc *ChainClient) QueryConsensusStateABCI(clientID string, height ibcexport
 		return nil, err
 	}
 
-	return clienttypes.NewQueryConsensusStateResponse(anyConsensusState, proofBz, proofHeight), nil
+	return &clienttypes.QueryConsensusStateResponse{
+		ConsensusState: anyConsensusState,
+		Proof:          proofBz,
+		ProofHeight:    proofHeight,
+	}, nil
 }
 
 // isMatchingClient determines if the two provided clients match in all fields
