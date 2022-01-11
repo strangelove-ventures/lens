@@ -645,6 +645,9 @@ func (cc *ChainClient) InjectTrustedFields(header ibcexported.Header, dst provid
 
 	// TODO: this is likely a source of off by 1 errors but may be impossible to change? Maybe this is the
 	// place where we need to fix the upstream query proof issue?
+	// TODO removed the +1 here for now to test removing these errors
+	// Error: TrustedHeight {4 9032785} must be less than header height {4 9032785}: invalid header height
+	// Maybe add back?
 	var trustedHeader *tmclient.Header
 	if err := retry.Do(func() error {
 		tmpHeader, err := cc.GetLightSignedHeaderAtHeight(int64(h.TrustedHeight.RevisionHeight))

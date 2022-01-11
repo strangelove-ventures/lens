@@ -61,22 +61,24 @@ func (rp relayMsgTimeout) Msg(src provider.ChainProvider, srcPortId, srcChanId, 
 	if err != nil {
 		return nil, err
 	}
-	msg := chantypes.NewMsgTimeout(
-		chantypes.NewPacket(
-			rp.packetData,
-			rp.seq,
-			srcPortId,
-			srcChanId,
-			dstPortId,
-			dstChanId,
-			rp.timeout,
-			rp.timeoutStamp,
-		),
-		rp.seq,
-		rp.dstRecvRes.Proof,
-		rp.dstRecvRes.ProofHeight,
-		addr,
-	)
+
+	msg := &chantypes.MsgTimeout{
+		Packet: chantypes.Packet{
+			Sequence:           rp.seq,
+			SourcePort:         srcPortId,
+			SourceChannel:      srcChanId,
+			DestinationPort:    dstPortId,
+			DestinationChannel: dstChanId,
+			Data:               rp.packetData,
+			TimeoutHeight:      rp.timeout,
+			TimeoutTimestamp:   rp.timeoutStamp,
+		},
+		ProofUnreceived:  rp.dstRecvRes.Proof,
+		ProofHeight:      rp.dstRecvRes.ProofHeight,
+		NextSequenceRecv: rp.seq,
+		Signer:           addr,
+	}
+
 	return NewCosmosMessage(msg), nil
 }
 
@@ -141,22 +143,22 @@ func (rp relayMsgRecvPacket) Msg(src provider.ChainProvider, srcPortId, srcChanI
 		return nil, err
 	}
 
-	packet := chantypes.NewPacket(
-		rp.packetData,
-		rp.seq,
-		dstPortId,
-		dstChanId,
-		srcPortId,
-		srcChanId,
-		rp.timeout,
-		rp.timeoutStamp,
-	)
-	msg := chantypes.NewMsgRecvPacket(
-		packet,
-		rp.dstComRes.Proof,
-		rp.dstComRes.ProofHeight,
-		addr,
-	)
+	msg := &chantypes.MsgRecvPacket{
+		Packet: chantypes.Packet{
+			Sequence:           rp.seq,
+			SourcePort:         dstPortId,
+			SourceChannel:      dstChanId,
+			DestinationPort:    srcPortId,
+			DestinationChannel: srcChanId,
+			Data:               rp.packetData,
+			TimeoutHeight:      rp.timeout,
+			TimeoutTimestamp:   rp.timeoutStamp,
+		},
+		ProofCommitment: rp.dstComRes.Proof,
+		ProofHeight:     rp.dstComRes.ProofHeight,
+		Signer:          addr,
+	}
+
 	return NewCosmosMessage(msg), nil
 }
 
@@ -195,22 +197,23 @@ func (rp relayMsgPacketAck) Msg(src provider.ChainProvider, srcPortId, srcChanId
 		return nil, err
 	}
 
-	msg := chantypes.NewMsgAcknowledgement(
-		chantypes.NewPacket(
-			rp.packetData,
-			rp.seq,
-			srcPortId,
-			srcChanId,
-			dstPortId,
-			dstChanId,
-			rp.timeout,
-			rp.timeoutStamp,
-		),
-		rp.ack,
-		rp.dstComRes.Proof,
-		rp.dstComRes.ProofHeight,
-		addr,
-	)
+	msg := &chantypes.MsgAcknowledgement{
+		Packet: chantypes.Packet{
+			Sequence:           rp.seq,
+			SourcePort:         srcPortId,
+			SourceChannel:      srcChanId,
+			DestinationPort:    dstPortId,
+			DestinationChannel: dstChanId,
+			Data:               rp.packetData,
+			TimeoutHeight:      rp.timeout,
+			TimeoutTimestamp:   rp.timeoutStamp,
+		},
+		Acknowledgement: rp.ack,
+		ProofAcked:      rp.dstComRes.Proof,
+		ProofHeight:     rp.dstComRes.ProofHeight,
+		Signer:          addr,
+	}
+
 	return NewCosmosMessage(msg), nil
 }
 

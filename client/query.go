@@ -194,8 +194,11 @@ func (cc *ChainClient) QueryClientStateResponse(height int64, srcClientId string
 		return nil, err
 	}
 
-	clientStateRes := clienttypes.NewQueryClientStateResponse(anyClientState, proofBz, proofHeight)
-	return clientStateRes, nil
+	return &clienttypes.QueryClientStateResponse{
+		ClientState: anyClientState,
+		Proof:       proofBz,
+		ProofHeight: proofHeight,
+	}, nil
 }
 
 // QueryClientState retrieves the latest consensus state for a client in state at a given height
