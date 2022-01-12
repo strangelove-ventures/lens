@@ -183,7 +183,7 @@ func (cc *ChainClient) CreateClient(clientState ibcexported.ClientState, dstHead
 		return nil, err
 	}
 
-	return NewCosmosMessage(msg), msg.ValidateBasic()
+	return NewCosmosMessage(msg), nil
 }
 
 func (cc *ChainClient) SubmitMisbehavior( /*TBD*/ ) (provider.RelayerMessage, error) {
@@ -216,7 +216,7 @@ func (cc *ChainClient) UpdateClient(srcClientId string, dstHeader ibcexported.He
 	if err != nil {
 		return nil, err
 	}
-	return NewCosmosMessage(msg), msg.ValidateBasic()
+	return NewCosmosMessage(msg), nil
 }
 
 func (cc *ChainClient) ConnectionOpenInit(srcClientId, dstClientId string, dstHeader ibcexported.Header) ([]provider.RelayerMessage, error) {
@@ -247,7 +247,7 @@ func (cc *ChainClient) ConnectionOpenInit(srcClientId, dstClientId string, dstHe
 		Signer:       acc,
 	}
 
-	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
+	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, nil
 }
 
 func (cc *ChainClient) ConnectionOpenTry(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcClientId, dstClientId, srcConnId, dstConnId string) ([]provider.RelayerMessage, error) {
@@ -304,7 +304,7 @@ func (cc *ChainClient) ConnectionOpenTry(dstQueryProvider provider.QueryProvider
 		Signer:          acc,
 	}
 
-	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
+	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, nil
 }
 
 func (cc *ChainClient) ConnectionOpenAck(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcClientId, srcConnId, dstClientId, dstConnId string) ([]provider.RelayerMessage, error) {
@@ -353,7 +353,7 @@ func (cc *ChainClient) ConnectionOpenAck(dstQueryProvider provider.QueryProvider
 		Signer:          acc,
 	}
 
-	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
+	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, nil
 }
 
 func (cc *ChainClient) ConnectionOpenConfirm(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, dstConnId, srcClientId, srcConnId string) ([]provider.RelayerMessage, error) {
@@ -386,7 +386,7 @@ func (cc *ChainClient) ConnectionOpenConfirm(dstQueryProvider provider.QueryProv
 		Signer:       acc,
 	}
 
-	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
+	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, nil
 }
 
 func (cc *ChainClient) ChannelOpenInit(srcClientId, srcConnId, srcPortId, srcVersion, dstPortId string, order chantypes.Order, dstHeader ibcexported.Header) ([]provider.RelayerMessage, error) {
@@ -418,7 +418,7 @@ func (cc *ChainClient) ChannelOpenInit(srcClientId, srcConnId, srcPortId, srcVer
 		Signer: acc,
 	}
 
-	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
+	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, nil
 }
 
 func (cc *ChainClient) ChannelOpenTry(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcPortId, dstPortId, srcChanId, dstChanId, srcVersion, srcConnectionId, srcClientId string) ([]provider.RelayerMessage, error) {
@@ -463,7 +463,7 @@ func (cc *ChainClient) ChannelOpenTry(dstQueryProvider provider.QueryProvider, d
 		Signer:              acc,
 	}
 
-	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
+	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, nil
 }
 
 func (cc *ChainClient) ChannelOpenAck(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcClientId, srcPortId, srcChanId, dstChanId, dstPortId string) ([]provider.RelayerMessage, error) {
@@ -500,7 +500,7 @@ func (cc *ChainClient) ChannelOpenAck(dstQueryProvider provider.QueryProvider, d
 		Signer:                acc,
 	}
 
-	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
+	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, nil
 }
 
 func (cc *ChainClient) ChannelOpenConfirm(dstQueryProvider provider.QueryProvider, dstHeader ibcexported.Header, srcClientId, srcPortId, srcChanId, dstPortId, dstChanId string) ([]provider.RelayerMessage, error) {
@@ -534,7 +534,7 @@ func (cc *ChainClient) ChannelOpenConfirm(dstQueryProvider provider.QueryProvide
 		Signer:      acc,
 	}
 
-	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, msg.ValidateBasic()
+	return []provider.RelayerMessage{updateMsg, NewCosmosMessage(msg)}, nil
 }
 
 func (cc *ChainClient) ChannelCloseInit(srcPortId, srcChanId string) (provider.RelayerMessage, error) {
