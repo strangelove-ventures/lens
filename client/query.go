@@ -839,7 +839,7 @@ func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI,
 
 // QueryBalanceWithDenomTraces is a helper function for query balance
 func (cc *ChainClient) QueryBalanceWithDenomTraces(ctx context.Context, address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
-	coins, err := cc.QueryBalanceWithAddress(address.String())
+	coins, err := cc.QueryBalanceWithAddress(cc.MustEncodeAccAddr(address))
 	if err != nil {
 		return nil, err
 	}
