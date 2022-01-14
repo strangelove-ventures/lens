@@ -1,11 +1,7 @@
 package chain_registry
 
-import (
-	"github.com/strangelove-ventures/lens/internal/chain_info"
-)
-
 type ChainRegistry interface {
-	GetChain(name string) (chain_info.ChainInfo, error)
+	GetChain(name string) (ChainInfo, error)
 	ListChains() ([]string, error)
 	SourceLink() string
 }

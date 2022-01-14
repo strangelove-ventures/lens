@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
-	"github.com/strangelove-ventures/lens/internal/chain_info"
 )
 
 type CosmosGithubRegistry struct{}
@@ -39,7 +38,7 @@ func (c CosmosGithubRegistry) ListChains() ([]string, error) {
 	return chains, nil
 }
 
-func (c CosmosGithubRegistry) GetChain(name string) (chain_info.ChainInfo, error) {
+func (c CosmosGithubRegistry) GetChain(name string) (ChainInfo, error) {
 	client := github.NewClient(http.DefaultClient)
 
 	chainFileName := path.Join(name, "chain.json")
@@ -50,17 +49,17 @@ func (c CosmosGithubRegistry) GetChain(name string) (chain_info.ChainInfo, error
 		chainFileName,
 		&github.RepositoryContentGetOptions{})
 	if err != nil || res.StatusCode != 200 {
-		return chain_info.ChainInfo{}, errors.Wrap(err, fmt.Sprintf("error fetching %s", chainFileName))
+		return ChainInfo{}, errors.Wrap(err, fmt.Sprintf("error fetching %s", chainFileName))
 	}
 
 	content, err := fileContent.GetContent()
 	if err != nil {
-		return chain_info.ChainInfo{}, err
+		return ChainInfo{}, err
 	}
 
-	var result chain_info.ChainInfo
+	var result ChainInfo
 	if err := json.Unmarshal([]byte(content), &result); err != nil {
-		return chain_info.ChainInfo{}, err
+		return ChainInfo{}, err
 	}
 
 	return result, nil

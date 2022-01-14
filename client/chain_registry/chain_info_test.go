@@ -1,4 +1,4 @@
-package chain_info
+package chain_registry
 
 import (
 	"testing"

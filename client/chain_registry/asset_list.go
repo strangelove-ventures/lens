@@ -1,4 +1,4 @@
-package chain_info
+package chain_registry
 
 type AssetList struct {
 	Schema  string `json:"$schema"`

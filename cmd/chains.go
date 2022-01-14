@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/strangelove-ventures/lens/client/chain_registry"
 	"log"
 	"os"
 	"os/exec"
@@ -9,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"github.com/strangelove-ventures/lens/internal/chain_registry"
 )
 
 func chainsCmd() *cobra.Command {
