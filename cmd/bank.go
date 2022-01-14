@@ -28,7 +28,7 @@ func bankSendCmd() *cobra.Command {
 
 			coins, err := sdk.ParseCoinsNormalized(args[2])
 			if err != nil {
-				return err
+				return fmt.Errorf("parsing coin string (i.e. 20000uatom): %s", err)
 			}
 
 			req := &banktypes.MsgSend{
