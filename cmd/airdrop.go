@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/client"
 )
 
 func airdropCmd() *cobra.Command {
@@ -14,19 +16,20 @@ func airdropCmd() *cobra.Command {
 		Use:   "airdrop [airdrop.json] [denom] [key]?",
 		Short: "Airdrop coins to a specified address",
 		Long:  "The airdrop file consists of map[string]float64 where the key is the address on the target chain and the value is the amount of coins to be airdropped to that address/1e6 (i.e. atom instead of uatom). The airdrop command 1. checks the addresses in the file to ensure that they are valid for the given chain l",
-		Args:  cobra.RangeArgs(1, 2),
+		Args:  cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			osmosis, _ := client.NewChainClient(client.GetOsmosisConfig("foo", false), "foo", os.Stdin, os.Stdout)
 			cl := config.GetDefaultClient()
-			// keyNameOrAddress := ""
-			// if len(args) == 1 {
-			// 	keyNameOrAddress = cl.Config.Key
-			// } else {
-			// 	keyNameOrAddress = args[1]
-			// }
-			// address, err := cl.AccountFromKeyOrAddress(keyNameOrAddress)
-			// if err != nil {
-			// 	return err
-			// }
+			keyNameOrAddress := ""
+			if len(args) == 2 {
+				keyNameOrAddress = cl.Config.Key
+			} else {
+				keyNameOrAddress = args[2]
+			}
+			address, err := cl.AccountFromKeyOrAddress(keyNameOrAddress)
+			if err != nil {
+				return err
+			}
 
 			f, err := os.Open(args[0])
 			if err != nil {
@@ -41,16 +44,27 @@ func airdropCmd() *cobra.Command {
 				return err
 			}
 
-			sum := 0.0
+			sends := make([]sdk.Msg, 0)
 			for k, v := range airdrop {
-				_, err := cl.DecodeBech32AccAddr(k)
+				to, err := osmosis.DecodeBech32AccAddr(k)
 				if err != nil {
 					return err
 				}
-				sum += v * 1e6
-				// fmt.Println(k, fmt.Sprintf("%fusomm", v*1000000))
+				toSend := sdk.NewCoins(sdk.NewCoin(args[1], sdk.NewInt(int64(v*1e6))))
+				sendMsg := &banktypes.MsgSend{
+					FromAddress: cl.MustEncodeAccAddr(address),
+					ToAddress:   cl.MustEncodeAccAddr(to),
+					Amount:      toSend,
+				}
+				sends = append(sends, sendMsg)
+				if len(sends) > 100 {
+					res, err := cl.SendMsgs(cmd.Context(), sends)
+					if err != nil || res.Code != 0 {
+						return err
+					}
+					sends = make([]sdk.Msg, 0)
+				}
 			}
-			fmt.Printf("TOTAL: %f\n", sum)
 			return nil
 		},
 	}
