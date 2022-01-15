@@ -44,25 +44,27 @@ func airdropCmd() *cobra.Command {
 				return err
 			}
 
-			sends := make([]sdk.Msg, 0)
+			multiMsg := &banktypes.MsgMultiSend{
+				Inputs:  []banktypes.Input{},
+				Outputs: []banktypes.Output{},
+			}
 			for k, v := range airdrop {
 				to, err := osmosis.DecodeBech32AccAddr(k)
 				if err != nil {
 					return err
 				}
 				toSend := sdk.NewCoins(sdk.NewCoin(args[1], sdk.NewInt(int64(v*1e6))))
-				sendMsg := &banktypes.MsgSend{
-					FromAddress: cl.MustEncodeAccAddr(address),
-					ToAddress:   cl.MustEncodeAccAddr(to),
-					Amount:      toSend,
-				}
-				sends = append(sends, sendMsg)
-				if len(sends) > 100 {
-					res, err := cl.SendMsgs(cmd.Context(), sends)
+
+				multiMsg.Inputs = append(multiMsg.Inputs, banktypes.NewInput(address, toSend))
+				multiMsg.Outputs = append(multiMsg.Outputs, banktypes.NewOutput(to, toSend))
+
+				if len(multiMsg.Outputs) > 100 {
+					res, err := cl.SendMsgs(cmd.Context(), []sdk.Msg{multiMsg})
 					if err != nil || res.Code != 0 {
 						return err
 					}
-					sends = make([]sdk.Msg, 0)
+					multiMsg.Inputs = []banktypes.Input{}
+					multiMsg.Outputs = []banktypes.Output{}
 				}
 			}
 			return nil
