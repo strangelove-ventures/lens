@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -48,23 +49,30 @@ func airdropCmd() *cobra.Command {
 				Inputs:  []banktypes.Input{},
 				Outputs: []banktypes.Output{},
 			}
+			amount := sdk.Coin{Denom: args[1], Amount: sdk.NewInt(0)}
+			var sent int
 			for k, v := range airdrop {
 				to, err := osmosis.DecodeBech32AccAddr(k)
 				if err != nil {
 					return err
 				}
-				toSend := sdk.NewCoins(sdk.NewCoin(args[1], sdk.NewInt(int64(v*1e6))))
-
-				multiMsg.Inputs = append(multiMsg.Inputs, banktypes.NewInput(address, toSend))
+				toSendCoin := sdk.NewCoin(args[1], sdk.NewInt(int64(v*1e6)))
+				toSend := sdk.NewCoins(toSendCoin)
+				amount = amount.Add(toSendCoin)
 				multiMsg.Outputs = append(multiMsg.Outputs, banktypes.NewOutput(to, toSend))
+				sent += 1
 
-				if len(multiMsg.Outputs) > 100 {
+				if len(multiMsg.Outputs) > 300 {
+					completion := float64(sent) / float64(len(airdrop))
+					fmt.Printf("(%f) sending %s to %d addresses\n", completion, amount.String(), len(multiMsg.Outputs))
+					multiMsg.Inputs = append(multiMsg.Inputs, banktypes.NewInput(address, sdk.NewCoins(amount)))
 					res, err := cl.SendMsgs(cmd.Context(), []sdk.Msg{multiMsg})
 					if err != nil || res.Code != 0 {
 						return err
 					}
 					multiMsg.Inputs = []banktypes.Input{}
 					multiMsg.Outputs = []banktypes.Output{}
+					amount = sdk.Coin{Denom: args[1], Amount: sdk.NewInt(0)}
 				}
 			}
 			return nil
