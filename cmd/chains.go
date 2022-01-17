@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/strangelove-ventures/lens/client/chain_registry"
 	"log"
 	"os"
 	"os/exec"
 	"path"
 	"strconv"
+
+	"github.com/strangelove-ventures/lens/client/chain_registry"
 
 	"github.com/spf13/cobra"
 )
@@ -106,9 +107,20 @@ func cmdChainsDelete() *cobra.Command {
 		Short:   "delete a chain from the configuration",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			originalChainCount := len(config.Chains)
 			for _, arg := range args {
+				if config.DefaultChain == arg {
+					log.Printf("ignoring delete request for %s, unable to delete default chain.", arg)
+					continue
+				}
 				delete(config.Chains, arg)
 			}
+
+			// If nothing was removed, there's no need to update the configuration file.
+			if len(config.Chains) == originalChainCount {
+				return nil
+			}
+
 			return overwriteConfig(config)
 		},
 	}
