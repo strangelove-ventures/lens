@@ -159,8 +159,8 @@ func stakingQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-	// stakingDelegationCmd(),
-	// stakingDelegationsCmd(),
+		stakingDelegationCmd(),
+		stakingDelegationsCmd(),
 	// stakingUnbondingDelegationCmd(),
 	// stakingUnbondingDelegationsCmd(),
 	// stakingRedelegationCmd(),
