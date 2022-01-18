@@ -66,14 +66,24 @@ func (c ChainInfo) GetAllRPCEndpoints() (out []string, err error) {
 		if err != nil {
 			return nil, err
 		}
+
 		var port string
-		if u.Scheme == "https" {
-			port = "443"
+		if u.Port() == "" {
+			switch u.Scheme {
+			case "https":
+				port = "443"
+			case "http":
+				port = "80"
+			default:
+				return nil, fmt.Errorf("invalid or unsupported url scheme: %v", u.Scheme)
+			}
 		} else {
 			port = u.Port()
 		}
-		out = append(out, fmt.Sprintf("%s://%s:%s", u.Scheme, u.Hostname(), port))
+
+		out = append(out, fmt.Sprintf("%s://%s:%s%s", u.Scheme, u.Hostname(), port, u.Path))
 	}
+
 	return
 }
 
