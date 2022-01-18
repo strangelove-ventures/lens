@@ -3,7 +3,7 @@ module github.com/strangelove-ventures/lens
 go 1.17
 
 require (
-	github.com/avast/retry-go v2.6.0+incompatible
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/cosmos/cosmos-sdk v0.44.5
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/ibc-go/v2 v2.0.2
