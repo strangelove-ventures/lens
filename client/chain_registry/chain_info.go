@@ -184,8 +184,13 @@ func (c ChainInfo) GetChainConfig() (*client.ChainClientConfig, error) {
 
 	var gasPrices string
 	if len(assetList.Assets) > 0 {
+		fmt.Println("IN GAS PRICE CONDITION")
 		gasPrices = fmt.Sprintf("%.2f%s", 0.01, assetList.Assets[0].Base)
 	}
+
+	fmt.Println()
+	fmt.Printf("%v", assetList)
+	fmt.Println()
 
 	rpc, err := c.GetRandomRPCEndpoint()
 	if err != nil {
