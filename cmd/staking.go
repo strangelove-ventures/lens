@@ -129,7 +129,7 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 
 func stakingDelegationsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delegations",
+		Use:   "delegations [delegator-addr]",
 		Short: "Query all delegations made by one delegator",
 		Long: strings.TrimSpace(`Query delegations for an individual delegator on all validators.
 
