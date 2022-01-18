@@ -150,7 +150,7 @@ func (c ChainInfo) GetRandomRPCEndpoint() (string, error) {
 func (c ChainInfo) GetAssetList() (AssetList, error) {
 	cl := github.NewClient(http.DefaultClient)
 
-	chainFileName := path.Join(c.ChainName, "chain.json")
+	chainFileName := path.Join(c.ChainName, "assetlist.json")
 	ch, _, res, err := cl.Repositories.GetContents(
 		context.Background(),
 		"cosmos",
