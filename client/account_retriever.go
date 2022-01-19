@@ -35,7 +35,6 @@ func (cc *ChainClient) GetAccountWithHeight(clientCtx client.Context, addr sdk.A
 	queryClient := authtypes.NewQueryClient(cc)
 	res, err := queryClient.Account(context.Background(), &authtypes.QueryAccountRequest{Address: address}, grpc.Header(&header))
 	if err != nil {
-		fmt.Println("in this error")
 		return nil, 0, err
 	}
 	blockHeight := header.Get(grpctypes.GRPCBlockHeightHeader)
