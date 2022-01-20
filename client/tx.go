@@ -206,10 +206,10 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 
 	// Set the account number and sequence on the transaction factory
 	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
+		fmt.Println("HERERE NOW")
 		return txf, err
 	}
 
-	fmt.Println("HERERE NOW")
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
