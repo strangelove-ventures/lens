@@ -199,8 +199,6 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		return tx.Factory{}, err
 	}
 
-	fmt.Println("HERERE NOW")
-
 	cliCtx := client.Context{}.WithClient(cc.RPCClient).
 		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
 		WithChainID(cc.Config.ChainID).
@@ -211,6 +209,7 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		return txf, err
 	}
 
+	fmt.Println("HERERE NOW")
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
