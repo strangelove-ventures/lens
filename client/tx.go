@@ -47,8 +47,6 @@ func (cc *ChainClient) SendMessage(msg provider.RelayerMessage) (*provider.Relay
 }
 
 func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
-
-	fmt.Println("HERERE")
 	// Query account details
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
@@ -200,6 +198,8 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 	if err != nil {
 		return tx.Factory{}, err
 	}
+
+	fmt.Println("HERERE NOW")
 
 	cliCtx := client.Context{}.WithClient(cc.RPCClient).
 		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
