@@ -204,9 +204,9 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		WithChainID(cc.Config.ChainID).
 		WithCodec(cc.Codec.Marshaler)
 
+	fmt.Println("HERERE NOW")
 	// Set the account number and sequence on the transaction factory
 	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
-		fmt.Println("HERERE NOW")
 		return txf, err
 	}
 
