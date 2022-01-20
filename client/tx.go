@@ -47,13 +47,14 @@ func (cc *ChainClient) SendMessage(msg provider.RelayerMessage) (*provider.Relay
 }
 
 func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
+
+	fmt.Println("HERERE")
 	// Query account details
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, false, err
 	}
 
-	fmt.Println("HERERE")
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
 	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
