@@ -207,8 +207,10 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 	fmt.Println("HERERE NOW")
 	// Set the account number and sequence on the transaction factory
 	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
+		fmt.Println("FAILED IN ACCOUNT RETR")
 		return txf, err
 	}
+	fmt.Println("PASSED ACCOUNT RETRIEVER")
 
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
