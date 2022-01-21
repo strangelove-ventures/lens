@@ -47,12 +47,14 @@ func (cc *ChainClient) SendMessage(msg provider.RelayerMessage) (*provider.Relay
 }
 
 func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
+	fmt.Println("BEFORE PREPARE FACTORY")
 	// Query account details
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, false, err
 	}
 
+	fmt.Println("PASSED PREPARE FACTORY")
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
 	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
@@ -62,6 +64,8 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		return nil, false, err
 	}
 
+	fmt.Println("PASSED CALCULATE GAS")
+
 	// Set the gas amount on the transaction factory
 	txf = txf.WithGas(adjusted)
 
@@ -70,6 +74,8 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 	if err != nil {
 		return nil, false, err
 	}
+
+	fmt.Println("PASSED BUILD UNSIGNED TX")
 
 	// Attach the signature to the transaction
 	// Force encoding in the chain specific address
@@ -81,17 +87,20 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
 		return nil, false, err
 	}
+	fmt.Println("FAILED IN TX SIGN")
 	done()
 
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
 	if err != nil {
+		fmt.Println("FAILED IN TX ENCODER")
 		return nil, false, err
 	}
 
 	// Broadcast those bytes
 	res, err := cc.BroadcastTx(context.Background(), txBytes)
 	if err != nil {
+		fmt.Println("FAILED IN BROADCAST TX")
 		return nil, false, err
 	}
 
@@ -136,13 +145,10 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxRespons
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
 func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxResponse, error) {
-	fmt.Println("BEFORE PREPARE FACTORY")
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("PASSED PREPARE FACTORY")
 
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
@@ -151,8 +157,6 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("PASSED CALCULATE GAS")
 
 	// Set the gas amount on the transaction factory
 	txf = txf.WithGas(adjusted)
@@ -163,8 +167,6 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 		return nil, err
 	}
 
-	fmt.Println("PASSED BUILD UNSIGNED TX")
-
 	// Attach the signature to the transaction
 	// c.LogFailedTx(nil, err, msgs)
 	// Force encoding in the chain specific address
@@ -174,7 +176,6 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 
 	done := cc.SetSDKContext()
 	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
-		fmt.Println("FAILED IN TX SIGN")
 		return nil, err
 	}
 	done()
@@ -182,14 +183,12 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
 	if err != nil {
-		fmt.Println("FAILED IN TX ENCODER")
 		return nil, err
 	}
 
 	// Broadcast those bytes
 	res, err := cc.BroadcastTx(ctx, txBytes)
 	if err != nil {
-		fmt.Println("FAILED IN BROADCAST TX")
 		return nil, err
 	}
 
