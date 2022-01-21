@@ -58,7 +58,6 @@ func (cc *ChainClient) GetAccountWithHeight(clientCtx client.Context, addr sdk.A
 // EnsureExists returns an error if no account exists for the given address else nil.
 func (cc *ChainClient) EnsureExists(clientCtx client.Context, addr sdk.AccAddress) error {
 	if _, err := cc.GetAccount(clientCtx, addr); err != nil {
-		fmt.Println("Failed to get account")
 		return err
 	}
 

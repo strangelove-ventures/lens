@@ -226,6 +226,8 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
+
+	fmt.Println("PASSED txf.ACCOUNTNUMBER and txf.SEQ")
 	if initNum == 0 || initSeq == 0 {
 		num, seq, err := txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
 		if err != nil {
