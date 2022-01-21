@@ -86,9 +86,9 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 
 	done := cc.SetSDKContext()
 	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+		fmt.Println("FAILED IN TX SIGN")
 		return nil, false, err
 	}
-	fmt.Println("FAILED IN TX SIGN")
 	done()
 
 	// Generate the transaction bytes
