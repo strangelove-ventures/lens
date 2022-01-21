@@ -69,6 +69,7 @@ func (cc *ChainClient) EnsureExists(clientCtx client.Context, addr sdk.AccAddres
 func (cc *ChainClient) GetAccountNumberSequence(clientCtx client.Context, addr sdk.AccAddress) (uint64, uint64, error) {
 	acc, err := cc.GetAccount(clientCtx, addr)
 	if err != nil {
+		fmt.Println("FAILED TO GET ACCOUNT IN GETACCOUNTNUMBERSEQUENCE")
 		return 0, 0, err
 	}
 
