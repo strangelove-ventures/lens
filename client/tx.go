@@ -61,6 +61,7 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 	// If users pass gas adjustment, then calculate gas
 	_, adjusted, err := cc.CalculateGas(txf, CosmosMsgs(msgs...)...)
 	if err != nil {
+		fmt.Println("FAILED IN CALCULATE GAS")
 		return nil, false, err
 	}
 
