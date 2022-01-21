@@ -136,10 +136,13 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxRespons
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
 func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxResponse, error) {
+	fmt.Println("BEFORE PREPARE FACTORY")
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("PASSED PREPARE FACTORY")
 
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
@@ -148,6 +151,8 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("PASSED CALCULATE GAS")
 
 	// Set the gas amount on the transaction factory
 	txf = txf.WithGas(adjusted)
@@ -158,6 +163,8 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 		return nil, err
 	}
 
+	fmt.Println("PASSED BUILD UNSIGNED TX")
+
 	// Attach the signature to the transaction
 	// c.LogFailedTx(nil, err, msgs)
 	// Force encoding in the chain specific address
@@ -167,6 +174,7 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 
 	done := cc.SetSDKContext()
 	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+		fmt.Println("FAILED IN TX SIGN")
 		return nil, err
 	}
 	done()
@@ -174,12 +182,14 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
 	if err != nil {
+		fmt.Println("FAILED IN TX ENCODER")
 		return nil, err
 	}
 
 	// Broadcast those bytes
 	res, err := cc.BroadcastTx(ctx, txBytes)
 	if err != nil {
+		fmt.Println("FAILED IN BROADCAST TX")
 		return nil, err
 	}
 
@@ -204,21 +214,22 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		WithChainID(cc.Config.ChainID).
 		WithCodec(cc.Codec.Marshaler)
 
-	fmt.Println("BEFORE ACCOUNT RETRIEVER")
+	fmt.Println("BEFORE ACCOUNT RETRIEVER ENSURE EXISTS")
 
 	// Set the account number and sequence on the transaction factory
 	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
-		fmt.Println("FAILED IN ACCOUNT RETR")
+		fmt.Println("FAILED IN ACCOUNT RETR ENSURE EXISTS")
 		return txf, err
 	}
 
-	fmt.Println("PASSED ACCOUNT RETRIEVER")
+	fmt.Println("PASSED ACCOUNT RETRIEVER ENSURE EXISTS")
 
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
 		num, seq, err := txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
 		if err != nil {
+			fmt.Println("FAILED IN ACCOUNT RETRIEVER GET ACC NUM SEQ")
 			return txf, err
 		}
 
