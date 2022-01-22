@@ -1165,7 +1165,7 @@ func (cc *ChainClient) AutoUpdateClient(dst provider.ChainProvider, thresholdTim
 	cc.Log(fmt.Sprintf("★ Client updated: [%s]client(%s) {%d}->{%d}",
 		cc.Config.ChainID,
 		srcClientId,
-		provider.MustGetHeight(srcUpdateHeader.GetHeight()),
+		MustGetHeight(srcUpdateHeader.GetHeight()),
 		srcUpdateHeader.GetHeight().GetRevisionHeight(),
 	))
 
@@ -1367,4 +1367,13 @@ func (cc *ChainClient) WaitForNBlocks(n int64) error {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+// MustGetHeight takes the height inteface and returns the actual height
+func MustGetHeight(h ibcexported.Height) clienttypes.Height {
+	height, ok := h.(clienttypes.Height)
+	if !ok {
+		panic("height is not an instance of height!")
+	}
+	return height
 }
