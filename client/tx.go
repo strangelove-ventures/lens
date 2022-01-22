@@ -53,8 +53,8 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 	if err != nil {
 		return nil, false, err
 	}
-
 	fmt.Println("PASSED PREPARE FACTORY")
+
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
 	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
@@ -64,7 +64,6 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		fmt.Println("FAILED IN CALCULATE GAS")
 		return nil, false, err
 	}
-
 	fmt.Println("PASSED CALCULATE GAS")
 
 	// Set the gas amount on the transaction factory
@@ -75,7 +74,6 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 	if err != nil {
 		return nil, false, err
 	}
-
 	fmt.Println("PASSED BUILD UNSIGNED TX")
 
 	// Attach the signature to the transaction
@@ -90,6 +88,7 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		return nil, false, err
 	}
 	done()
+	fmt.Println("PASSED TX SIGN")
 
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
@@ -97,6 +96,7 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		fmt.Println("FAILED IN TX ENCODER")
 		return nil, false, err
 	}
+	fmt.Println("PASSED TX ENCODE")
 
 	// Broadcast those bytes
 	res, err := cc.BroadcastTx(context.Background(), txBytes)
@@ -104,6 +104,7 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 		fmt.Println("FAILED IN BROADCAST TX")
 		return nil, false, err
 	}
+	fmt.Println("PASSED BROADCAST TX")
 
 	// Parse events and build a map where the key is event.Type+"."+attribute.Key
 	events := make(map[string]string, 1)
