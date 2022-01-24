@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/avast/retry-go"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -57,9 +58,19 @@ func (cc *ChainClient) GetAccountWithHeight(clientCtx client.Context, addr sdk.A
 
 // EnsureExists returns an error if no account exists for the given address else nil.
 func (cc *ChainClient) EnsureExists(clientCtx client.Context, addr sdk.AccAddress) error {
-	if _, err := cc.GetAccount(clientCtx, addr); err != nil {
+	var err error
+	if err = retry.Do(func() error {
+		if _, err = cc.GetAccount(clientCtx, addr); err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return err
 	}
+
+	//if _, err := cc.GetAccount(clientCtx, addr); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
@@ -67,11 +78,26 @@ func (cc *ChainClient) EnsureExists(clientCtx client.Context, addr sdk.AccAddres
 // GetAccountNumberSequence returns sequence and account number for the given address.
 // It returns an error if the account couldn't be retrieved from the state.
 func (cc *ChainClient) GetAccountNumberSequence(clientCtx client.Context, addr sdk.AccAddress) (uint64, uint64, error) {
-	acc, err := cc.GetAccount(clientCtx, addr)
-	if err != nil {
+	var (
+		acc client.Account
+		err error
+	)
+
+	if err = retry.Do(func() error {
+		if acc, err = cc.GetAccount(clientCtx, addr); err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		fmt.Println("FAILED TO GET ACCOUNT IN GETACCOUNTNUMBERSEQUENCE")
 		return 0, 0, err
 	}
+
+	//acc, err = cc.GetAccount(clientCtx, addr)
+	//if err != nil {
+	//	fmt.Println("FAILED TO GET ACCOUNT IN GETACCOUNTNUMBERSEQUENCE")
+	//	return 0, 0, err
+	//}
 
 	return acc.GetAccountNumber(), acc.GetSequence(), nil
 }
