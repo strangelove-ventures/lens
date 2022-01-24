@@ -49,6 +49,11 @@ var (
 	toHeightTag = "packet_timeout_height"
 	toTSTag     = "packet_timeout_timestamp"
 	seqTag      = "packet_sequence"
+
+	RtyAttNum = uint(5)
+	RtyAtt    = retry.Attempts(RtyAttNum)
+	RtyDel    = retry.Delay(time.Millisecond * 400)
+	RtyErr    = retry.LastErrorOnly(true)
 )
 
 type CosmosMessage struct {
@@ -654,7 +659,7 @@ func (cc *ChainClient) InjectTrustedFields(header ibcexported.Header, dst provid
 		}
 		trustedHeader = th
 		return err
-	}, provider.RtyAtt, provider.RtyDel, provider.RtyErr); err != nil {
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return nil, fmt.Errorf(
 			"failed to get trusted header, please ensure header at the height %d has not been pruned by the connected node: %w",
 			h.TrustedHeight.RevisionHeight, err,
@@ -1160,7 +1165,7 @@ func (cc *ChainClient) AutoUpdateClient(dst provider.ChainProvider, thresholdTim
 	cc.Log(fmt.Sprintf("★ Client updated: [%s]client(%s) {%d}->{%d}",
 		cc.Config.ChainID,
 		srcClientId,
-		provider.MustGetHeight(srcUpdateHeader.GetHeight()),
+		MustGetHeight(srcUpdateHeader.GetHeight()),
 		srcUpdateHeader.GetHeight().GetRevisionHeight(),
 	))
 
@@ -1362,4 +1367,13 @@ func (cc *ChainClient) WaitForNBlocks(n int64) error {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+// MustGetHeight takes the height inteface and returns the actual height
+func MustGetHeight(h ibcexported.Height) clienttypes.Height {
+	height, ok := h.(clienttypes.Height)
+	if !ok {
+		panic("height is not an instance of height!")
+	}
+	return height
 }
