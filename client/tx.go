@@ -164,7 +164,7 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 			return err
 		}
 		return err
-	}); err != nil {
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		fmt.Println("FAILED IN BROADCAST TX")
 		return nil, false, err
 	}
