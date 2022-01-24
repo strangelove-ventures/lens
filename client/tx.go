@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/avast/retry-go"
 	"github.com/cosmos/relayer/relayer/provider"
 	"strings"
 
@@ -47,33 +48,72 @@ func (cc *ChainClient) SendMessage(msg provider.RelayerMessage) (*provider.Relay
 }
 
 func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
+	var (
+		txf      tx.Factory
+		err      error
+		adjusted uint64
+		txb      client.TxBuilder
+		txBytes  []byte
+		res      *sdk.TxResponse
+	)
+
 	fmt.Println("BEFORE PREPARE FACTORY")
 	// Query account details
-	txf, err := cc.PrepareFactory(cc.TxFactory())
-	if err != nil {
+	if err = retry.Do(func() error {
+		txf, err = cc.PrepareFactory(cc.TxFactory())
+		if err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return nil, false, err
 	}
+
+	//txf, err := cc.PrepareFactory(cc.TxFactory())
+	//if err != nil {
+	//	return nil, false, err
+	//}
 	fmt.Println("PASSED PREPARE FACTORY")
 
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
 	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
 	// If users pass gas adjustment, then calculate gas
-	_, adjusted, err := cc.CalculateGas(txf, CosmosMsgs(msgs...)...)
-	if err != nil {
+	if err = retry.Do(func() error {
+		_, adjusted, err = cc.CalculateGas(txf, CosmosMsgs(msgs...)...)
+		if err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		fmt.Println("FAILED IN CALCULATE GAS")
 		return nil, false, err
 	}
+
+	//_, adjusted, err := cc.CalculateGas(txf, CosmosMsgs(msgs...)...)
+	//if err != nil {
+	//	fmt.Println("FAILED IN CALCULATE GAS")
+	//	return nil, false, err
+	//}
 	fmt.Println("PASSED CALCULATE GAS")
 
 	// Set the gas amount on the transaction factory
 	txf = txf.WithGas(adjusted)
 
 	// Build the transaction builder
-	txb, err := tx.BuildUnsignedTx(txf, CosmosMsgs(msgs...)...)
-	if err != nil {
+	if err = retry.Do(func() error {
+		if txb, err = tx.BuildUnsignedTx(txf, CosmosMsgs(msgs...)...); err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return nil, false, err
 	}
+
+	//txb, err := tx.BuildUnsignedTx(txf, CosmosMsgs(msgs...)...)
+	//if err != nil {
+	//	return nil, false, err
+	//}
 	fmt.Println("PASSED BUILD UNSIGNED TX")
 
 	// Attach the signature to the transaction
@@ -83,27 +123,57 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 	}
 
 	done := cc.SetSDKContext()
-	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+	if err = retry.Do(func() error {
+		if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		fmt.Println("FAILED IN TX SIGN")
 		return nil, false, err
 	}
+
+	//if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+	//	fmt.Println("FAILED IN TX SIGN")
+	//	return nil, false, err
+	//}
 	done()
 	fmt.Println("PASSED TX SIGN")
 
 	// Generate the transaction bytes
-	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
-	if err != nil {
+	if err = retry.Do(func() error {
+		if txBytes, err = cc.Codec.TxConfig.TxEncoder()(txb.GetTx()); err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		fmt.Println("FAILED IN TX ENCODER")
 		return nil, false, err
 	}
+
+	//txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
+	//if err != nil {
+	//	fmt.Println("FAILED IN TX ENCODER")
+	//	return nil, false, err
+	//}
 	fmt.Println("PASSED TX ENCODE")
 
 	// Broadcast those bytes
-	res, err := cc.BroadcastTx(context.Background(), txBytes)
-	if err != nil {
+	if err = retry.Do(func() error {
+		if res, err = cc.BroadcastTx(context.Background(), txBytes); err != nil {
+			return err
+		}
+		return err
+	}); err != nil {
 		fmt.Println("FAILED IN BROADCAST TX")
 		return nil, false, err
 	}
+
+	//res, err := cc.BroadcastTx(context.Background(), txBytes)
+	//if err != nil {
+	//	fmt.Println("FAILED IN BROADCAST TX")
+	//	return nil, false, err
+	//}
 	fmt.Println("PASSED BROADCAST TX")
 
 	// Parse events and build a map where the key is event.Type+"."+attribute.Key
