@@ -185,7 +185,7 @@ func distributionSlashesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "slashes [validator-address] [start-height] [end-height]",
 		Short: "query things about a validator's slashes on a chain",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 
