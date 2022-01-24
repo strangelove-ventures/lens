@@ -26,7 +26,7 @@ func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxR
 	// point
 	syncRes, err := cc.RPCClient.BroadcastTxSync(ctx, tx)
 	if errRes := CheckTendermintError(err, tx); errRes != nil {
-		return errRes, nil
+		return errRes, err
 	}
 
 	// TODO: maybe we need to check if the node has tx indexing enabled?
