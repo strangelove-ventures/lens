@@ -461,6 +461,9 @@ func (cc *ChainClient) QueryConnections() (conns []*conntypes.IdentifiedConnecti
 	res, err := qc.Connections(context.Background(), &conntypes.QueryConnectionsRequest{
 		Pagination: DefaultPageRequest(),
 	})
+	if err != nil || res == nil {
+		return nil, err
+	}
 	return res.Connections, err
 }
 
