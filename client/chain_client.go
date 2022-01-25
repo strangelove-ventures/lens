@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/relayer/relayer/provider"
 	"github.com/gogo/protobuf/proto"
 	"github.com/tendermint/tendermint/libs/log"
 	provtypes "github.com/tendermint/tendermint/light/provider"
@@ -94,6 +96,45 @@ func (cc *ChainClient) HandleAndPrintMsgSend(res *sdk.TxResponse, err error) err
 		return fmt.Errorf("failed to withdraw rewards: err(%w)", err)
 	}
 	return cc.PrintTxResponse(res)
+}
+
+// LogFailedTx takes the transaction and the messages to create it and logs the appropriate data
+func (cc *ChainClient) LogFailedTx(res *provider.RelayerTxResponse, err error, msgs []provider.RelayerMessage) {
+	if cc.Config.Debug {
+		cc.Log(fmt.Sprintf("- [%s] -> failed sending transaction:", cc.ChainId()))
+		for _, msg := range msgs {
+			_ = cc.PrintObject(msg)
+		}
+	}
+
+	if err != nil {
+		cc.Logger.Error(fmt.Errorf("- [%s] -> err(%v)", cc.ChainId(), err).Error())
+		if res == nil {
+			return
+		}
+	}
+
+	if res.Code != 0 && res.Data != "" {
+		cc.Log(fmt.Sprintf("✘ [%s]@{%d} - msg(%s) err(%d:%s)", cc.ChainId(), res.Height, getMsgTypes(msgs), res.Code, res.Data))
+	}
+
+	if cc.Config.Debug && res != nil {
+		cc.Log("- transaction response:")
+		_ = cc.PrintObject(res)
+	}
+}
+
+func getMsgTypes(msgs []provider.RelayerMessage) string {
+	var out string
+	for i, msg := range msgs {
+		out += fmt.Sprintf("%d:%s,", i, msg.Type())
+	}
+	return strings.TrimSuffix(out, ",")
+}
+
+// LogSuccessTx take the transaction and the messages to create it and logs the appropriate data
+func (cc *ChainClient) LogSuccessTx(res *sdk.TxResponse, msgs []provider.RelayerMessage) {
+	cc.Logger.Info(fmt.Sprintf("✔ [%s]@{%d} - msg(%s) hash(%s)", cc.ChainId(), res.Height, getMsgTypes(msgs), res.TxHash))
 }
 
 func (cc *ChainClient) PrintObject(res interface{}) error {

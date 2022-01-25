@@ -118,11 +118,11 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 	// NOTE: error is nil, logic should use the returned error to determine if the
 	// transaction was successfully executed.
 	if rlyRes.Code != 0 {
-		//cc.LogFailedTx(res, err, CosmosMsgs(msgs...))
+		cc.LogFailedTx(rlyRes, err, msgs)
 		return rlyRes, false, fmt.Errorf("transaction failed with code: %d", res.Code)
 	}
 
-	//cc.LogSuccessTx(res, CosmosMsgs(msgs...))
+	cc.LogSuccessTx(res, msgs)
 	return rlyRes, true, nil
 }
 
