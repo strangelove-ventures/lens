@@ -1,6 +1,9 @@
 package client
 
 import (
+	"os"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authz "github.com/cosmos/cosmos-sdk/x/authz/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -19,8 +22,6 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
 	ibc "github.com/cosmos/ibc-go/v2/modules/core"
-	"os"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/relayer/relayer/provider"
