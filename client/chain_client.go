@@ -78,6 +78,46 @@ func (cc *ChainClient) Init() error {
 	return nil
 }
 
+func (cc *ChainClient) GetKeyAddress() (sdk.AccAddress, error) {
+	info, err := cc.Keybase.Key(cc.Config.Key)
+	if err != nil {
+		return nil, err
+	}
+	return info.GetAddress(), nil
+}
+
+func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
+	httpClient, err := libclient.DefaultHTTPClient(addr)
+	if err != nil {
+		return nil, err
+	}
+	httpClient.Timeout = timeout
+	rpcClient, err := rpchttp.NewWithClient(addr, "/websocket", httpClient)
+	if err != nil {
+		return nil, err
+	}
+	return rpcClient, nil
+}
+
+// AccountFromKeyOrAddress returns an account from either a key or an address
+// if empty string is passed in this returns the default key's address
+func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.AccAddress, err error) {
+	switch {
+	case keyOrAddress == "":
+		out, err = cc.GetKeyAddress()
+	case cc.KeyExists(keyOrAddress):
+		cc.Config.Key = keyOrAddress
+		out, err = cc.GetKeyAddress()
+	default:
+		out, err = cc.DecodeBech32AccAddr(keyOrAddress)
+	}
+	return
+}
+
+func keysDir(home, chainID string) string {
+	return path.Join(home, "keys", chainID)
+}
+
 // Log takes a string and logs the data
 func (cc *ChainClient) Log(s string) {
 	cc.Logger.Info(s)
@@ -183,44 +223,4 @@ func (cc *ChainClient) PrintObject(res interface{}) error {
 
 func (cc *ChainClient) MarshalProto(res proto.Message) ([]byte, error) {
 	return cc.Codec.Marshaler.MarshalJSON(res)
-}
-
-func (cc *ChainClient) GetKeyAddress() (sdk.AccAddress, error) {
-	info, err := cc.Keybase.Key(cc.Config.Key)
-	if err != nil {
-		return nil, err
-	}
-	return info.GetAddress(), nil
-}
-
-func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
-	httpClient, err := libclient.DefaultHTTPClient(addr)
-	if err != nil {
-		return nil, err
-	}
-	httpClient.Timeout = timeout
-	rpcClient, err := rpchttp.NewWithClient(addr, "/websocket", httpClient)
-	if err != nil {
-		return nil, err
-	}
-	return rpcClient, nil
-}
-
-// AccountFromKeyOrAddress returns an account from either a key or an address
-// if empty string is passed in this returns the default key's address
-func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.AccAddress, err error) {
-	switch {
-	case keyOrAddress == "":
-		out, err = cc.GetKeyAddress()
-	case cc.KeyExists(keyOrAddress):
-		cc.Config.Key = keyOrAddress
-		out, err = cc.GetKeyAddress()
-	default:
-		out, err = cc.DecodeBech32AccAddr(keyOrAddress)
-	}
-	return
-}
-
-func keysDir(home, chainID string) string {
-	return path.Join(home, "keys", chainID)
 }

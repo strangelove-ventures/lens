@@ -42,10 +42,19 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 	return signMode
 }
 
+// SendMessage attempts to sign, encode & send a RelayerMessage
+// This is used extensively in the relayer as an extension of the Provider interface
 func (cc *ChainClient) SendMessage(msg provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
 	return cc.SendMessages([]provider.RelayerMessage{msg})
 }
 
+// SendMessages attempts to sign, encode, & send a slice of RelayerMessages
+// This is used extensively in the relayer as an extension of the Provider interface
+//
+// NOTE: An error is returned if there was an issue sending the transaction. A successfully sent, but failed
+// transaction will not return an error. If a transaction is successfully sent, the result of the execution
+// of that transaction will be logged. A boolean indicating if a transaction was successfully
+// sent and executed successfully is returned.
 func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
 	// Query account details
 	txf, err := cc.PrepareFactory(cc.TxFactory())
