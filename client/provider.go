@@ -270,7 +270,7 @@ func (cc *ChainClient) ConnectionOpenTry(dstQueryProvider provider.QueryProvider
 		return nil, err
 	}
 
-	clientState, clientStateProof, consensusStateProof, connStateProof, proofHeight, err := dstQueryProvider.GenerateConnHandshakeProof(cph+1, dstClientId, dstConnId)
+	clientState, clientStateProof, consensusStateProof, connStateProof, proofHeight, err := dstQueryProvider.GenerateConnHandshakeProof(cph, dstClientId, dstConnId)
 	if err != nil {
 		return nil, err
 	}
