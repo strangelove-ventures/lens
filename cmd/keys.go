@@ -3,10 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/crypto/ssh/terminal"
 	"log"
 	"sort"
 	"strings"
+
+	"golang.org/x/crypto/ssh/terminal"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
@@ -133,13 +134,14 @@ $ %s keys delete ibc-1 key2 -y
 $ %s k d ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
+			chainName := cl.Config.ChainID
 			keyName := args[0]
 			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
 			}
 
 			if skip, _ := cmd.Flags().GetBool("skip"); !skip {
-				fmt.Printf("Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, args[0])
+				fmt.Printf("Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, chainName)
 				if !askForConfirmation() {
 					return nil
 				}
