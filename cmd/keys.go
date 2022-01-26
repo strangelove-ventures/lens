@@ -3,10 +3,12 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/crypto/ssh/terminal"
 	"log"
 	"sort"
 	"strings"
+	"syscall"
+
+	"golang.org/x/crypto/ssh/terminal"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
@@ -103,7 +105,7 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 			}
 
 			fmt.Print("Enter mnemonic 🔑: ")
-			mnemonic, _ := terminal.ReadPassword(0)
+			mnemonic, _ := terminal.ReadPassword(syscall.Stdin)
 			fmt.Println()
 
 			address, err := cl.RestoreKey(keyName, string(mnemonic))
