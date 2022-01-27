@@ -1179,9 +1179,22 @@ func (cc *ChainClient) AutoUpdateClient(dst provider.ChainProvider, thresholdTim
 // to the latest consensus state of a potential match. The provided client state is the client
 // state that will be created if there exist no matches.
 func (cc *ChainClient) FindMatchingClient(counterparty provider.ChainProvider, clientState ibcexported.ClientState) (string, bool) {
-	// TODO: add appropriate offset and limits, along with retries
-	clientsResp, err := cc.QueryClients()
-	if err != nil {
+	// TODO: add appropriate offset and limits
+	var (
+		clientsResp clienttypes.IdentifiedClientStates
+		err         error
+	)
+
+	if err = retry.Do(func() error {
+		clientsResp, err = cc.QueryClients()
+		if err != nil {
+			if cc.Config.Debug {
+				cc.Log(fmt.Sprintf("Error: querying clients on %s failed: %v", cc.Config.ChainID, err))
+			}
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		if cc.Config.Debug {
 			cc.Log(fmt.Sprintf("Error: querying clients on %s failed: %v", cc.Config.ChainID, err))
 		}
