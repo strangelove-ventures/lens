@@ -2,6 +2,8 @@
 
 **Lens provides a cmd line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).**
 
+**Lens is meant to be imported and used in other repos and projects to eaily navigate and interact with the Cosmos Hub.**
+
 ---
 
 `lens` is your lens to view the Cosmos :atom:. `lens` packs all the best practices in golang cosmos client development into one place and provides a simple and easy to use APIs provided by standard Cosmos chains. The `cmd` package implements the `lens` command line tool while the `client` package contains all the building blocks to build your own, complex, feature rich, Cosmos client in go.
@@ -58,7 +60,7 @@ Use "lens [command] --help" for more information about a command.
 ---
 The config file tells lens how to interact with blockchains. This is where information such as grpc address's and chain-ids are held.
 
-Config File Location: `~/.lens/config.yaml` 
+**Config File Location:** `~/.lens/config.yaml` 
 
 > NOTE: The config file is not created at install, it is created the first time lens needs to query your config. Just to get it created, you can run something like:
 >```
@@ -94,41 +96,6 @@ To change your default, run:
 
 ``` 
 lens chains set-default <chain_name>
-```
-
-An example config file:
-
-```
-default_chain: cosmoshub
-chains:
-  cosmoshub:
-    key: default
-    chain-id: cosmoshub-4
-    rpc-addr: https://cosmoshub-4.technofractal.com:443
-    grpc-addr: https://gprc.cosmoshub-4.technofractal.com:443
-    account-prefix: cosmos
-    keyring-backend: test
-    gas-adjustment: 1.2
-    gas-prices: 0.01uatom
-    key-directory: /Users/dan/.lens/keys
-    debug: false
-    timeout: 20s
-    output-format: json
-    sign-mode: direct
-  osmosis:
-    key: default
-    chain-id: osmosis-1
-    rpc-addr: https://osmosis-1.technofractal.com:443
-    grpc-addr: https://gprc.osmosis-1.technofractal.com:443
-    account-prefix: osmo
-    keyring-backend: test
-    gas-adjustment: 1.2
-    gas-prices: 0.01uosmo
-    key-directory: /Users/dan/.lens/keys
-    debug: false
-    timeout: 20s
-    output-format: json
-    sign-mode: direct
 ```
 
 ### **Keys**
