@@ -123,13 +123,18 @@ func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.R
 	}
 
 	// Broadcast those bytes & retry if there was an error sending the tx
-	if err = retry.Do(func() error {
-		res, err = cc.BroadcastTx(context.Background(), txBytes)
-		if err != nil {
-			return err
-		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
+	//if err = retry.Do(func() error {
+	//	res, err = cc.BroadcastTx(context.Background(), txBytes)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	return err
+	//}, RtyAtt, RtyDel, RtyErr); err != nil {
+	//	return nil, false, err
+	//}
+
+	res, err = cc.BroadcastTx(context.Background(), txBytes)
+	if err != nil || res == nil {
 		return nil, false, err
 	}
 
