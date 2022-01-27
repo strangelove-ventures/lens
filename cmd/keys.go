@@ -49,12 +49,12 @@ func keysAddCmd() *cobra.Command {
 		Use:     "add [name]",
 		Aliases: []string{"a"},
 		Short:   "adds a key to the keychain associated with a particular chain",
-		Long:    "if no name is passed, name in config is used",
+		Long:    "if no name is passed, 'default' is used",
 		Args:    cobra.RangeArgs(0, 1),
 		Example: strings.TrimSpace(fmt.Sprintf(`
-$ %s keys add ibc-0
-$ %s keys add ibc-1 key2
-$ %s k a ibc-2 testkey`, appName, appName, appName)),
+$ %s keys add
+$ %s keys add test_key
+$ %s k a osmo_key --chain osmois`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 			var keyName string
