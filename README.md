@@ -2,7 +2,7 @@
 
 **Lens provides a command line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).**
 
-**Lens is meant to be imported and used in other repos and projects to eaily navigate and interact with the Cosmos Hub.**
+**Lens is meant to be imported as a library in other repos and projects to easily navigate and interact with the Cosmos Hub along with IBC chains.**
 
 ---
 
