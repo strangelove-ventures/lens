@@ -1,6 +1,6 @@
 # `lens`
 
-**Lens provides a cmd line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).**
+**Lens provides a command line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).**
 
 **Lens is meant to be imported and used in other repos and projects to eaily navigate and interact with the Cosmos Hub.**
 
