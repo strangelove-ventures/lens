@@ -53,7 +53,7 @@ func keysAddCmd() *cobra.Command {
 		Example: strings.TrimSpace(fmt.Sprintf(`
 $ %s keys add
 $ %s keys add test_key
-$ %s k a osmo_key --chain osmois`, appName, appName, appName)),
+$ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 			var keyName string
