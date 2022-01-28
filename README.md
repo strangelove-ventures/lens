@@ -99,7 +99,7 @@ lens chains set-default <chain_name>
 ```
 
 ### **Keys**
-Lens uses the keyring from the Cosmos-sdk. There is more information about it keyring [here](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/keyring/doc.go). 
+Lens uses the keyring from the Cosmos-sdk. There is more information about it [here](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/keyring/doc.go). 
 
 To add a key to lens you have two options:
 
