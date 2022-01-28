@@ -68,7 +68,7 @@ The config file describes how lens will interact with blockchains. This is where
 >```
 
 ### **CHAINS**
-Lens comes with two defaulted chains. Cosmos Hub and Osmosis.
+Lens comes with two default chains. Cosmos Hub and Osmosis.
 
 To interact with other chains, you need to add them to your config, run:
 
