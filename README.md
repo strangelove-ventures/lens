@@ -117,7 +117,7 @@ To add a key to lens you have two options:
 >    ...
 >```
 
-After adding or restoring a key, it should appear in your list by running: `lens keys list`, by default it will show the Cosmos Hub address. 
+After generating or restoring a key, it should appear in your list by running: `lens keys list`, by default it will show the Cosmos Hub address. 
 
 To see the key encoded for use on other chains run `lens keys enumerate <key_name>`. 
 
