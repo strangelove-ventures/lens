@@ -45,6 +45,29 @@ func airdropCmd() *cobra.Command {
 			}
 
 			denom := args[1]
+
+			dryRun, err := cmd.Flags().GetBool("dry-run")
+			if err != nil {
+				return err
+			}
+			if dryRun {
+				var dropTotal float64
+				var dropAddress int64
+				for k, v := range airdrop {
+
+					_, err := cl.DecodeBech32AccAddr(k)
+					if err != nil {
+						return err
+					}
+					dropTotal += v
+					dropAddress++
+
+				}
+				fmt.Printf("Airdrop total: %f %s\n", dropTotal, denom)
+				fmt.Printf("Airdrop address count: %d\n", dropAddress)
+				return nil
+			}
+
 			maxSends, err := cmd.Flags().GetInt("max-sends")
 			if err != nil {
 				return err
@@ -87,6 +110,8 @@ func airdropCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Int("max-sends", 200, "max number of msgs per tx to send")
+	cmd.Flags().Bool("dry-run", false, "read the aidrop file and print metrics")
+
 	return cmd
 }
 
