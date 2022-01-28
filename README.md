@@ -58,7 +58,7 @@ Use "lens [command] --help" for more information about a command.
 
 ## **--CONFIG--**
 ---
-The config file tells lens how to interact with blockchains. This is where information such as grpc address's and chain-ids are held.
+The config file describes how lens will interact with blockchains. This is where information such as grpc addresses and chain-ids are held.
 
 **Config File Location:** `~/.lens/config.yaml` 
 
