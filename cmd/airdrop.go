@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/avast/retry-go"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -107,12 +108,16 @@ func airdropCmd() *cobra.Command {
 					fmt.Printf("(%f) sending %s to %d addresses\n", completion, amount.String(), len(multiMsg.Outputs))
 					multiMsg.Inputs = append(multiMsg.Inputs, banktypes.Input{cl.MustEncodeAccAddr(address), sdk.NewCoins(amount)})
 					retry.Do(func() error {
+						fmt.Printf("sending tx\n")
 						res, err := cl.SendMsgs(cmd.Context(), []sdk.Msg{multiMsg})
 						if err != nil || res.Code != 0 {
 							if err != nil {
 								fmt.Printf("failed to send airdrop: %s\n", err)
+								return err
 							}
 							fmt.Printf("failed to send airdrop: %s\n", res.RawLog)
+							err = fmt.Errorf("failed to send airdrop")
+							time.Sleep(time.Second * 10)
 							return err
 						}
 						return nil
