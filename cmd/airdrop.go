@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -14,17 +15,17 @@ import (
 
 func airdropCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "airdrop [airdrop.json] [denom] [key]?",
+		Use:   "airdrop [airdrop.json] [denom] [exclude] [key]?",
 		Short: "Airdrop coins to a specified address",
 		Long:  "The airdrop file consists of map[string]float64 where the key is the address on the target chain and the value is the amount of coins to be airdropped to that address/1e6 (i.e. atom instead of uatom). The airdrop command 1. checks the addresses in the file to ensure that they are valid for the given chain l",
-		Args:  cobra.RangeArgs(2, 3),
+		Args:  cobra.RangeArgs(3, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 			keyNameOrAddress := ""
-			if len(args) == 2 {
+			if len(args) == 3 {
 				keyNameOrAddress = cl.Config.Key
 			} else {
-				keyNameOrAddress = args[2]
+				keyNameOrAddress = args[3]
 			}
 			address, err := cl.AccountFromKeyOrAddress(keyNameOrAddress)
 			if err != nil {
@@ -45,6 +46,17 @@ func airdropCmd() *cobra.Command {
 			}
 
 			denom := args[1]
+
+			exclude, err := os.Open(args[2])
+			if err != nil {
+				return err
+			}
+
+			scanner := bufio.NewScanner(exclude)
+
+			for scanner.Scan() {
+				delete(airdrop, scanner.Text())
+			}
 
 			dryRun, err := cmd.Flags().GetBool("dry-run")
 			if err != nil {
@@ -90,7 +102,7 @@ func airdropCmd() *cobra.Command {
 				multiMsg.Outputs = append(multiMsg.Outputs, banktypes.Output{cl.MustEncodeAccAddr(to), toSend})
 				sent += 1
 
-				if len(multiMsg.Outputs) > maxSends {
+				if len(multiMsg.Outputs) > maxSends-1 {
 					completion := float64(sent) / float64(len(airdrop))
 					fmt.Printf("(%f) sending %s to %d addresses\n", completion, amount.String(), len(multiMsg.Outputs))
 					multiMsg.Inputs = append(multiMsg.Inputs, banktypes.Input{cl.MustEncodeAccAddr(address), sdk.NewCoins(amount)})
@@ -98,9 +110,9 @@ func airdropCmd() *cobra.Command {
 						res, err := cl.SendMsgs(cmd.Context(), []sdk.Msg{multiMsg})
 						if err != nil || res.Code != 0 {
 							if err != nil {
-								fmt.Errorf("failed to send airdrop: %s\n", err)
+								fmt.Printf("failed to send airdrop: %s\n", err)
 							}
-							fmt.Errorf("failed to send airdrop: %s\n", res.RawLog)
+							fmt.Printf("failed to send airdrop: %s\n", res.RawLog)
 							return err
 						}
 						return nil
