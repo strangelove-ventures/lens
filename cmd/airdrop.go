@@ -84,7 +84,7 @@ func airdropCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				toSendCoin := sdk.NewCoin(denom, sdk.NewInt(int64(v*1e6)))
+				toSendCoin := sdk.NewCoin(denom, sdk.NewInt(int64(v)))
 				toSend := sdk.NewCoins(toSendCoin)
 				amount = amount.Add(toSendCoin)
 				multiMsg.Outputs = append(multiMsg.Outputs, banktypes.Output{cl.MustEncodeAccAddr(to), toSend})
@@ -97,6 +97,10 @@ func airdropCmd() *cobra.Command {
 					retry.Do(func() error {
 						res, err := cl.SendMsgs(cmd.Context(), []sdk.Msg{multiMsg})
 						if err != nil || res.Code != 0 {
+							if err != nil {
+								fmt.Errorf("failed to send airdrop: %s\n", err)
+							}
+							fmt.Errorf("failed to send airdrop: %s\n", res.RawLog)
 							return err
 						}
 						return nil
