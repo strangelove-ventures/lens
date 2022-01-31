@@ -636,7 +636,7 @@ func (cc *ChainClient) InjectTrustedFields(header ibcexported.Header, dst provid
 
 	// retrieve dst client from src chain
 	// this is the client that will be updated
-	cs, err := dst.QueryClientState(0, dstClientId)
+	cs, err := dst.QueryClientState(int64(h.TrustedHeight.RevisionHeight), dstClientId)
 	if err != nil {
 		return nil, err
 	}
