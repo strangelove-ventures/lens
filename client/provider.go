@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"math"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -829,11 +830,17 @@ func (cc *ChainClient) MsgRelayRecvPacket(dst provider.ChainProvider, dsth int64
 
 // RelayPacketFromSequence relays a packet with a given seq on src and returns recvPacket msgs, timeoutPacketmsgs and error
 func (cc *ChainClient) RelayPacketFromSequence(src, dst provider.ChainProvider, srch, dsth, seq uint64, dstChanId, dstPortId, srcChanId, srcPortId, srcClientId string) (provider.RelayerMessage, provider.RelayerMessage, error) {
+	// TODO: maybe to add support for begin/endblock we need to also do a block search here too?
+	// Do these queries in parallel or maybe only look in the block events if the tx query doesn't return the data
 	txs, err := cc.QueryTxs(1, 1000, rcvPacketQuery(srcChanId, int(seq)))
 	switch {
 	case err != nil:
 		return nil, nil, err
 	case len(txs) == 0:
+		// TODO: support begin/end block here?
+		// this would try to find the data in the block events in the case
+		// where the tx query doesn't return the data
+		// there is also this same flow in the case of acks
 		return nil, nil, fmt.Errorf("no transactions returned with query")
 	case len(txs) > 1:
 		return nil, nil, fmt.Errorf("more than one transaction returned with query")
