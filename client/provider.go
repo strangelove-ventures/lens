@@ -140,7 +140,7 @@ func (cc *ChainClient) TrustingPeriod() (time.Duration, error) {
 		return 0, err
 	}
 
-	integer, _ := math.Modf(res.UnbondingTime.Hours() * 0.7)
+	integer, _ := math.Modf(res.UnbondingTime.Hours() * 0.85)
 	trustingStr := fmt.Sprintf("%vh", integer)
 	tp, err := time.ParseDuration(trustingStr)
 	if err != nil {
