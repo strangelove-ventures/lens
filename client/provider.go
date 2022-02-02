@@ -652,7 +652,7 @@ func (cc *ChainClient) InjectTrustedFields(header ibcexported.Header, dst provid
 	// place where we need to fix the upstream query proof issue?
 	var trustedHeader *tmclient.Header
 	if err := retry.Do(func() error {
-		tmpHeader, err := cc.GetLightSignedHeaderAtHeight(int64(h.TrustedHeight.RevisionHeight + 1))
+		tmpHeader, err := cc.GetLightSignedHeaderAtHeight(int64(h.TrustedHeight.RevisionHeight))
 		th, ok := tmpHeader.(*tmclient.Header)
 		if !ok {
 			err = errors.New("non-tm client header")
