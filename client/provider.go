@@ -165,8 +165,6 @@ func (cc *ChainClient) CreateClient(clientState ibcexported.ClientState, dstHead
 		return nil, fmt.Errorf("got data of type %T but wanted tmclient.Header \n", dstHeader)
 	}
 
-	fmt.Printf("TM-Header Trusted Height %d, TM-Header Current Height %d", tmHeader.TrustedHeight, tmHeader.GetHeight())
-
 	if acc, err = cc.Address(); err != nil {
 		return nil, err
 	}
