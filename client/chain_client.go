@@ -44,7 +44,7 @@ func NewChainClient(ccc *ChainClientConfig, homepath string, input io.Reader, ou
 		Codec:          MakeCodec(ccc.Modules),
 		Logger:         log.NewTMLogger(log.NewSyncWriter(output)),
 	}
-	if err := cc.init(); err != nil {
+	if err := cc.initKeybase(); err != nil {
 		return nil, err
 	}
 	timeout, _ := time.ParseDuration(cc.Config.Timeout)
@@ -74,7 +74,7 @@ func NewChainClientWithRPCClient(ccc *ChainClientConfig, cli rpcclient.Client, h
 		Codec:          MakeCodec(ccc.Modules),
 		Logger:         log.NewTMLogger(log.NewSyncWriter(output)),
 	}
-	if err := cc.init(); err != nil {
+	if err := cc.initKeybase(); err != nil {
 		return nil, err
 	}
 	cc.RPCClient = cli
@@ -82,7 +82,7 @@ func NewChainClientWithRPCClient(ccc *ChainClientConfig, cli rpcclient.Client, h
 	return cc, nil
 }
 
-func (cc *ChainClient) init() error {
+func (cc *ChainClient) initKeybase() error {
 	// TODO: test key directory and return error if not created
 	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.KeyringOptions...)
 	if err != nil {
