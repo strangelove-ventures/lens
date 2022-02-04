@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	prov "github.com/tendermint/tendermint/light/provider/http"
 	"io"
 	"path"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/tendermint/tendermint/libs/log"
 	provtypes "github.com/tendermint/tendermint/light/provider"
-	prov "github.com/tendermint/tendermint/light/provider/http"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	libclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
@@ -44,33 +44,52 @@ func NewChainClient(ccc *ChainClientConfig, homepath string, input io.Reader, ou
 		Codec:          MakeCodec(ccc.Modules),
 		Logger:         log.NewTMLogger(log.NewSyncWriter(output)),
 	}
-	if err := cc.Init(); err != nil {
+	if err := cc.init(); err != nil {
 		return nil, err
 	}
+	timeout, _ := time.ParseDuration(cc.Config.Timeout)
+	rpcClient, err := NewRPCClient(cc.Config.RPCAddr, timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	lightprovider, err := prov.New(cc.Config.ChainID, cc.Config.RPCAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	cc.RPCClient = rpcClient
+	cc.LightProvider = lightprovider
+
 	return cc, nil
 }
 
-func (cc *ChainClient) Init() error {
+func NewChainClientWithRPCClient(ccc *ChainClientConfig, cli rpcclient.Client, homepath string, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {
+	ccc.KeyDirectory = keysDir(homepath, ccc.ChainID)
+	cc := &ChainClient{
+		KeyringOptions: kro,
+		Config:         ccc,
+		Input:          input,
+		Output:         output,
+		Codec:          MakeCodec(ccc.Modules),
+		Logger:         log.NewTMLogger(log.NewSyncWriter(output)),
+	}
+	if err := cc.init(); err != nil {
+		return nil, err
+	}
+	cc.RPCClient = cli
+	// TODO @renaynay: this will be a problem not to set the light provider if we want a light block
+	return cc, nil
+}
+
+func (cc *ChainClient) init() error {
 	// TODO: test key directory and return error if not created
 	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.KeyringOptions...)
 	if err != nil {
 		return err
 	}
+
 	// TODO: figure out how to deal with input or maybe just make all keyring backends test?
-
-	timeout, _ := time.ParseDuration(cc.Config.Timeout)
-	rpcClient, err := NewRPCClient(cc.Config.RPCAddr, timeout)
-	if err != nil {
-		return err
-	}
-
-	lightprovider, err := prov.New(cc.Config.ChainID, cc.Config.RPCAddr)
-	if err != nil {
-		return err
-	}
-
-	cc.RPCClient = rpcClient
-	cc.LightProvider = lightprovider
 	cc.Keybase = keybase
 
 	return nil
