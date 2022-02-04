@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go v2.6.0+incompatible
 	github.com/cosmos/cosmos-sdk v0.44.5
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/ibc-go/v2 v2.0.2
+	github.com/cosmos/ibc-go/v2 v2.0.3
 	github.com/cosmos/relayer v1.0.1-0.20220107210018-e85b7af9a30b
 	github.com/gogo/protobuf v1.3.3
 	github.com/google/go-github v17.0.0+incompatible
