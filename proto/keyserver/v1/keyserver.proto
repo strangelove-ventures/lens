@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package keyserver;
+
+// AccountKeyService is a key service for storing cosmos account keys
+// these keys are assumed to be `secp256k1` keys
+service AccountKeyService {
+    rpc NewKey(NewKeyRequest) returns (NewKeyResponse);
+    rpc Sign(SignRequest) returns (SignResponse);
+    rpc PubKey(PubKeyRequest) returns (PubKeyResponse);
+}
+
+message NewKeyRequest {
+    string name = 1;
+    string derivation_path = 2;
+}
+
+message NewKeyResponse {
+    bytes pub_key = 1;
+    string error = 2;
+}
+
+message SignRequest {
+    bytes sign_data = 1;
+    string chain_id = 2;
+    int64 account_number = 3;
+    int64 sequence = 4;
+}
+
+message SignResponse {
+    bytes signature = 1;
+    string error = 2;
+}
+
+message PubKeyRequest {
+    string name = 1;
+}
+
+
+message PubKeyResponse {
+    bytes pub_key = 1;
+    string error = 2;
+}
