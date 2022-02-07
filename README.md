@@ -1,5 +1,11 @@
 # `lens`
 
+**Lens provides a command line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).**
+
+**Lens is meant to be imported as a library in other repos and projects to easily navigate and interact with the Cosmos Hub along with IBC chains.**
+
+---
+
 `lens` is your lens to view the Cosmos :atom:. `lens` packs all the best practices in golang cosmos client development into one place and provides a simple and easy to use APIs provided by standard Cosmos chains. The `cmd` package implements the `lens` command line tool while the `client` package contains all the building blocks to build your own, complex, feature rich, Cosmos client in go.
 
 Intended use cases:
@@ -11,23 +17,20 @@ Intended use cases:
 
 This is the start of ideas around how to implement the cosmos client libraries in a seperate repo.
 
-## Tutorial
-
-### CMD Line
-
-Lens provides a cmd line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).
-
-#### Install
-
-```
+## **--INSTALL--**
+---
+```bash
 git clone https://github.com/strangelove-ventures/lens.git
 
 cd lens
 
 make install
 ```
-
-After running the above commands, when running `lens` you should see
+Now run:
+```bash
+lens
+```
+You should see:
 
 ```
 ❯ lens            
@@ -53,100 +56,41 @@ Flags:
 Use "lens [command] --help" for more information about a command.
 ```
 
-#### Chains
+## **--CONFIG--**
+---
+The config file describes how lens will interact with blockchains. This is where information such as grpc addresses and chain-ids are held.
 
-Lens comes with two defaulted chains, Cosmos Hub and Osmosis. Located at `~/.lens/config.toml` 
+**Config File Location:** `~/.lens/config.yaml` 
 
-```
-default_chain: osmosis
- chains:
-   cosmoshub:
-     key: default
-     chain-id: cosmoshub-4
-     rpc-addr: https://cosmoshub-4.technofractal.com:443
-     grpc-addr: https://gprc.cosmoshub-4.technofractal.com:443
-     account-prefix: cosmos
-     keyring-backend: test
-     gas-adjustment: 1.2
-     gas-prices: 0.01uatom
-     key-directory: /Users/lenscrafters/.lens/keys
-     debug: false
-     timeout: 20s
-     output-format: json
-     sign-mode: direct
-   osmosis:
-     key: default
-     chain-id: osmosis-1
-     rpc-addr: https://osmosis-1.technofractal.com:443
-     grpc-addr: https://gprc.osmosis-1.technofractal.com:443
-     account-prefix: osmo
-     keyring-backend: test
-     gas-adjustment: 1.2
-     gas-prices: 0.01uosmo
-     key-directory: /Users/lenscrafters/.lens/keys
-     debug: false
-     timeout: 20s
-     output-format: json
-     sign-mode: direct
-```
+> NOTE: The config file is not created at install, it is created the first time lens needs to query your config. Just to get it created, you can run something like:
+>```
+>lens chains show-default
+>```
 
-To add more chains to your config, run: 
+### **CHAINS**
+Lens comes with two default chains. Cosmos Hub and Osmosis.
+
+To interact with other chains, you need to add them to your config. To do this, run:
 
 ```
 lens chains add <chain_name>
+#Example:
+lens chains add juno
 ```
 
+To view all possible chain names, run:
+```
+lens chains registry-list
+```
+> NOTE: These two commands check the chain registry located [here](https://github.com/cosmos/chain-registry), for the requested chain.
 
-This command checks the chain registry located [here](https://github.com/cosmos/chain-registry), for the requested chain. The chain name references the directory name in the chain registry. After running `lens chains add juno` your `config.toml` should look like
+When running a command, it will run the command for the defaulted chain.
+
+To view your default chain, run:
 
 ```
-default_chain: osmosis
- chains:
-   cosmoshub:
-     key: default
-     chain-id: cosmoshub-4
-     rpc-addr: https://cosmoshub-4.technofractal.com:443
-     grpc-addr: https://gprc.cosmoshub-4.technofractal.com:443
-     account-prefix: cosmos
-     keyring-backend: test
-     gas-adjustment: 1.2
-     gas-prices: 0.01uatom
-     key-directory: /Users/lenscrafters/.lens/keys
-     debug: false
-     timeout: 20s
-     output-format: json
-     sign-mode: direct
-   juno:
-     key: default
-     chain-id: juno-1
-     rpc-addr: https://rpc-juno.itastakers.com:443
-     grpc-addr: ""
-     account-prefix: juno
-     keyring-backend: test
-     gas-adjustment: 1.2
-     gas-prices: 0.01ujuno
-     key-directory: /Users/lenscrafters/.lens/keys
-     debug: false
-     timeout: 20s
-     output-format: json
-     sign-mode: direct
-   osmosis:
-     key: default
-     chain-id: osmosis-1
-     rpc-addr: https://osmosis-1.technofractal.com:443
-     grpc-addr: https://gprc.osmosis-1.technofractal.com:443
-     account-prefix: osmo
-     keyring-backend: test
-     gas-adjustment: 1.2
-     gas-prices: 0.01uosmo
-     key-directory: /Users/lenscrafters/.lens/keys
-     debug: false
-     timeout: 20s
-     output-format: json
-     sign-mode: direct
+ lens chains show-default
 ```
-
-When running a command, it will run the command for the defaulted chain. The defaulted chain can be found at the top of `~/.lens/config.toml` or by running `lens`. 
 
 To change your default, run: 
 
@@ -154,12 +98,30 @@ To change your default, run:
 lens chains set-default <chain_name>
 ```
 
-#### Keys
+### **Keys**
+Lens uses the keyring from the Cosmos-sdk. There is more information about it [here](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/keyring/doc.go). 
 
-Lens uses the keyring from the Cosmos-sdk. There is more information about it keyring [here](https://github.com/cosmos/cosmos-sdk/blob/master/crypto/keyring/doc.go). To add a key to lens run:
+To add a key to lens you have two options:
 
-``` 
-lens keys restore <key_name>
-```
+* `lens keys add` - This will add a key to you default chain and name it "default". You can optionally add a name as an argument. 
+* `lens keys restore <name>` - This will restore a key to your default chain. Replace '\<name\>' with a key name. This command will THEN ask for your mnemonic which is needed to restore and use it to boradcast transactions. 
 
-After restoring a key, it should appear in your list by running: `lens keys list`, by default it will show the Cosmos Hub address. To see the key encoded for use on other chains run `lens keys enumerate <key_name>`. 
+>❗️ NOTE: IF you name your key anything other than "default", you will need to manually change the `key:` value in your config to link key with chain.  
+>```bash
+>default_chain: cosmoshub
+>chains:
+>  cosmoshub:
+>    key: default #CHANGE THIS NAME
+>    chain-id: cosmoshub-4
+>    rpc-addr: https://cosmoshub-4.technofractal.com:443
+>    ...
+>```
+
+After generating or restoring a key, it should appear in your list by running: `lens keys list`, by default it will show the Cosmos Hub address. 
+
+To see the key encoded for use on other chains run `lens keys enumerate <key_name>`. 
+
+
+## --QUICKSTART EXAMPLES--
+---
+
