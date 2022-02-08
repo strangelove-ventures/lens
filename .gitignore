@@ -2,3 +2,4 @@ lens.exe
 .idea/
 vendor/
 build/
+*.json
