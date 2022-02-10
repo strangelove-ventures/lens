@@ -21,7 +21,7 @@ func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxR
 	// in the mempool or we can retry the broadcast at that
 	// point
 	syncRes, err := cc.RPCClient.BroadcastTxSync(ctx, tx)
-	if errRes := CheckTendermintError(err, tx); errRes != nil {
+	if errRes := CheckTendermintError(err, tx); errRes != nil || syncRes == nil {
 		return errRes, nil
 	}
 

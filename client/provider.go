@@ -140,7 +140,7 @@ func (cc *ChainClient) TrustingPeriod() (time.Duration, error) {
 		return 0, err
 	}
 
-	integer, _ := math.Modf(res.UnbondingTime.Hours() * 0.7)
+	integer, _ := math.Modf(res.UnbondingTime.Hours() * 0.85)
 	trustingStr := fmt.Sprintf("%vh", integer)
 	tp, err := time.ParseDuration(trustingStr)
 	if err != nil {
@@ -636,7 +636,7 @@ func (cc *ChainClient) InjectTrustedFields(header ibcexported.Header, dst provid
 
 	// retrieve dst client from src chain
 	// this is the client that will be updated
-	cs, err := dst.QueryClientState(0, dstClientId)
+	cs, err := dst.QueryClientState(int64(h.TrustedHeight.RevisionHeight), dstClientId)
 	if err != nil {
 		return nil, err
 	}
@@ -1179,9 +1179,22 @@ func (cc *ChainClient) AutoUpdateClient(dst provider.ChainProvider, thresholdTim
 // to the latest consensus state of a potential match. The provided client state is the client
 // state that will be created if there exist no matches.
 func (cc *ChainClient) FindMatchingClient(counterparty provider.ChainProvider, clientState ibcexported.ClientState) (string, bool) {
-	// TODO: add appropriate offset and limits, along with retries
-	clientsResp, err := cc.QueryClients()
-	if err != nil {
+	// TODO: add appropriate offset and limits
+	var (
+		clientsResp clienttypes.IdentifiedClientStates
+		err         error
+	)
+
+	if err = retry.Do(func() error {
+		clientsResp, err = cc.QueryClients()
+		if err != nil {
+			if cc.Config.Debug {
+				cc.Log(fmt.Sprintf("Error: querying clients on %s failed: %v", cc.Config.ChainID, err))
+			}
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		if cc.Config.Debug {
 			cc.Log(fmt.Sprintf("Error: querying clients on %s failed: %v", cc.Config.ChainID, err))
 		}
