@@ -64,9 +64,10 @@ func airdropCmd() *cobra.Command {
 				return err
 			}
 			if dryRun {
-				var dropTotal float64
+				var dropTotal int64
 				var dropAddress int64
 				for k, v := range airdrop {
+					v = v / 1000000
 
 					_, err := cl.DecodeBech32AccAddr(k)
 					if err != nil {
@@ -74,6 +75,7 @@ func airdropCmd() *cobra.Command {
 					}
 					dropTotal += v
 					dropAddress++
+					fmt.Printf("%s,%s\n", k, v)
 
 				}
 				fmt.Printf("Airdrop total: %f %s\n", dropTotal, denom)
@@ -103,7 +105,7 @@ func airdropCmd() *cobra.Command {
 				multiMsg.Outputs = append(multiMsg.Outputs, banktypes.Output{cl.MustEncodeAccAddr(to), toSend})
 				sent += 1
 
-				if len(multiMsg.Outputs) > maxSends-1 {
+				if len(multiMsg.Outputs) > maxSends-1 || len(multiMsg.Outputs) == len(airdrop) {
 					completion := float64(sent) / float64(len(airdrop))
 					fmt.Printf("(%f) sending %s to %d addresses\n", completion, amount.String(), len(multiMsg.Outputs))
 					multiMsg.Inputs = append(multiMsg.Inputs, banktypes.Input{cl.MustEncodeAccAddr(address), sdk.NewCoins(amount)})
@@ -136,4 +138,4 @@ func airdropCmd() *cobra.Command {
 	return cmd
 }
 
-type airdropFile map[string]float64
+type airdropFile map[string]int64
