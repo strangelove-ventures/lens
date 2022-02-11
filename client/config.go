@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/cosmos/relayer/relayer/provider"
 	"os"
 	"time"
 
@@ -24,7 +25,7 @@ import (
 	ibc "github.com/cosmos/ibc-go/v2/modules/core"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/relayer/relayer/provider"
+	relayer "github.com/cosmos/relayer/relayer/provider/cosmos"
 )
 
 var (
@@ -69,23 +70,28 @@ type ChainClientConfig struct {
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
 }
 
-func (ccc *ChainClientConfig) NewProvider(homepath string, debug bool) (provider.ChainProvider, error) {
-	if err := ccc.Validate(); err != nil {
-		return nil, err
-	}
-	ccc.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
-	p, err := NewChainClient(ccc, homepath, os.Stdin, os.Stdout)
-	if err != nil {
-		return nil, err
-	}
-	return p, err
-}
-
 func (ccc *ChainClientConfig) Validate() error {
 	if _, err := time.ParseDuration(ccc.Timeout); err != nil {
 		return err
 	}
 	return nil
+}
+
+// NewProvider validates the ChainClientConfig, instantiates a ChainClient and instantiates a CosmosProvider
+// NOTE: CosmosProvider is an implementation of the Provider interface that is exposed and used throughout
+//       the go-relayer. We call this method in the relayer after parsing a ChainClientConfig so that
+//       we have access to the ChainClient's functionality in the relayer
+func (ccc *ChainClientConfig) NewProvider(homepath string, debug bool) (provider.ChainProvider, error) {
+	if err := ccc.Validate(); err != nil {
+		return nil, err
+	}
+	ccc.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
+	cc, err := NewChainClient(ccc, homepath, os.Stdin, os.Stdout)
+	if err != nil {
+		return nil, err
+	}
+	p := &relayer.CosmosProvider{ChainClient: *cc}
+	return p, nil
 }
 
 func GetCosmosHubConfig(keyHome string, debug bool) *ChainClientConfig {
