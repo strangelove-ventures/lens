@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/avast/retry-go"
-	"github.com/cosmos/relayer/relayer/provider"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -41,121 +40,6 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 		signMode = signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON
 	}
 	return signMode
-}
-
-// SendMessage attempts to sign, encode & send a RelayerMessage
-// This is used extensively in the relayer as an extension of the Provider interface
-func (cc *ChainClient) SendMessage(msg provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
-	return cc.SendMessages([]provider.RelayerMessage{msg})
-}
-
-// SendMessages attempts to sign, encode, & send a slice of RelayerMessages
-// This is used extensively in the relayer as an extension of the Provider interface
-//
-// NOTE: An error is returned if there was an issue sending the transaction. A successfully sent, but failed
-// transaction will not return an error. If a transaction is successfully sent, the result of the execution
-// of that transaction will be logged. A boolean indicating if a transaction was successfully
-// sent and executed successfully is returned.
-func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
-	var (
-		txb     client.TxBuilder
-		txBytes []byte
-		res     *sdk.TxResponse
-	)
-
-	// Query account details
-	txf, err := cc.PrepareFactory(cc.TxFactory())
-	if err != nil {
-		return nil, false, err
-	}
-
-	// TODO: Make this work with new CalculateGas method
-	// TODO: This is related to GRPC client stuff?
-	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
-	// If users pass gas adjustment, then calculate gas
-	_, adjusted, err := cc.CalculateGas(txf, CosmosMsgs(msgs...)...)
-	if err != nil {
-		return nil, false, err
-	}
-
-	// Set the gas amount on the transaction factory
-	txf = txf.WithGas(adjusted)
-
-	// Build the transaction builder & retry on failures
-	if err = retry.Do(func() error {
-		txb, err = tx.BuildUnsignedTx(txf, CosmosMsgs(msgs...)...)
-		if err != nil {
-			return err
-		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
-		return nil, false, err
-	}
-
-	// Attach the signature to the transaction
-	// Force encoding in the chain specific address
-	for _, msg := range msgs {
-		cc.Codec.Marshaler.MustMarshalJSON(CosmosMsg(msg))
-	}
-
-	done := cc.SetSDKContext()
-
-	if err = retry.Do(func() error {
-		if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
-			return err
-		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
-		return nil, false, err
-	}
-
-	done()
-
-	// Generate the transaction bytes
-	if err = retry.Do(func() error {
-		txBytes, err = cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
-		if err != nil {
-			return err
-		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
-		return nil, false, err
-	}
-
-	res, err = cc.BroadcastTx(context.Background(), txBytes)
-	if err != nil || res == nil {
-		return nil, false, err
-	}
-
-	// Parse events and build a map where the key is event.Type+"."+attribute.Key
-	events := make(map[string]string, 1)
-	for _, logs := range res.Logs {
-		for _, ev := range logs.Events {
-			for _, attr := range ev.Attributes {
-				key := ev.Type + "." + attr.Key
-				events[key] = attr.Value
-			}
-		}
-	}
-
-	rlyRes := &provider.RelayerTxResponse{
-		Height: res.Height,
-		TxHash: res.TxHash,
-		Code:   res.Code,
-		Data:   res.Data,
-		Events: events,
-	}
-
-	// transaction was executed, log the success or failure using the tx response code
-	// NOTE: error is nil, logic should use the returned error to determine if the
-	// transaction was successfully executed.
-	if rlyRes.Code != 0 {
-		cc.LogFailedTx(rlyRes, err, msgs)
-		return rlyRes, false, fmt.Errorf("transaction failed with code: %d", res.Code)
-	}
-
-	cc.LogSuccessTx(res, msgs)
-	return rlyRes, true, nil
 }
 
 func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
