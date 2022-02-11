@@ -1,6 +1,9 @@
 package client
 
 import (
+	"time"
+
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authz "github.com/cosmos/cosmos-sdk/x/authz/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -19,8 +22,6 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
 	ibc "github.com/cosmos/ibc-go/v2/modules/core"
-
-	"github.com/cosmos/cosmos-sdk/types/module"
 )
 
 var (
@@ -62,6 +63,13 @@ type ChainClientConfig struct {
 	OutputFormat   string                  `json:"output-format" yaml:"output-format"`
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
+}
+
+func (ccc *ChainClientConfig) Validate() error {
+	if _, err := time.ParseDuration(ccc.Timeout); err != nil {
+		return err
+	}
+	return nil
 }
 
 func GetCosmosHubConfig(keyHome string, debug bool) *ChainClientConfig {
