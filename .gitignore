@@ -3,3 +3,5 @@ lens.exe
 vendor/
 build/
 *.json
+.vscode/
+.DS_STORE
