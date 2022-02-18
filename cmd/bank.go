@@ -2,11 +2,10 @@ package cmd
 
 import (
 	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
-	"github.com/strangelove-ventures/lens/client"
+	bankApi "github.com/strangelove-ventures/lens/client/api/bank"
 )
 
 func bankSendCmd() *cobra.Command {
@@ -61,6 +60,7 @@ func bankBalanceCmd() *cobra.Command {
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
+			pageReq, err := ReadPageRequest(cmd.Flags())
 			keyNameOrAddress := ""
 			if len(args) == 0 {
 				keyNameOrAddress = cl.Config.Key
@@ -71,7 +71,8 @@ func bankBalanceCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			balance, err := cl.QueryBalanceWithDenomTraces(cmd.Context(), address, client.DefaultPageRequest())
+			encAddr := cl.MustEncodeAccAddr(address)
+			balance, err := bankApi.QueryBalanceWithAddress(cl, encAddr, pageReq)
 			if err != nil {
 				return err
 			}
@@ -93,7 +94,7 @@ func bankTotalSupplyCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			totalSupply, err := cl.QueryTotalSupply(cmd.Context(), pageReq)
+			totalSupply, err := bankApi.QueryTotalSupply(cl, pageReq)
 			if err != nil {
 				return err
 			}
@@ -115,7 +116,7 @@ func bankDenomsMetadataCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			denoms, err := cl.QueryDenomsMetadata(cmd.Context(), pageReq)
+			denoms, err := bankApi.QueryDenomsMetadata(cl, pageReq)
 			if err != nil {
 				return err
 			}

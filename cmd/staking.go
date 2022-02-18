@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/strangelove-ventures/lens/client/api/staking"
 	"strings"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
@@ -8,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/spf13/cobra"
-	"github.com/strangelove-ventures/lens/client/staking"
 )
 
 func stakingDelegateCmd() *cobra.Command {

@@ -2,7 +2,6 @@ package staking
 
 import (
 	"context"
-
 	"github.com/strangelove-ventures/lens/client"
 
 	querytypes "github.com/cosmos/cosmos-sdk/types/query"
