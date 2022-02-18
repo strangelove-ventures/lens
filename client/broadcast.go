@@ -14,10 +14,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-// BroadcastTx broadcasts a transactions either synchronously or asynchronously
-// based on the context parameters. The result of the broadcast is parsed into
-// an intermediate structure which is logged if the context has a logger
-// defined.
 func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxResponse, err error) {
 	// broadcast tx sync waits for check tx to pass
 	// NOTE: this can return w/ a timeout
@@ -25,7 +21,7 @@ func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxR
 	// in the mempool or we can retry the broadcast at that
 	// point
 	syncRes, err := cc.RPCClient.BroadcastTxSync(ctx, tx)
-	if errRes := CheckTendermintError(err, tx); errRes != nil {
+	if errRes := CheckTendermintError(err, tx); errRes != nil || syncRes == nil {
 		return errRes, nil
 	}
 

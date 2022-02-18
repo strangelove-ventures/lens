@@ -3,10 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/crypto/ssh/terminal"
 	"log"
 	"sort"
 	"strings"
+
+	"golang.org/x/crypto/ssh/terminal"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
@@ -47,12 +48,12 @@ func keysAddCmd() *cobra.Command {
 		Use:     "add [name]",
 		Aliases: []string{"a"},
 		Short:   "adds a key to the keychain associated with a particular chain",
-		Long:    "if no name is passed, name in config is used",
+		Long:    "if no name is passed, 'default' is used",
 		Args:    cobra.RangeArgs(0, 1),
 		Example: strings.TrimSpace(fmt.Sprintf(`
-$ %s keys add ibc-0
-$ %s keys add ibc-1 key2
-$ %s k a ibc-2 testkey`, appName, appName, appName)),
+$ %s keys add
+$ %s keys add test_key
+$ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
 			var keyName string
@@ -133,13 +134,14 @@ $ %s keys delete ibc-1 key2 -y
 $ %s k d ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
+			chainName := cl.Config.ChainID
 			keyName := args[0]
 			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
 			}
 
 			if skip, _ := cmd.Flags().GetBool("skip"); !skip {
-				fmt.Printf("Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, args[0])
+				fmt.Printf("Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, chainName)
 				if !askForConfirmation() {
 					return nil
 				}

@@ -1,6 +1,9 @@
 package client
 
 import (
+	"time"
+
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authz "github.com/cosmos/cosmos-sdk/x/authz/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -19,16 +22,10 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
 	ibc "github.com/cosmos/ibc-go/v2/modules/core"
-	"os"
-	"time"
-
-	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/relayer/relayer/provider"
 )
 
 var (
-	_            provider.ProviderConfig = &ChainClientConfig{}
-	ModuleBasics                         = []module.AppModuleBasic{
+	ModuleBasics = []module.AppModuleBasic{
 		auth.AppModuleBasic{},
 		authz.AppModuleBasic{},
 		bank.AppModuleBasic{},
@@ -66,18 +63,6 @@ type ChainClientConfig struct {
 	OutputFormat   string                  `json:"output-format" yaml:"output-format"`
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
-}
-
-func (ccc *ChainClientConfig) NewProvider(homepath string, debug bool) (provider.ChainProvider, error) {
-	if err := ccc.Validate(); err != nil {
-		return nil, err
-	}
-	ccc.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
-	p, err := NewChainClient(ccc, homepath, os.Stdin, os.Stdout)
-	if err != nil {
-		return nil, err
-	}
-	return p, err
 }
 
 func (ccc *ChainClientConfig) Validate() error {

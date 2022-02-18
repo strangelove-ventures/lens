@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/cosmos/relayer/relayer/provider"
+	"github.com/avast/retry-go"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -40,90 +40,6 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 		signMode = signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON
 	}
 	return signMode
-}
-
-func (cc *ChainClient) SendMessage(msg provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
-	return cc.SendMessages([]provider.RelayerMessage{msg})
-}
-
-func (cc *ChainClient) SendMessages(msgs []provider.RelayerMessage) (*provider.RelayerTxResponse, bool, error) {
-	// Query account details
-	txf, err := cc.PrepareFactory(cc.TxFactory())
-	if err != nil {
-		return nil, false, err
-	}
-
-	// TODO: Make this work with new CalculateGas method
-	// TODO: This is related to GRPC client stuff?
-	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
-	// If users pass gas adjustment, then calculate gas
-	_, adjusted, err := cc.CalculateGas(txf, CosmosMsgs(msgs...)...)
-	if err != nil {
-		return nil, false, err
-	}
-
-	// Set the gas amount on the transaction factory
-	txf = txf.WithGas(adjusted)
-
-	// Build the transaction builder
-	txb, err := tx.BuildUnsignedTx(txf, CosmosMsgs(msgs...)...)
-	if err != nil {
-		return nil, false, err
-	}
-
-	// Attach the signature to the transaction
-	// Force encoding in the chain specific address
-	for _, msg := range msgs {
-		cc.Codec.Marshaler.MustMarshalJSON(CosmosMsg(msg))
-	}
-
-	done := cc.SetSDKContext()
-	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
-		return nil, false, err
-	}
-	done()
-
-	// Generate the transaction bytes
-	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
-	if err != nil {
-		return nil, false, err
-	}
-
-	// Broadcast those bytes
-	res, err := cc.BroadcastTx(context.Background(), txBytes)
-	if err != nil {
-		return nil, false, err
-	}
-
-	// Parse events and build a map where the key is event.Type+"."+attribute.Key
-	events := make(map[string]string, 1)
-	for _, logs := range res.Logs {
-		for _, ev := range logs.Events {
-			for _, attr := range ev.Attributes {
-				key := ev.Type + "." + attr.Key
-				events[key] = attr.Value
-			}
-		}
-	}
-
-	rlyRes := &provider.RelayerTxResponse{
-		Height: res.Height,
-		TxHash: res.TxHash,
-		Code:   res.Code,
-		Data:   res.Data,
-		Events: events,
-	}
-
-	// transaction was executed, log the success or failure using the tx response code
-	// NOTE: error is nil, logic should use the returned error to determine if the
-	// transaction was successfully executed.
-	if rlyRes.Code != 0 {
-		//cc.LogFailedTx(res, err, CosmosMsgs(msgs...))
-		return rlyRes, false, fmt.Errorf("transaction failed with code: %d", res.Code)
-	}
-
-	//cc.LogSuccessTx(res, CosmosMsgs(msgs...))
-	return rlyRes, true, nil
 }
 
 func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
@@ -194,8 +110,20 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 }
 
 func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
-	from, err := cc.GetKeyAddress()
-	if err != nil {
+	var (
+		err      error
+		from     sdk.AccAddress
+		num, seq uint64
+	)
+
+	// Get key address and retry if fail
+	if err = retry.Do(func() error {
+		from, err = cc.GetKeyAddress()
+		if err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return tx.Factory{}, err
 	}
 
@@ -204,16 +132,26 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		WithChainID(cc.Config.ChainID).
 		WithCodec(cc.Codec.Marshaler)
 
-	// Set the account number and sequence on the transaction factory
-	if err := txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
+	// Set the account number and sequence on the transaction factory and retry if fail
+	if err = retry.Do(func() error {
+		if err = txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return txf, err
 	}
 
 	// TODO: why this code? this may potentially require another query when we don't want one
 	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
 	if initNum == 0 || initSeq == 0 {
-		num, seq, err := txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
-		if err != nil {
+		if err = retry.Do(func() error {
+			num, seq, err = txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
+			if err != nil {
+				return err
+			}
+			return err
+		}, RtyAtt, RtyDel, RtyErr); err != nil {
 			return txf, err
 		}
 
@@ -230,8 +168,20 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 }
 
 func (cc *ChainClient) CalculateGas(txf tx.Factory, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
-	txBytes, err := BuildSimTx(txf, msgs...)
-	if err != nil {
+	var (
+		txBytes []byte
+		err     error
+		res     abci.ResponseQuery
+		simRes  txtypes.SimulateResponse
+	)
+
+	if err = retry.Do(func() error {
+		txBytes, err = BuildSimTx(txf, msgs...)
+		if err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return txtypes.SimulateResponse{}, 0, err
 	}
 
@@ -240,13 +190,22 @@ func (cc *ChainClient) CalculateGas(txf tx.Factory, msgs ...sdk.Msg) (txtypes.Si
 		Data: txBytes,
 	}
 
-	res, err := cc.QueryABCI(simQuery)
-	if err != nil {
+	if err = retry.Do(func() error {
+		res, err = cc.QueryABCI(simQuery)
+		if err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return txtypes.SimulateResponse{}, 0, err
 	}
 
-	var simRes txtypes.SimulateResponse
-	if err := simRes.Unmarshal(res.Value); err != nil {
+	if err = retry.Do(func() error {
+		if err = simRes.Unmarshal(res.Value); err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return txtypes.SimulateResponse{}, 0, err
 	}
 
