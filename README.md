@@ -1,8 +1,7 @@
 # `lens`
 **Lens provides a command line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x)**
 
-**Lens is also built with intent to be imported into other projects to easily navigate and interact with the Cosmos Hub along with IBC chains.**
-Check out our [examples](https://github.com/strangelove-ventures/lens/tree/main/examples)
+**Lens is built with the intent to be imported into other projects to easily navigate and interact with the Cosmos Hub along with IBC chains** -- Check out our [examples](https://github.com/strangelove-ventures/lens/tree/main/examples)
 
 ---
 
@@ -124,4 +123,3 @@ To see the key encoded for use on other chains run `lens keys enumerate <key_nam
 
 ## --QUICKSTART EXAMPLES--
 ---
-
