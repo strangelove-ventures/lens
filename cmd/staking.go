@@ -31,10 +31,6 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 
 			cl := config.GetDefaultClient()
 
-			if args[2] != cl.Config.Key {
-				cl.Config.Key = args[2]
-			}
-
 			amount, err := sdk.ParseCoinNormalized(args[1])
 			if err != nil {
 				return err
@@ -71,8 +67,8 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 
 		},
 	}
-
-	flags.AddTxFlagsToCmd(cmd)
+	// TODO: Link Flags v
+	// flags.AddTxFlagsToCmd(cmd)
 
 	return cmd
 }
