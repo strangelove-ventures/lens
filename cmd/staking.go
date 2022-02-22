@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/strangelove-ventures/lens/client/query/staking"
+	"github.com/strangelove-ventures/lens/client/query"
 	"strings"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
@@ -130,8 +130,8 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 func stakingDelegationsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegations [delegator-addr]",
-		Short: "Query all delegations made by one delegator",
-		Long: strings.TrimSpace(`Query delegations for an individual delegator on all validators.
+		Short: "Querier all delegations made by one delegator",
+		Long: strings.TrimSpace(`Querier delegations for an individual delegator on all validators.
 
 Example:
 $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
@@ -143,7 +143,9 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 			if err != nil {
 				return err
 			}
-			response, err := staking.QueryDelegations(cl, args[0], pageReq)
+			options := query.Options{Pagination: *pageReq}
+			querier := query.Query{cl, &options}
+			response, err := querier.Delegations(args[0])
 			if err != nil {
 				return err
 			}
@@ -160,8 +162,8 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 func stakingDelegationCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegation [delegator-addr] [validator-addr]",
-		Short: "Query a delegation based on address and validator address",
-		Long: strings.TrimSpace(`Query delegations for an individual delegator on an individual validator.
+		Short: "Querier a delegation based on address and validator address",
+		Long: strings.TrimSpace(`Querier delegations for an individual delegator on an individual validator.
 
 Example:
 $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p cosmosvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
@@ -169,7 +171,8 @@ $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p co
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			response, err := staking.QueryDelegation(cl, args[0], args[1])
+			querier := query.Query{cl, query.DefaultOptions()}
+			response, err := querier.Delegation(args[0], args[1])
 			if err != nil {
 				return err
 			}

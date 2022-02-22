@@ -29,7 +29,7 @@ var protoCodec = encoding.GetCodec(proto.Name)
 func (cc *ChainClient) Invoke(ctx context.Context, method string, req, reply interface{}, opts ...grpc.CallOption) (err error) {
 	// Two things can happen here:
 	// 1. either we're broadcasting a Tx, in which call we call Tendermint's broadcast endpoint directly,
-	// 2. or we are querying for state, in which case we call ABCI's Query.
+	// 2. or we are querying for state, in which case we call ABCI's Querier.
 
 	// In both cases, we don't allow empty request req (it will panic unexpectedly).
 	if reflect.ValueOf(req).IsNil() {

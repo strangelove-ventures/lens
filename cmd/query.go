@@ -78,7 +78,7 @@ func distributionQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "distribution",
 		Aliases: []string{"dist", "distr", "d"},
-		Short:   "Query things about a chain's distribution module",
+		Short:   "Querier things about a chain's distribution module",
 	}
 
 	cmd.AddCommand(
@@ -98,7 +98,7 @@ func feegrantQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "feegrant",
 		Aliases: []string{"feegrant"},
-		Short:   "Query things about a chain's fee grant module",
+		Short:   "Querier things about a chain's fee grant module",
 	}
 
 	cmd.AddCommand(
@@ -114,7 +114,7 @@ func govQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "governance",
 		Aliases: []string{"gov", "g"},
-		Short:   "Query things about a chain's gov module",
+		Short:   "Querier things about a chain's gov module",
 	}
 
 	cmd.AddCommand(
@@ -138,7 +138,7 @@ func slashingQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "slashing",
 		Aliases: []string{"sl", "slash"},
-		Short:   "Query things about a chain's slashing module",
+		Short:   "Querier things about a chain's slashing module",
 	}
 
 	cmd.AddCommand(
@@ -155,24 +155,24 @@ func stakingQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "staking",
 		Aliases: []string{"stake", "s"},
-		Short:   "Query things about a chain's staking module",
+		Short:   "Querier things about a chain's staking module",
 	}
 
 	cmd.AddCommand(
 		stakingDelegationCmd(),
 		stakingDelegationsCmd(),
-	// stakingUnbondingDelegationCmd(),
-	// stakingUnbondingDelegationsCmd(),
-	// stakingRedelegationCmd(),
-	// stakingRedelegationsCmd(),
-	// stakingValidatorCmd(),
-	// stakingValidatorsCmd(),
-	// stakingValidatorDelegationsCmd(),
-	// stakingValidatorUnbondingDelegationsCmd(),
-	// stakingValidatorRedelegationsCmd(),
-	// stakingHistoricalInfoCmd(),
-	// stakingParamsCmd(),
-	// stakingPoolCmd(),
+		// stakingUnbondingDelegationCmd(),
+		// stakingUnbondingDelegationsCmd(),
+		// stakingRedelegationCmd(),
+		// stakingRedelegationsCmd(),
+		// stakingValidatorCmd(),
+		// stakingValidatorsCmd(),
+		// stakingValidatorDelegationsCmd(),
+		// stakingValidatorUnbondingDelegationsCmd(),
+		// stakingValidatorRedelegationsCmd(),
+		// stakingHistoricalInfoCmd(),
+		// stakingParamsCmd(),
+		// stakingPoolCmd(),
 	)
 
 	return cmd

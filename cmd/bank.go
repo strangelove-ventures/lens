@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
-	bankApi "github.com/strangelove-ventures/lens/client/query/bank"
+	query "github.com/strangelove-ventures/lens/client/query"
 )
 
 func bankSendCmd() *cobra.Command {
@@ -50,7 +50,7 @@ func bankSendCmd() *cobra.Command {
 	return cmd
 }
 
-// ========== Query Functions ==========
+// ========== Querier Functions ==========
 
 func bankBalanceCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -60,7 +60,7 @@ func bankBalanceCmd() *cobra.Command {
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			pageReq, err := ReadPageRequest(cmd.Flags())
+			_, err := ReadPageRequest(cmd.Flags())
 			keyNameOrAddress := ""
 			if len(args) == 0 {
 				keyNameOrAddress = cl.Config.Key
@@ -71,8 +71,9 @@ func bankBalanceCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			encAddr := cl.MustEncodeAccAddr(address)
-			balance, err := bankApi.QueryBalanceWithAddress(cl, encAddr, pageReq)
+			encodedAddr := cl.MustEncodeAccAddr(address)
+			querier := query.Query{cl, query.DefaultOptions()}
+			balance, err := querier.Balances(encodedAddr)
 			if err != nil {
 				return err
 			}
@@ -89,16 +90,18 @@ func bankTotalSupplyCmd() *cobra.Command {
 		Short:   "query the total supply of coins",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
-			pageReq, err := ReadPageRequest(cmd.Flags())
-			if err != nil {
-				return err
-			}
-			totalSupply, err := bankApi.QueryTotalSupply(cl, pageReq)
-			if err != nil {
-				return err
-			}
-			return cl.PrintObject(totalSupply)
+			/*			cl := config.GetDefaultClient()
+						pageReq, err := ReadPageRequest(cmd.Flags())
+						if err != nil {
+							return err
+						}
+						totalSupply, err := bankApi.QueryTotalSupply(cl, pageReq)
+						if err != nil {
+							return err
+						}
+						return cl.PrintObject(totalSupply)
+			},*/
+			return nil
 		},
 	}
 	return cmd
@@ -111,16 +114,17 @@ func bankDenomsMetadataCmd() *cobra.Command {
 		Short:   "query the denoms metadata",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			/*cl := config.GetDefaultClient()
 			pageReq, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			denoms, err := bankApi.QueryDenomsMetadata(cl, pageReq)
+			denoms, err := query.Bank.QueryDenomsMetadata(cl, pageReq)
 			if err != nil {
 				return err
 			}
-			return cl.PrintObject(denoms)
+			return cl.PrintObject(denoms)*/
+			return nil
 		},
 	}
 	return cmd
