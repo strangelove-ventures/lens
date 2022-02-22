@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/strangelove-ventures/lens/client/api/staking"
+	"github.com/strangelove-ventures/lens/client/query/staking"
 	"strings"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
