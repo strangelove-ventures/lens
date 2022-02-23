@@ -80,7 +80,7 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 func stakingRedelegateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "redelegate [from] [src-validator-addr] [dst-validator-addr] [amount]",
-		Short: "Redelegate illiquid tokens from one validator to another",
+		Short: "redelegate tokens from one validator to another",
 		Args:  cobra.ExactArgs(3),
 		Long: strings.TrimSpace(
 			`Redelegate an amount of illiquid staking tokens from one validator to another.
@@ -130,8 +130,8 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 func stakingDelegationsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegations [delegator-addr]",
-		Short: "Querier all delegations made by one delegator",
-		Long: strings.TrimSpace(`Querier delegations for an individual delegator on all validators.
+		Short: "query all delegations for a delegator address",
+		Long: strings.TrimSpace(`query delegations for an individual delegator on all validators.
 
 Example:
 $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
@@ -162,8 +162,8 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 func stakingDelegationCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegation [delegator-addr] [validator-addr]",
-		Short: "Querier a delegation based on address and validator address",
-		Long: strings.TrimSpace(`Querier delegations for an individual delegator on an individual validator.
+		Short: "query a delegation based on a delegator address and validator address",
+		Long: strings.TrimSpace(`query delegations for an individual delegator on an individual validator.
 
 Example:
 $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p cosmosvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
@@ -171,8 +171,10 @@ $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p co
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			querier := query.Query{cl, query.DefaultOptions()}
-			response, err := querier.Delegation(args[0], args[1])
+			cq := query.Query{Client: cl, Options: query.DefaultOptions()}
+			delegator := args[0]
+			validator := args[1]
+			response, err := cq.Delegation(delegator, validator)
 			if err != nil {
 				return err
 			}

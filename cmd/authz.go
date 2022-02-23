@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func authzQueryGrants() *cobra.Command {
+func authzGrantsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "grants [grantor] [grantee] [msg_type]?",
 		Aliases: []string{"grants"},
