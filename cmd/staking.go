@@ -139,13 +139,17 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			pageReq, err := sdkclient.ReadPageRequest(cmd.Flags())
+			pr, err := sdkclient.ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			options := query.Options{Pagination: *pageReq}
-			querier := query.Query{cl, &options}
-			response, err := querier.Delegations(args[0])
+			height, err := ReadHeight(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			options := query.QueryOptions{Pagination: pr, Height: height}
+			query := query.Query{cl, &options}
+			response, err := query.Delegations(args[0])
 			if err != nil {
 				return err
 			}

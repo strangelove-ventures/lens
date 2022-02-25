@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
-	clientquery "github.com/strangelove-ventures/lens/client/query"
+	query "github.com/strangelove-ventures/lens/client/query"
 )
 
 func bankSendCmd() *cobra.Command {
@@ -54,13 +55,20 @@ func bankSendCmd() *cobra.Command {
 
 func bankBalanceCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "balance [key-or-address]",
+		Use:     "balances [key-or-address]",
 		Aliases: []string{"bal", "b"},
 		Short:   "query the account balance for a key or address (if none is specified, the balance of the default account is returned)",
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			_, err := ReadPageRequest(cmd.Flags())
+			pr, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			height, err := ReadHeight(cmd.Flags())
+			if err != nil {
+				return err
+			}
 			keyNameOrAddress := ""
 			if len(args) == 0 {
 				keyNameOrAddress = cl.Config.Key
@@ -72,7 +80,8 @@ func bankBalanceCmd() *cobra.Command {
 				return err
 			}
 			encodedAddr := cl.MustEncodeAccAddr(address)
-			query := clientquery.Query{Client: cl, Options: clientquery.DefaultOptions()}
+			options := query.QueryOptions{Pagination: pr, Height: height}
+			query := query.Query{Client: cl, Options: &options}
 			balance, err := query.Balances(encodedAddr)
 			if err != nil {
 				return err
@@ -80,6 +89,8 @@ func bankBalanceCmd() *cobra.Command {
 			return cl.PrintObject(balance)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	flags.AddPaginationFlagsToCmd(cmd, "balance")
 	return cmd
 }
 
@@ -91,7 +102,16 @@ func bankTotalSupplyCmd() *cobra.Command {
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			query := clientquery.Query{Client: cl, Options: clientquery.DefaultOptions()}
+			pr, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			height, err := ReadHeight(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			options := query.QueryOptions{Pagination: pr, Height: height}
+			query := query.Query{Client: cl, Options: &options}
 			totalSupply, err := query.TotalSupply()
 			if err != nil {
 				return err
@@ -99,6 +119,8 @@ func bankTotalSupplyCmd() *cobra.Command {
 			return cl.PrintObject(totalSupply)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	flags.AddPaginationFlagsToCmd(cmd, "total-supply")
 	return cmd
 }
 
@@ -110,7 +132,16 @@ func bankDenomsMetadataCmd() *cobra.Command {
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			query := clientquery.Query{Client: cl, Options: clientquery.DefaultOptions()}
+			pr, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			height, err := ReadHeight(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			options := query.QueryOptions{Pagination: pr, Height: height}
+			query := query.Query{Client: cl, Options: &options}
 			denoms, err := query.DenomsMetadata()
 			if err != nil {
 				return err
@@ -118,5 +149,7 @@ func bankDenomsMetadataCmd() *cobra.Command {
 			return cl.PrintObject(denoms)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
+	flags.AddPaginationFlagsToCmd(cmd, "denoms-metadata")
 	return cmd
 }

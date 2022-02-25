@@ -26,7 +26,7 @@ func Delegations(q *Query, delegator string) (types.DelegationResponses, error) 
 	queryClient := types.NewQueryClient(q.Client)
 	params := &types.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: delegator,
-		Pagination:    &q.Options.Pagination,
+		Pagination:    q.Options.Pagination,
 	}
 
 	res, err := queryClient.DelegatorDelegations(context.Background(), params)

@@ -9,7 +9,7 @@ import (
 
 type Query struct {
 	Client  *client.ChainClient
-	Options *Options
+	Options *QueryOptions
 }
 
 func (q *Query) Balances(address string) (sdk.Coins, error) {
