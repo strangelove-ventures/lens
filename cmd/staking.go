@@ -156,10 +156,8 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 			return cl.PrintObject(response)
 		},
 	}
-
 	flags.AddQueryFlagsToCmd(cmd)
 	flags.AddPaginationFlagsToCmd(cmd, "delegations")
-
 	return cmd
 }
 
