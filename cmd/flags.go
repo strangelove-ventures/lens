@@ -89,3 +89,17 @@ func ReadPageRequest(flagSet *pflag.FlagSet) (*query.PageRequest, error) {
 		Reverse:    reverse,
 	}, nil
 }
+
+// ReadHeight reads the height flag.
+func ReadHeight(flagSet *pflag.FlagSet) (int64, error) {
+	if flagSet.Changed(flags.FlagHeight) {
+		height, err := flagSet.GetInt64(flags.FlagHeight)
+		if err != nil {
+			return 0, err
+		}
+		return height, nil
+	} else {
+		return 0, nil
+	}
+
+}

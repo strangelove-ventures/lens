@@ -17,10 +17,13 @@ func queryCmd() *cobra.Command {
 		authzQueryCmd(),
 		bankQueryCmd(),
 		distributionQueryCmd(),
+		stakingQueryCmd(),
+		/* Enabled these when commands are available
 		feegrantQueryCmd(),
 		govQueryCmd(),
 		slashingQueryCmd(),
-		stakingQueryCmd(),
+		*/
+
 	)
 
 	return cmd
@@ -48,10 +51,12 @@ func authzQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "authz",
 		Aliases: []string{"authz"},
-		Short:   "Querying commands for the auth module",
+		Short:   "Querying commands for the authz module",
 	}
 
-	cmd.AddCommand(authzQueryGrants())
+	cmd.AddCommand(
+		authzGrantsCmd(),
+	)
 
 	return cmd
 }
@@ -61,7 +66,7 @@ func bankQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "bank",
 		Aliases: []string{"b"},
-		Short:   "Querying commands for the auth module",
+		Short:   "Querying commands for the bank module",
 	}
 
 	cmd.AddCommand(
@@ -78,7 +83,7 @@ func distributionQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "distribution",
 		Aliases: []string{"dist", "distr", "d"},
-		Short:   "Query things about a chain's distribution module",
+		Short:   "Querying commands for the distribution module",
 	}
 
 	cmd.AddCommand(
@@ -98,7 +103,7 @@ func feegrantQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "feegrant",
 		Aliases: []string{"feegrant"},
-		Short:   "Query things about a chain's fee grant module",
+		Short:   "Querying commands for the feegrant module",
 	}
 
 	cmd.AddCommand(
@@ -114,7 +119,7 @@ func govQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "governance",
 		Aliases: []string{"gov", "g"},
-		Short:   "Query things about a chain's gov module",
+		Short:   "Querying commands for the gov module",
 	}
 
 	cmd.AddCommand(
@@ -138,7 +143,7 @@ func slashingQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "slashing",
 		Aliases: []string{"sl", "slash"},
-		Short:   "Query things about a chain's slashing module",
+		Short:   "Querying commands for the slashing module",
 	}
 
 	cmd.AddCommand(
@@ -155,24 +160,24 @@ func stakingQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "staking",
 		Aliases: []string{"stake", "s"},
-		Short:   "Query things about a chain's staking module",
+		Short:   "Querying commands for the staking module",
 	}
 
 	cmd.AddCommand(
 		stakingDelegationCmd(),
 		stakingDelegationsCmd(),
-	// stakingUnbondingDelegationCmd(),
-	// stakingUnbondingDelegationsCmd(),
-	// stakingRedelegationCmd(),
-	// stakingRedelegationsCmd(),
-	// stakingValidatorCmd(),
-	// stakingValidatorsCmd(),
-	// stakingValidatorDelegationsCmd(),
-	// stakingValidatorUnbondingDelegationsCmd(),
-	// stakingValidatorRedelegationsCmd(),
-	// stakingHistoricalInfoCmd(),
-	// stakingParamsCmd(),
-	// stakingPoolCmd(),
+		// stakingUnbondingDelegationCmd(),
+		// stakingUnbondingDelegationsCmd(),
+		// stakingRedelegationCmd(),
+		// stakingRedelegationsCmd(),
+		// stakingValidatorCmd(),
+		// stakingValidatorsCmd(),
+		// stakingValidatorDelegationsCmd(),
+		// stakingValidatorUnbondingDelegationsCmd(),
+		// stakingValidatorRedelegationsCmd(),
+		// stakingHistoricalInfoCmd(),
+		// stakingParamsCmd(),
+		// stakingPoolCmd(),
 	)
 
 	return cmd
