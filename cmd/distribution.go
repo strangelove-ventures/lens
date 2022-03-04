@@ -1,6 +1,11 @@
 package cmd
 
 import (
+	"flag"
+	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/strangelove-ventures/lens/client/query"
+	"os"
 	"strconv"
 	"strings"
 
@@ -15,7 +20,7 @@ var (
 )
 
 // TODO: should this be [from] [validator-address]?
-// if so then we should make the first arg manditory and further args be []sdk.ValAddr
+// if so then we should make the first arg mandatory and further args be []sdk.ValAddr
 // and make the []sdk.ValAddr optional. This way we don't need any of the flags except
 // commission
 func distributionWithdrawRewardsCmd() *cobra.Command {
@@ -45,18 +50,19 @@ $ lens tx withdraw-rewards --from mykey --all
 			if err != nil {
 				return err
 			}
-
+			encodedAddr := cl.MustEncodeAccAddr(delAddr)
 			msgs := []sdk.Msg{}
 
+			query := query.Query{Client: cl, Options: query.DefaultOptions()}
 			if all, _ := cmd.Flags().GetBool(FlagAll); all {
 
-				validators, err := cl.QueryDelegatorValidators(cmd.Context(), delAddr)
+				resp, err := query.DelegatorValidators(encodedAddr)
 				if err != nil {
 					return err
 				}
 
 				// build multi-message transaction
-				for _, valAddr := range validators {
+				for _, valAddr := range resp.Validators {
 					val, err := cl.DecodeBech32ValAddr(valAddr)
 					if err != nil {
 						return err
@@ -242,5 +248,61 @@ func distributionValidatorRewardsCmd() *cobra.Command {
 			return cl.PrintObject(rewards)
 		},
 	}
+	return cmd
+}
+
+func distributionDelegatorValidatorsCmd() *cobra.Command {
+	var delegator string
+	cmd := &cobra.Command{
+		Use:     "delegator-validators [delegator_address]",
+		Aliases: []string{"dv", "delval"},
+		Short:   "query the delegator's validators",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				cmd.Usage()
+				return fmt.Errorf("\n please specify the delegator's address")
+			} else {
+				delegator = args[0]
+				return nil
+			}
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			keyNameOrAddress := ""
+			cl := config.GetDefaultClient()
+
+			// Parse the delegator parameter
+			flag.Parse()
+			if len(delegator) == 0 {
+				fmt.Fprintln(os.Stderr, "Please specify a valid delegator address")
+				keyNameOrAddress = cl.Config.Key
+			} else {
+				keyNameOrAddress = delegator
+			}
+			address, err := cl.AccountFromKeyOrAddress(keyNameOrAddress)
+			if err != nil {
+				return err
+			}
+			encodedAddr := cl.MustEncodeAccAddr(address)
+
+			// Query options
+			pr, err := ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			height, err := ReadHeight(cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			options := query.QueryOptions{Pagination: pr, Height: height}
+			query := query.Query{Client: cl, Options: &options}
+			delValidators, err := query.DelegatorValidators(encodedAddr)
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(delValidators)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

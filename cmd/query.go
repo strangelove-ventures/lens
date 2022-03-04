@@ -93,6 +93,7 @@ func distributionQueryCmd() *cobra.Command {
 		distributionCommunityPoolCmd(),
 		distributionRewardsCmd(),
 		distributionSlashesCmd(),
+		distributionDelegatorValidatorsCmd(),
 	)
 
 	return cmd

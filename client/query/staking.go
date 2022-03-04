@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// Delegation returns the delegations to a particular validator
-func Delegation(q *Query, delegator, validator string) (*stakingTypes.DelegationResponse, error) {
+// DelegationRPC returns the delegations to a particular validator
+func DelegationRPC(q *Query, delegator, validator string) (*stakingTypes.DelegationResponse, error) {
 	queryClient := stakingTypes.NewQueryClient(q.Client)
 	params := &stakingTypes.QueryDelegationRequest{
 		DelegatorAddr: delegator,
@@ -29,8 +29,8 @@ func Delegation(q *Query, delegator, validator string) (*stakingTypes.Delegation
 	return res.DelegationResponse, nil
 }
 
-// Delegations returns all the delegations
-func Delegations(q *Query, delegator string) (*stakingTypes.QueryDelegatorDelegationsResponse, error) {
+// DelegationsRPC returns all the delegations
+func DelegationsRPC(q *Query, delegator string) (*stakingTypes.QueryDelegatorDelegationsResponse, error) {
 	queryClient := stakingTypes.NewQueryClient(q.Client)
 	params := &stakingTypes.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: delegator,
