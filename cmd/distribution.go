@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"flag"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/strangelove-ventures/lens/client/query"
-	"os"
 	"strconv"
 	"strings"
 
@@ -258,6 +256,10 @@ func distributionDelegatorValidatorsCmd() *cobra.Command {
 		Aliases: []string{"dv", "delval"},
 		Short:   "query the delegator's validators",
 		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				delegator = ""
+				return nil
+			}
 			if len(args) != 1 {
 				cmd.Usage()
 				return fmt.Errorf("\n please specify the delegator's address")
@@ -267,18 +269,17 @@ func distributionDelegatorValidatorsCmd() *cobra.Command {
 			}
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			keyNameOrAddress := ""
 			cl := config.GetDefaultClient()
-
-			// Parse the delegator parameter
-			flag.Parse()
-			if len(delegator) == 0 {
-				fmt.Fprintln(os.Stderr, "Please specify a valid delegator address")
-				keyNameOrAddress = cl.Config.Key
-			} else {
-				keyNameOrAddress = delegator
+			// Check if the address has a valid format
+			if len(delegator) > 0 {
+				_, err := cl.DecodeBech32AccAddr(delegator)
+				if err != nil {
+					return fmt.Errorf("\n please specify a valid delegator's address for chain '%s'. Address should start with '%s'", cl.Config.ChainID, cl.Config.AccountPrefix)
+					return err
+				}
 			}
-			address, err := cl.AccountFromKeyOrAddress(keyNameOrAddress)
+
+			address, err := cl.AccountFromKeyOrAddress(delegator)
 			if err != nil {
 				return err
 			}
