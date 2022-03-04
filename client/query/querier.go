@@ -5,6 +5,7 @@ import (
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/strangelove-ventures/lens/client"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type Query struct {
@@ -46,4 +47,11 @@ func (q *Query) Delegations(delegator string) (*stakingTypes.QueryDelegatorDeleg
 func (q *Query) DelegatorValidators(delegator string) (*distributionTypes.QueryDelegatorValidatorsResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
 	return DelegatorValidatorsRPC(q, delegator)
+}
+
+// Tendermint queries
+
+func (q *Query) Block() (*coretypes.ResultBlock, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return BlockRPC(q)
 }

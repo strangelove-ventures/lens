@@ -19,6 +19,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/strangelove-ventures/lens/client"
+	"github.com/strangelove-ventures/lens/client/query"
 	"net/url"
 	"strconv"
 	"strings"
@@ -115,29 +118,27 @@ func abciQueryCmd() *cobra.Command {
 
 func blockCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		// TODO: make this use a height flag and make height arg optional
-		Use:     "block [height]",
-		Aliases: []string{"bl"},
-		Short:   "query tendermint data for a block at given height",
-		Args:    cobra.ExactArgs(1),
+		Use:     "block",
+		Aliases: []string{"bl", "blk"},
+		Short:   "query tendermint data for a block at a given height",
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := config.GetDefaultClient()
-			height, err := strconv.ParseInt(args[0], 10, 64)
+			height, err := ReadHeight(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			block, err := cl.RPCClient.Block(cmd.Context(), &height)
+			options := query.QueryOptions{Pagination: client.DefaultPageRequest(), Height: height}
+			query := query.Query{Client: cl, Options: &options}
+
+			block, err := query.Block()
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
+			return cl.PrintObject(block)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 
