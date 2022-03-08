@@ -11,8 +11,7 @@ import (
 
 // BalanceWithAddressRPC returns the balance of all coins for a single account.
 func BalanceWithAddressRPC(q *Query, address string) (*bankTypes.QueryAllBalancesResponse, error) {
-	var req *bankTypes.QueryAllBalancesRequest
-	req = &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: q.Options.Pagination}
+	req := &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: q.Options.Pagination}
 	queryClient := bankTypes.NewQueryClient(q.Client)
 	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)

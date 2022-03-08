@@ -3,9 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	querytypes "github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -173,7 +173,7 @@ func (cc *ChainClient) QueryDistributionRewards(ctx context.Context, delegatorAd
 }
 
 // QueryDistributionSlashes returns all slashes of a validator, optionally pass the start and end height
-func (cc *ChainClient) QueryDistributionSlashes(ctx context.Context, validatorAddress sdk.ValAddress, startHeight, endHeight uint64, pageReq *querytypes.PageRequest) (*distTypes.QueryValidatorSlashesResponse, error) {
+func (cc *ChainClient) QueryDistributionSlashes(ctx context.Context, validatorAddress sdk.ValAddress, startHeight, endHeight uint64, pageReq *query.PageRequest) (*distTypes.QueryValidatorSlashesResponse, error) {
 	valAddr, err := cc.EncodeBech32ValAddr(validatorAddress)
 	if err != nil {
 		return nil, err
@@ -212,8 +212,8 @@ func (cc *ChainClient) QueryDenomsMetadata(ctx context.Context, pageReq *query.P
 	return bankTypes.NewQueryClient(cc).DenomsMetadata(ctx, &bankTypes.QueryDenomsMetadataRequest{Pagination: pageReq})
 }
 
-func DefaultPageRequest() *querytypes.PageRequest {
-	return &querytypes.PageRequest{
+func DefaultPageRequest() *query.PageRequest {
+	return &query.PageRequest{
 		Key:        []byte(""),
 		Offset:     0,
 		Limit:      1000,
