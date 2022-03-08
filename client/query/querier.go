@@ -47,6 +47,12 @@ func (q *Query) Delegations(delegator string) (*stakingTypes.QueryDelegatorDeleg
 	return DelegationsRPC(q, delegator)
 }
 
+// ValidatorDelegations returns all the delegations for a validator
+func (q *Query) ValidatorDelegations(validator string) (*stakingTypes.QueryValidatorDelegationsResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ValidatorDelegationssRPC(q, validator)
+}
+
 // Distribution queries
 
 // DelegatorValidators returns the validators of a delegator

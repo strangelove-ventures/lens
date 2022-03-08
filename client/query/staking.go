@@ -48,3 +48,28 @@ func DelegationsRPC(q *Query, delegator string) (*stakingTypes.QueryDelegatorDel
 
 	return res, nil
 }
+
+// ValidatorDelegationssRPC returns all the delegations for a validator
+func ValidatorDelegationssRPC(q *Query, validator string) (*stakingTypes.QueryValidatorDelegationsResponse, error) {
+	// ensure the validator parameter is a valid validator address
+	_, err := q.Client.DecodeBech32ValAddr(validator)
+	if err != nil {
+		return nil, err
+	}
+	queryClient := stakingTypes.NewQueryClient(q.Client)
+	params := &stakingTypes.QueryValidatorDelegationsRequest{
+		ValidatorAddr: validator,
+		Pagination:    q.Options.Pagination,
+	}
+	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	strHeight := strconv.Itoa(int(q.Options.Height))
+	ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, strHeight)
+	defer cancel()
+	res, err := queryClient.ValidatorDelegations(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

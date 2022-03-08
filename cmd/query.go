@@ -173,7 +173,7 @@ func stakingQueryCmd() *cobra.Command {
 		// stakingRedelegationsCmd(),
 		// stakingValidatorCmd(),
 		// stakingValidatorsCmd(),
-		// stakingValidatorDelegationsCmd(),
+		stakingValidatorDelegationsCmd(),
 		// stakingValidatorUnbondingDelegationsCmd(),
 		// stakingValidatorRedelegationsCmd(),
 		// stakingHistoricalInfoCmd(),
