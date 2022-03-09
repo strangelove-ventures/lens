@@ -18,13 +18,16 @@ func queryCmd() *cobra.Command {
 		bankQueryCmd(),
 		distributionQueryCmd(),
 		stakingQueryCmd(),
-		/* Enabled these when commands are available
-		feegrantQueryCmd(),
-		govQueryCmd(),
-		slashingQueryCmd(),
-		*/
-
 	)
+
+	if false {
+		// TODO: enable these when commands are available
+		cmd.AddCommand(
+			feegrantQueryCmd(),
+			govQueryCmd(),
+			slashingQueryCmd(),
+		)
+	}
 
 	return cmd
 }

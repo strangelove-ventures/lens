@@ -2,11 +2,12 @@ package query
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"google.golang.org/grpc/metadata"
-	"strconv"
-	"time"
 )
 
 // Delegation returns the delegations to a particular validator
@@ -21,7 +22,7 @@ func Delegation(q *Query, delegator, validator string) (*stakingTypes.Delegation
 	strHeight := strconv.Itoa(int(q.Options.Height))
 	ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, strHeight)
 	defer cancel()
-	res, err := queryClient.Delegation(context.Background(), params)
+	res, err := queryClient.Delegation(ctx, params)
 	if err != nil {
 		return nil, err
 	}
