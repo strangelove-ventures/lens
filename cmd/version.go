@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
 	dbg "runtime/debug"
 
 	"github.com/spf13/cobra"
@@ -34,8 +32,9 @@ func versionCmd() *cobra.Command {
 				Tendermint: dependencyVersions["github.com/tendermint/tendermint"],
 			}
 
-			bz, _ := json.MarshalIndent(v, "", "  ")
-			fmt.Println(string(bz))
+			if err := writeJSON(cmd.OutOrStdout(), v); err != nil {
+				return err
+			}
 			return nil
 		},
 	}

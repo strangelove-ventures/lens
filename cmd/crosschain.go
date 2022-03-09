@@ -105,7 +105,7 @@ func getEnabledChainbalancesCmd() *cobra.Command {
 					}
 				}
 				for denom, balance := range combinedBalanceMap {
-					fmt.Printf("%s: %s\n", denom, balance.String())
+					fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", denom, balance.String())
 				}
 			} else {
 				for _, chain := range enabledChains {
@@ -114,10 +114,10 @@ func getEnabledChainbalancesCmd() *cobra.Command {
 					if err != nil {
 						return err
 					}
-					fmt.Println("==============================================================")
-					fmt.Printf("Chain: %s, Address: %s\n", chain, chainAddress)
+					fmt.Fprintln(cmd.OutOrStdout(), "==============================================================")
+					fmt.Fprintf(cmd.OutOrStdout(), "Chain: %s, Address: %s\n", chain, chainAddress)
 					for _, balance := range denomBalanceMap[chain] {
-						fmt.Printf("%s: %s\n", balance.Denom, balance.Amount.String())
+						fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", balance.Denom, balance.Amount.String())
 					}
 				}
 			}
