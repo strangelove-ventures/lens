@@ -16,6 +16,8 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -98,4 +100,18 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+// writeJSON encodes the given object to the given writer.
+func writeJSON(w io.Writer, obj interface{}) error {
+	// Although simple, this is just subtle enough
+	// and used in enough places to justify its own function.
+
+	// Using an encoder is slightly preferable over json.Marshal
+	// as the encoder will write directly to the io.Writer
+	// instead of copying to a temporary buffer.
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+	return enc.Encode(obj)
 }

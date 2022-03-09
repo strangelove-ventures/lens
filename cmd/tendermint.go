@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -65,11 +64,10 @@ func abciInfoCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(info, "", "  ")
-			if err != nil {
+
+			if err := writeJSON(cmd.OutOrStdout(), info); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -101,11 +99,9 @@ func abciQueryCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(info, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), info); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -130,11 +126,9 @@ func blockCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -157,11 +151,9 @@ func blockByHashCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -185,11 +177,9 @@ func blockResultsCmd() *cobra.Command {
 				return err
 			}
 			// TODO: figure out how to fix the base64 output here
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -204,7 +194,7 @@ func blockSearchCmd() *cobra.Command {
 		// TODO: long explaination and example should include example queries
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("TODO")
+			fmt.Fprintln(cmd.OutOrStdout(), "TODO")
 			return nil
 		},
 	}
@@ -230,11 +220,9 @@ func consensusParamsCmd() *cobra.Command {
 				return err
 			}
 			// TODO: figure out how to fix the base64 output here
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -256,11 +244,9 @@ func consensusStateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -279,11 +265,9 @@ func dumpConsensusStateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -302,11 +286,9 @@ func healthCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -333,22 +315,21 @@ func netInfoCmd() *cobra.Command {
 				return err
 			}
 			if !peers {
-				bz, err := json.MarshalIndent(block, "", "  ")
-				if err != nil {
+				if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 					return err
 				}
-				fmt.Println(string(bz))
 				return nil
 			}
-			peersList := ""
+			peersList := make([]string, 0, len(block.Peers))
 			for _, peer := range block.Peers {
 				url, err := url.Parse(peer.NodeInfo.ListenAddr)
 				if err != nil {
+					fmt.Fprintf(cmd.OutOrStderr(), "error parsing addr %q: %v\n", peer.NodeInfo.ListenAddr, err)
 					continue
 				}
-				peersList += fmt.Sprintf("%s@%s:%s,", peer.NodeInfo.ID(), peer.RemoteIP, url.Port())
+				peersList = append(peersList, fmt.Sprintf("%s@%s:%s", peer.NodeInfo.ID(), peer.RemoteIP, url.Port()))
 			}
-			fmt.Println(strings.TrimSuffix(peersList, ","))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Join(peersList, ","))
 			return nil
 		},
 	}
@@ -376,11 +357,9 @@ func numUnconfirmedTxs() *cobra.Command {
 			// for _, txbz := range block.Txs {
 			// 	fmt.Printf("%X\n", tmtypes.Tx(txbz).Hash())
 			// }
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -399,11 +378,10 @@ func statusCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
@@ -430,7 +408,6 @@ func queryTxCmd() *cobra.Command {
 				return err
 			}
 			return cl.PrintObject(block)
-
 		},
 	}
 	return proveFlag(cmd)

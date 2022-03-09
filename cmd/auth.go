@@ -33,6 +33,7 @@ func authAccountCmd() *cobra.Command {
 	}
 	return cmd
 }
+
 func authAccountsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "accounts",

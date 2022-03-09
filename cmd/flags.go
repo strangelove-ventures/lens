@@ -101,5 +101,4 @@ func ReadHeight(flagSet *pflag.FlagSet) (int64, error) {
 	} else {
 		return 0, nil
 	}
-
 }

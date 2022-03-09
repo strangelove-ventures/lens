@@ -71,12 +71,14 @@ $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 				return err
 			}
 
-			out, err := json.Marshal(&ko)
-			if err != nil {
+			// Not calling writeJSON because this is one case that does not use indentation.
+			// (Was that intentional?)
+			enc := json.NewEncoder(cmd.OutOrStdout())
+			enc.SetEscapeHTML(false)
+			if err := enc.Encode(&ko); err != nil {
 				return err
 			}
 
-			fmt.Println(string(out))
 			return nil
 		},
 	}
@@ -105,14 +107,14 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 
 			fmt.Print("Enter mnemonic 🔑: ")
 			mnemonic, _ := term.ReadPassword(0)
-			fmt.Println()
+			fmt.Fprintln(cmd.OutOrStdout())
 
 			address, err := cl.RestoreKey(keyName, string(mnemonic))
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(address)
+			fmt.Fprintln(cmd.OutOrStdout(), address)
 			return nil
 		},
 	}
@@ -141,8 +143,8 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 			}
 
 			if skip, _ := cmd.Flags().GetBool("skip"); !skip {
-				fmt.Printf("Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, chainName)
-				if !askForConfirmation() {
+				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, chainName)
+				if !askForConfirmation(cmd) {
 					return nil
 				}
 			}
@@ -151,7 +153,7 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 				panic(err)
 			}
 
-			fmt.Printf("key %s deleted\n", keyName)
+			fmt.Fprintf(cmd.OutOrStdout(), "key %s deleted\n", keyName)
 			return nil
 		},
 	}
@@ -159,10 +161,10 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 	return skipConfirm(cmd)
 }
 
-func askForConfirmation() bool {
+func askForConfirmation(cmd *cobra.Command) bool {
 	var response string
 
-	_, err := fmt.Scanln(&response)
+	_, err := fmt.Fscanln(cmd.InOrStdin(), &response)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -173,8 +175,8 @@ func askForConfirmation() bool {
 	case "n", "no":
 		return false
 	default:
-		fmt.Println("please type (y)es or (n)o and then press enter")
-		return askForConfirmation()
+		fmt.Fprintln(cmd.OutOrStdout(), "please type (y)es or (n)o and then press enter")
+		return askForConfirmation(cmd)
 	}
 }
 
@@ -196,7 +198,7 @@ $ %s k l ibc-1`, appName, appName)),
 			}
 
 			for key, val := range info {
-				fmt.Printf("key(%s) -> %s\n", key, val)
+				fmt.Fprintf(cmd.OutOrStdout(), "key(%s) -> %s\n", key, val)
 			}
 
 			return nil
@@ -239,7 +241,7 @@ $ %s k s ibc-2 testkey`, appName, appName, appName)),
 				return err
 			}
 
-			fmt.Println(address)
+			fmt.Fprintln(cmd.OutOrStdout(), address)
 			return nil
 		},
 	}
@@ -279,7 +281,7 @@ $ %s k e key2`, appName, appName, appName)),
 				return err
 			}
 
-			var chains []string
+			chains := make([]string, 0, len(config.Chains))
 			for chain := range config.Chains {
 				chains = append(chains, chain)
 			}

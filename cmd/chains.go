@@ -66,7 +66,6 @@ func cmdChainsAdd() *cobra.Command {
 			}
 
 			for _, chain := range args {
-
 				found := false
 				for _, possibleChain := range allChains {
 					if chain == possibleChain {

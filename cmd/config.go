@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -33,28 +32,18 @@ func createConfig(home string, debug bool) error {
 	}
 
 	// Then create the file...
-	f, err := os.Create(cfgPath)
-	if err != nil {
+	content := defaultConfig(path.Join(home, "keys"), debug)
+	if err := os.WriteFile(cfgPath, content, 0600); err != nil {
 		return err
 	}
-	defer f.Close()
 
-	// And write the default config to that location...
-	if _, err = f.Write(defaultConfig(path.Join(home, "keys"), debug)); err != nil {
-		return err
-	}
 	return nil
 }
 
 func overwriteConfig(cfg *Config) error {
 	home := viper.GetString("home")
 	cfgPath := path.Join(home, "config.yaml")
-	f, err := os.Create(cfgPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if _, err := f.Write(cfg.MustYAML()); err != nil {
+	if err := os.WriteFile(cfgPath, cfg.MustYAML(), 0600); err != nil {
 		return err
 	}
 
@@ -114,6 +103,7 @@ func defaultConfig(keyHome string, debug bool) []byte {
 }
 
 // initConfig reads in config file and ENV variables if set.
+// This is called as a persistent pre-run command of the root command.
 func initConfig(cmd *cobra.Command) error {
 	home, err := cmd.PersistentFlags().GetString(flags.FlagHome)
 	if err != nil {
@@ -137,21 +127,18 @@ func initConfig(cmd *cobra.Command) error {
 	viper.SetConfigFile(cfgPath)
 	err = viper.ReadInConfig()
 	if err != nil {
-		fmt.Println("Failed to read in config:", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to read in config: %w", err)
 	}
 
 	// read the config file bytes
-	file, err := ioutil.ReadFile(viper.ConfigFileUsed())
+	file, err := os.ReadFile(viper.ConfigFileUsed())
 	if err != nil {
-		fmt.Println("Error reading file:", err)
-		os.Exit(1)
+		return fmt.Errorf("error reading config file: %w", err)
 	}
 
 	// unmarshall them into the struct
 	if err = yaml.Unmarshal(file, config); err != nil {
-		fmt.Println("Error unmarshalling config:", err)
-		os.Exit(1)
+		return fmt.Errorf("error unmarshalling config: %w", err)
 	}
 
 	// instantiate chain client
@@ -160,10 +147,9 @@ func initConfig(cmd *cobra.Command) error {
 	config.cl = make(map[string]*client.ChainClient)
 	for name, chain := range config.Chains {
 		chain.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
-		cl, err := client.NewChainClient(chain, home, os.Stdin, os.Stdout)
+		cl, err := client.NewChainClient(chain, home, cmd.InOrStdin(), cmd.OutOrStdout())
 		if err != nil {
-			fmt.Println("Error creating chain client:", err)
-			os.Exit(1)
+			return fmt.Errorf("error creating chain client: %w", err)
 		}
 		config.cl[name] = cl
 	}
@@ -191,9 +177,8 @@ func initConfig(cmd *cobra.Command) error {
 	}
 
 	// validate configuration
-	if err = validateConfig(config); err != nil {
-		fmt.Println("Error parsing chain config:", err)
-		os.Exit(1)
+	if err := validateConfig(config); err != nil {
+		return fmt.Errorf("error validating config: %w", err)
 	}
 	return nil
 }
