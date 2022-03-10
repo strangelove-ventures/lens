@@ -1,5 +1,8 @@
-lens.exe
 .idea/
 vendor/
 build/
 *.json
+
+# If anyone runs "go build .", ignore the resulting binary.
+lens
+lens.exe
