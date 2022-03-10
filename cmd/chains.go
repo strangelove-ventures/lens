@@ -6,7 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/strangelove-ventures/lens/client/chain_registry"
 
@@ -110,7 +112,7 @@ func cmdChainsDelete(v *viper.Viper, lc *lensConfig) *cobra.Command {
 			originalChainCount := len(lc.config.Chains)
 			for _, arg := range args {
 				if lc.config.DefaultChain == arg {
-					log.Printf("ignoring delete request for %s, unable to delete default chain.", arg)
+					fmt.Fprintf(cmd.ErrOrStderr(), "Ignoring delete request for %s, unable to delete default chain.\n", arg)
 					continue
 				}
 				delete(lc.config.Chains, arg)
@@ -191,11 +193,20 @@ func cmdChainsShow(lc *lensConfig) *cobra.Command {
 		Use:     "show [chain-name]",
 		Aliases: []string{"s"},
 		Short:   "show an individual chain configuration",
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				// Return a helpful error so the user knows which chain names are available.
+				names := make([]string, 0, len(lc.config.Chains))
+				for name := range lc.config.Chains {
+					names = append(names, name)
+				}
+				sort.Strings(names)
+				return fmt.Errorf("no chain-name provided; available names are: %s", strings.Join(names, ", "))
+			}
+
 			if ch, ok := lc.config.Chains[args[0]]; ok {
 				return lc.config.GetDefaultClient().PrintObject(ch)
-
 			}
 			return fmt.Errorf("chain %s not found", args[0])
 		},
@@ -227,7 +238,8 @@ func cmdChainsShowDefault(lc *lensConfig) *cobra.Command {
 		Short:   "show the configured default chain",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return lc.config.GetDefaultClient().PrintObject(lc.config.DefaultChain)
+			fmt.Fprintln(cmd.OutOrStdout(), lc.config.DefaultChain)
+			return nil
 		},
 	}
 	return cmd

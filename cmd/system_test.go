@@ -47,6 +47,9 @@ func (s *System) Run(args ...string) RunResult {
 func (s *System) RunWithInput(in io.Reader, args ...string) RunResult {
 	rootCmd := cmd.NewRootCmd()
 	rootCmd.SetIn(in)
+	// cmd.Execute also sets SilenceUsage,
+	// so match that here for more correct assertions.
+	rootCmd.SilenceUsage = true
 
 	var res RunResult
 	rootCmd.SetOutput(&res.Stdout)

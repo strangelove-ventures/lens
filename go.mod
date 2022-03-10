@@ -9,6 +9,7 @@ require (
 	github.com/cosmos/ibc-go/v2 v2.0.3
 	github.com/cosmos/relayer v1.0.1-0.20220211165707-31d6f6c6d3ae
 	github.com/gogo/protobuf v1.3.3
+	github.com/google/go-cmp v0.5.6
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.2.1
@@ -110,6 +111,7 @@ require (
 require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 )
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
