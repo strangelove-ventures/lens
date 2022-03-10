@@ -3,16 +3,17 @@ package cmd
 import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-func authAccountCmd() *cobra.Command {
+func authAccountCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "account [address]",
 		Aliases: []string{"acc"},
 		Short:   "query an account for its number and sequence or pass no arguement to query default account",
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			keyNameOrAddress := ""
 			if len(args) == 0 {
 				keyNameOrAddress = cl.Config.Key
@@ -34,14 +35,14 @@ func authAccountCmd() *cobra.Command {
 	return cmd
 }
 
-func authAccountsCmd() *cobra.Command {
+func authAccountsCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "accounts",
 		Aliases: []string{"accs"},
 		Short:   "query all accounts on a given chain w/ pagination",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			pr, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
@@ -54,17 +55,17 @@ func authAccountsCmd() *cobra.Command {
 			return cl.PrintObject(res)
 		},
 	}
-	return paginationFlags(cmd)
+	return paginationFlags(cmd, v)
 }
 
-func authParamsCmd() *cobra.Command {
+func authParamsCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "parameters",
 		Aliases: []string{"param", "params", "p"},
 		Short:   "query the current auth parameters",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			res, err := authtypes.NewQueryClient(cl).Params(cmd.Context(), &authtypes.QueryParamsRequest{})
 			if err != nil {
 				return err

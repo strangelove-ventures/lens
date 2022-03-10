@@ -11,7 +11,7 @@ import (
 )
 
 // crosschainCmd represents the command to get balances across chains
-func crosschainCmd() *cobra.Command {
+func crosschainCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "crosschain",
 		Aliases: []string{"cc", "kriskross", "cchain", "coolchain"},
@@ -19,7 +19,7 @@ func crosschainCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		crosschainBankQueryCmd(),
+		crosschainBankQueryCmd(lc),
 	)
 
 	cmd.PersistentFlags().Bool("combined", false, "combine balances from all chains")
@@ -27,8 +27,8 @@ func crosschainCmd() *cobra.Command {
 	return cmd
 }
 
-// crosschainBankQueryCmd  returns the transaction commands for this module
-func crosschainBankQueryCmd() *cobra.Command {
+// crosschainBankQueryCmd returns the transaction commands for this module
+func crosschainBankQueryCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "bank",
 		Aliases: []string{"b"},
@@ -36,13 +36,13 @@ func crosschainBankQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		getEnabledChainbalancesCmd(),
+		getEnabledChainbalancesCmd(lc),
 	)
 
 	return cmd
 }
 
-func getEnabledChainbalancesCmd() *cobra.Command {
+func getEnabledChainbalancesCmd(lc *lensConfig) *cobra.Command {
 	return &cobra.Command{
 		Use:   "balances",
 		Args:  cobra.MinimumNArgs(1),
@@ -53,14 +53,14 @@ func getEnabledChainbalancesCmd() *cobra.Command {
 				return err
 			}
 			enabledChains := []string{}
-			for chain := range config.Chains {
+			for chain := range lc.config.Chains {
 				enabledChains = append(enabledChains, chain)
 			}
 			// alphabetically sort the chains - this is to make the output more readable/consistent
 			sort.StringSlice(enabledChains).Sort()
 
 			// copied from bank.go
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			var (
 				keyNameOrAddress = ""
 				address          sdk.AccAddress
@@ -82,7 +82,7 @@ func getEnabledChainbalancesCmd() *cobra.Command {
 			denomBalanceMap := make(map[string]sdk.Coins)
 			// end: copied from bank.go
 			for _, chain := range enabledChains {
-				cl := config.GetClient(chain)
+				cl := lc.config.GetClient(chain)
 				balance, err := cl.QueryBalanceWithDenomTraces(cmd.Context(), address, client.DefaultPageRequest())
 				if err != nil {
 					return err
@@ -109,7 +109,7 @@ func getEnabledChainbalancesCmd() *cobra.Command {
 				}
 			} else {
 				for _, chain := range enabledChains {
-					cl := config.GetClient(chain)
+					cl := lc.config.GetClient(chain)
 					chainAddress, err := cl.EncodeBech32AccAddr(address)
 					if err != nil {
 						return err
