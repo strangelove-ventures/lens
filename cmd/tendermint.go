@@ -324,7 +324,7 @@ func netInfoCmd() *cobra.Command {
 			for _, peer := range block.Peers {
 				url, err := url.Parse(peer.NodeInfo.ListenAddr)
 				if err != nil {
-					fmt.Fprintf(cmd.OutOrStderr(), "error parsing addr %q: %v\n", peer.NodeInfo.ListenAddr, err)
+					fmt.Fprintf(cmd.ErrOrStderr(), "error parsing addr %q: %v\n", peer.NodeInfo.ListenAddr, err)
 					continue
 				}
 				peersList = append(peersList, fmt.Sprintf("%s@%s:%s", peer.NodeInfo.ID(), peer.RemoteIP, url.Port()))
