@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"sort"
 	"strings"
@@ -105,9 +107,11 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 				return errKeyExists(keyName)
 			}
 
-			fmt.Print("Enter mnemonic 🔑: ")
-			mnemonic, _ := term.ReadPassword(0)
-			fmt.Fprintln(cmd.OutOrStdout())
+			mnemonic, err := readMnemonic(cmd.InOrStdin(), cmd.ErrOrStderr())
+			if err != nil {
+				// Can happen when there is an issue with the terminal.
+				return fmt.Errorf("failed to read mnemonic: %w", err)
+			}
 
 			address, err := cl.RestoreKey(keyName, string(mnemonic))
 			if err != nil {
@@ -121,6 +125,28 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 	// TODO: wire this up
 	cmd.Flags().Uint32(flagCoinType, defaultCoinType, "coin type number for HD derivation")
 	return cmd
+}
+
+// readMnemonic reads a password in terminal mode if stdin is a terminal,
+// otherwise it returns all of stdin with the trailing newline removed.
+func readMnemonic(stdin io.Reader, stderr io.Writer) ([]byte, error) {
+	type fder interface {
+		Fd() uintptr
+	}
+
+	if f, ok := stdin.(fder); ok {
+		fmt.Fprint(stderr, "Enter mnemonic 🔑: ")
+		mnemonic, err := term.ReadPassword(int(f.Fd()))
+		fmt.Fprintln(stderr)
+		return mnemonic, err
+	}
+
+	in, err := io.ReadAll(stdin)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.TrimSuffix(in, []byte("\n")), nil
 }
 
 // keysDeleteCmd respresents the `keys delete` command
@@ -195,6 +221,11 @@ $ %s k l ibc-1`, appName, appName)),
 			info, err := cl.ListAddresses()
 			if err != nil {
 				return err
+			}
+
+			if len(info) == 0 {
+				fmt.Fprintln(cmd.ErrOrStderr(), "WARNING: no keys found")
+				return nil
 			}
 
 			for key, val := range info {
