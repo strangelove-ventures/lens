@@ -8,6 +8,8 @@ import (
 )
 
 func TestKeysList_EmptyKeys(t *testing.T) {
+	t.Parallel()
+
 	sys := NewSystem(t)
 
 	res := sys.MustRun(t, "keys", "list")
@@ -18,6 +20,8 @@ func TestKeysList_EmptyKeys(t *testing.T) {
 }
 
 func TestKeysAdd_List(t *testing.T) {
+	t.Parallel()
+
 	sys := NewSystem(t)
 
 	sys.MustRun(t, "keys", "add")
@@ -28,6 +32,8 @@ func TestKeysAdd_List(t *testing.T) {
 }
 
 func TestKeysAdd_CustomName_List(t *testing.T) {
+	t.Parallel()
+
 	sys := NewSystem(t)
 
 	sys.MustRun(t, "keys", "add", "foo")
@@ -38,6 +44,8 @@ func TestKeysAdd_CustomName_List(t *testing.T) {
 }
 
 func TestKeys_Restore(t *testing.T) {
+	t.Parallel()
+
 	sys := NewSystem(t)
 
 	in := strings.NewReader(ZeroMnemonic + "\n")

@@ -9,27 +9,27 @@ import (
 	"github.com/spf13/viper"
 )
 
-func peersFlag(cmd *cobra.Command) *cobra.Command {
+func peersFlag(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	cmd.Flags().Bool("peers", false, "Comma-delimited list of peers to connect to for syncing")
-	viper.BindPFlag("peers", cmd.Flags().Lookup("peers"))
+	v.BindPFlag("peers", cmd.Flags().Lookup("peers"))
 	return cmd
 }
 
-func proveFlag(cmd *cobra.Command) *cobra.Command {
+func proveFlag(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	cmd.Flags().Bool("prove", false, "return the proof as well as the result")
-	viper.BindPFlag("prove", cmd.Flags().Lookup("prove"))
+	v.BindPFlag("prove", cmd.Flags().Lookup("prove"))
 	return cmd
 }
 
-func limitFlag(cmd *cobra.Command) *cobra.Command {
+func limitFlag(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	cmd.Flags().Int("limit", 100, "limit the number of things to fetch")
-	viper.BindPFlag("limit", cmd.Flags().Lookup("limit"))
+	v.BindPFlag("limit", cmd.Flags().Lookup("limit"))
 	return cmd
 }
 
-func skipConfirm(cmd *cobra.Command) *cobra.Command {
+func skipConfirm(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	cmd.Flags().BoolP("skip", "y", false, "output using yaml")
-	viper.BindPFlag("skip", cmd.Flags().Lookup("skip"))
+	v.BindPFlag("skip", cmd.Flags().Lookup("skip"))
 	return cmd
 }
 
@@ -43,24 +43,24 @@ func AddTxFlagsToCmd(cmd *cobra.Command) {
 }
 
 // AddPaginationFlagsToCmd adds common pagination flags to cmd
-func paginationFlags(cmd *cobra.Command) *cobra.Command {
+func paginationFlags(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	cmd.Flags().Uint64("page", 1, "pagination page of objects to query for. This sets offset to a multiple of limit")
-	viper.BindPFlag("page", cmd.Flags().Lookup("page"))
+	v.BindPFlag("page", cmd.Flags().Lookup("page"))
 
 	cmd.Flags().String("page-key", "", "pagination page-key of objects to query for")
-	viper.BindPFlag("page-key", cmd.Flags().Lookup("page-key"))
+	v.BindPFlag("page-key", cmd.Flags().Lookup("page-key"))
 
 	cmd.Flags().Uint64("limit", 100, "pagination limit of objects to query for")
-	viper.BindPFlag("limit", cmd.Flags().Lookup("limit"))
+	v.BindPFlag("limit", cmd.Flags().Lookup("limit"))
 
 	cmd.Flags().Uint64("offset", 0, "pagination offset of objects to query for")
-	viper.BindPFlag("offset", cmd.Flags().Lookup("offset"))
+	v.BindPFlag("offset", cmd.Flags().Lookup("offset"))
 
 	cmd.Flags().Bool("count-total", true, "count total number of records in objects to query for")
-	viper.BindPFlag("count-total", cmd.Flags().Lookup("count-total"))
+	v.BindPFlag("count-total", cmd.Flags().Lookup("count-total"))
 
 	cmd.Flags().Bool("reverse", false, "results are sorted in descending order")
-	viper.BindPFlag("reverse", cmd.Flags().Lookup("reverse"))
+	v.BindPFlag("reverse", cmd.Flags().Lookup("reverse"))
 	return cmd
 }
 

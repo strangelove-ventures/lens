@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-// queryCmd represents the keys command
-func queryCmd() *cobra.Command {
+// queryCmd represents the query command tree.
+func queryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "query",
 		Aliases: []string{"q"},
@@ -13,11 +14,11 @@ func queryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		authQueryCmd(),
-		authzQueryCmd(),
-		bankQueryCmd(),
-		distributionQueryCmd(),
-		stakingQueryCmd(),
+		authQueryCmd(v, lc),
+		authzQueryCmd(v, lc),
+		bankQueryCmd(lc),
+		distributionQueryCmd(v, lc),
+		stakingQueryCmd(lc),
 	)
 
 	if false {
@@ -33,7 +34,7 @@ func queryCmd() *cobra.Command {
 }
 
 // authQueryCmd returns the transaction commands for this module
-func authQueryCmd() *cobra.Command {
+func authQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "auth",
 		Aliases: []string{"a"},
@@ -41,16 +42,16 @@ func authQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		authAccountCmd(),
-		authAccountsCmd(),
-		authParamsCmd(),
+		authAccountCmd(lc),
+		authAccountsCmd(v, lc),
+		authParamsCmd(lc),
 	)
 
 	return cmd
 }
 
 // authzQueryCmd returns the authz query commands for this module
-func authzQueryCmd() *cobra.Command {
+func authzQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "authz",
 		Aliases: []string{"authz"},
@@ -58,14 +59,14 @@ func authzQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		authzGrantsCmd(),
+		authzGrantsCmd(v, lc),
 	)
 
 	return cmd
 }
 
 // bankQueryCmd  returns the transaction commands for this module
-func bankQueryCmd() *cobra.Command {
+func bankQueryCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "bank",
 		Aliases: []string{"b"},
@@ -73,16 +74,16 @@ func bankQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		bankBalanceCmd(),
-		bankTotalSupplyCmd(),
-		bankDenomsMetadataCmd(),
+		bankBalanceCmd(lc),
+		bankTotalSupplyCmd(lc),
+		bankDenomsMetadataCmd(lc),
 	)
 
 	return cmd
 }
 
 // distributionQueryCmd returns the distribution query commands for this module
-func distributionQueryCmd() *cobra.Command {
+func distributionQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "distribution",
 		Aliases: []string{"dist", "distr", "d"},
@@ -90,12 +91,12 @@ func distributionQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		distributionParamsCmd(),
-		distributionValidatorRewardsCmd(),
-		distributionCommissionCmd(),
-		distributionCommunityPoolCmd(),
-		distributionRewardsCmd(),
-		distributionSlashesCmd(),
+		distributionParamsCmd(lc),
+		distributionValidatorRewardsCmd(lc),
+		distributionCommissionCmd(lc),
+		distributionCommunityPoolCmd(lc),
+		distributionRewardsCmd(lc),
+		distributionSlashesCmd(v, lc),
 	)
 
 	return cmd
@@ -159,7 +160,7 @@ func slashingQueryCmd() *cobra.Command {
 }
 
 // stakingQueryCmd returns the staking query commands for this module
-func stakingQueryCmd() *cobra.Command {
+func stakingQueryCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "staking",
 		Aliases: []string{"stake", "s"},
@@ -167,8 +168,8 @@ func stakingQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		stakingDelegationCmd(),
-		stakingDelegationsCmd(),
+		stakingDelegationCmd(lc),
+		stakingDelegationsCmd(lc),
 		// stakingUnbondingDelegationCmd(),
 		// stakingUnbondingDelegationsCmd(),
 		// stakingRedelegationCmd(),

@@ -11,9 +11,10 @@ import (
 	"github.com/strangelove-ventures/lens/client/chain_registry"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-func chainsCmd() *cobra.Command {
+func chainsCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "chains",
 		Aliases: []string{"ch", "c"},
@@ -21,21 +22,21 @@ func chainsCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		cmdChainsAdd(),
-		cmdChainsDelete(),
-		cmdChainsEdit(),
-		cmdChainsList(),
-		cmdChainsShow(),
-		cmdChainsSetDefault(),
-		cmdChainsRegistryList(),
-		cmdChainsShowDefault(),
+		cmdChainsAdd(v, lc),
+		cmdChainsDelete(v, lc),
+		cmdChainsEdit(v, lc),
+		cmdChainsList(lc),
+		cmdChainsShow(lc),
+		cmdChainsSetDefault(v, lc),
+		cmdChainsRegistryList(lc),
+		cmdChainsShowDefault(lc),
 		cmdChainsEditorDefault(),
 	)
 
 	return cmd
 }
 
-func cmdChainsRegistryList() *cobra.Command {
+func cmdChainsRegistryList(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "registry-list",
 		Args:    cobra.NoArgs,
@@ -46,13 +47,13 @@ func cmdChainsRegistryList() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return config.GetDefaultClient().PrintObject(chains)
+			return lc.config.GetDefaultClient().PrintObject(chains)
 		},
 	}
 	return cmd
 }
 
-func cmdChainsAdd() *cobra.Command {
+func cmdChainsAdd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "add [[chain-name]]",
 		Args:    cobra.MinimumNArgs(1),
@@ -90,110 +91,110 @@ func cmdChainsAdd() *cobra.Command {
 					continue
 				}
 
-				config.Chains[chain] = chainConfig
+				lc.config.Chains[chain] = chainConfig
 			}
 
-			return overwriteConfig(config)
+			return overwriteConfig(v, &lc.config)
 		},
 	}
 	return cmd
 }
 
-func cmdChainsDelete() *cobra.Command {
+func cmdChainsDelete(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete [[chain-name]]",
 		Aliases: []string{"d"},
 		Short:   "delete a chain from the configuration",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			originalChainCount := len(config.Chains)
+			originalChainCount := len(lc.config.Chains)
 			for _, arg := range args {
-				if config.DefaultChain == arg {
+				if lc.config.DefaultChain == arg {
 					log.Printf("ignoring delete request for %s, unable to delete default chain.", arg)
 					continue
 				}
-				delete(config.Chains, arg)
+				delete(lc.config.Chains, arg)
 			}
 
 			// If nothing was removed, there's no need to update the configuration file.
-			if len(config.Chains) == originalChainCount {
+			if len(lc.config.Chains) == originalChainCount {
 				return nil
 			}
 
-			return overwriteConfig(config)
+			return overwriteConfig(v, &lc.config)
 		},
 	}
 	return cmd
 }
 
-func cmdChainsEdit() *cobra.Command {
+func cmdChainsEdit(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "edit [chain-name] [key] [value]",
 		Aliases: []string{"e"},
 		Short:   "edit a chain configuration value",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if _, ok := config.Chains[args[0]]; !ok {
+			if _, ok := lc.config.Chains[args[0]]; !ok {
 				return fmt.Errorf("chain %s not found in configuration", args[0])
 			}
 			switch args[1] {
 			case "key":
-				config.Chains[args[0]].Key = args[2]
+				lc.config.Chains[args[0]].Key = args[2]
 			case "chain-id":
-				config.Chains[args[0]].ChainID = args[2]
+				lc.config.Chains[args[0]].ChainID = args[2]
 			case "rpc-addr":
-				config.Chains[args[0]].RPCAddr = args[2]
+				lc.config.Chains[args[0]].RPCAddr = args[2]
 			case "grpc-addr":
-				config.Chains[args[0]].GRPCAddr = args[2]
+				lc.config.Chains[args[0]].GRPCAddr = args[2]
 			case "account-prefix":
-				config.Chains[args[0]].AccountPrefix = args[2]
+				lc.config.Chains[args[0]].AccountPrefix = args[2]
 			case "gas-adjustment":
 				fl, err := strconv.ParseFloat(args[2], 64)
 				if err != nil {
 					return err
 				}
-				config.Chains[args[0]].GasAdjustment = fl
+				lc.config.Chains[args[0]].GasAdjustment = fl
 			case "gas-prices":
-				config.Chains[args[0]].GasPrices = args[2]
+				lc.config.Chains[args[0]].GasPrices = args[2]
 			case "debug":
 				b, err := strconv.ParseBool(args[2])
 				if err != nil {
 					return err
 				}
-				config.Chains[args[0]].Debug = b
+				lc.config.Chains[args[0]].Debug = b
 			case "timeout":
-				config.Chains[args[0]].Timeout = args[2]
+				lc.config.Chains[args[0]].Timeout = args[2]
 			default:
 				return fmt.Errorf("unknown key %s, try 'key', 'chain-id', 'rpc-addr', 'grpc-addr', 'account-prefix', 'gas-adjustment', 'gas-prices', 'debug', or 'timeout'", args[1])
 			}
-			return overwriteConfig(config)
+			return overwriteConfig(v, &lc.config)
 		},
 	}
 	return cmd
 }
 
-func cmdChainsList() *cobra.Command {
+func cmdChainsList(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"l"},
 		Short:   "List all chains in the configuration",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return config.GetDefaultClient().PrintObject(config.Chains)
+			return lc.config.GetDefaultClient().PrintObject(lc.config.Chains)
 		},
 	}
 	return cmd
 }
 
-func cmdChainsShow() *cobra.Command {
+func cmdChainsShow(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show [chain-name]",
 		Aliases: []string{"s"},
 		Short:   "show an individual chain configuration",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if ch, ok := config.Chains[args[0]]; ok {
-				return config.GetDefaultClient().PrintObject(ch)
+			if ch, ok := lc.config.Chains[args[0]]; ok {
+				return lc.config.GetDefaultClient().PrintObject(ch)
 
 			}
 			return fmt.Errorf("chain %s not found", args[0])
@@ -202,16 +203,16 @@ func cmdChainsShow() *cobra.Command {
 	return cmd
 }
 
-func cmdChainsSetDefault() *cobra.Command {
+func cmdChainsSetDefault(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "set-default [chain-name]",
 		Aliases: []string{"sd"},
 		Short:   "set the default chain",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if _, ok := config.Chains[args[0]]; ok {
-				config.DefaultChain = args[0]
-				return overwriteConfig(config)
+			if _, ok := lc.config.Chains[args[0]]; ok {
+				lc.config.DefaultChain = args[0]
+				return overwriteConfig(v, &lc.config)
 			}
 			return fmt.Errorf("chain %s not found", args[0])
 		},
@@ -219,14 +220,14 @@ func cmdChainsSetDefault() *cobra.Command {
 	return cmd
 }
 
-func cmdChainsShowDefault() *cobra.Command {
+func cmdChainsShowDefault(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show-default",
 		Aliases: []string{"d", "default"},
 		Short:   "show the configured default chain",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return config.GetDefaultClient().PrintObject(config.DefaultChain)
+			return lc.config.GetDefaultClient().PrintObject(lc.config.DefaultChain)
 		},
 	}
 	return cmd

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -9,13 +10,13 @@ import (
 	query "github.com/strangelove-ventures/lens/client/query"
 )
 
-func bankSendCmd() *cobra.Command {
+func bankSendCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "send [from] [to] [amount]",
 		Short: "send coins from one address to another",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			fromAddr, err := cl.AccountFromKeyOrAddress(args[0])
 			if err != nil {
 				return err
@@ -53,14 +54,14 @@ func bankSendCmd() *cobra.Command {
 
 // ========== Querier Functions ==========
 
-func bankBalanceCmd() *cobra.Command {
+func bankBalanceCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "balances [key-or-address]",
 		Aliases: []string{"bal", "b"},
 		Short:   "query the account balance for a key or address (if none is specified, the balance of the default account is returned)",
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			pr, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
@@ -94,14 +95,14 @@ func bankBalanceCmd() *cobra.Command {
 	return cmd
 }
 
-func bankTotalSupplyCmd() *cobra.Command {
+func bankTotalSupplyCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "total-supply",
 		Aliases: []string{"totalsupply", "tot", "ts", "totsupplys"},
 		Short:   "query the total supply of coins in the chain",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			pr, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
@@ -124,14 +125,14 @@ func bankTotalSupplyCmd() *cobra.Command {
 	return cmd
 }
 
-func bankDenomsMetadataCmd() *cobra.Command {
+func bankDenomsMetadataCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "denoms-metadata",
 		Aliases: []string{"denoms", "d"},
 		Short:   "query the denoms metadata",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			pr, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
