@@ -1,18 +1,15 @@
 package query
 
 import (
-	"context"
 	"encoding/hex"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
-	"time"
 )
 
 // BlockRPC returns information about a block
 func BlockRPC(q *Query) (*coretypes.ResultBlock, error) {
 	var height int64
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	// If height is not specified, default value is 0, query the latest available block then
 	if q.Options.Height == 0 {
@@ -34,8 +31,7 @@ func BlockRPC(q *Query) (*coretypes.ResultBlock, error) {
 
 // BlockByHashRPC returns information about a block by hash
 func BlockByHashRPC(q *Query, hash string) (*coretypes.ResultBlock, error) {
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	h, err := hex.DecodeString(hash)
 	if err != nil {
@@ -51,8 +47,7 @@ func BlockByHashRPC(q *Query, hash string) (*coretypes.ResultBlock, error) {
 // BlockResultsRPC returns information about a block by hash
 func BlockResultsRPC(q *Query) (*coretypes.ResultBlockResults, error) {
 	var height int64
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	// If height is not specified, default value is 0, query the latest available block then
 	if q.Options.Height == 0 {
@@ -74,8 +69,7 @@ func BlockResultsRPC(q *Query) (*coretypes.ResultBlockResults, error) {
 
 // StatusRPC returns information about a node status
 func StatusRPC(q *Query) (*coretypes.ResultStatus, error) {
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	res, err := q.Client.RPCClient.Status(ctx)
 	if err != nil {
@@ -87,8 +81,7 @@ func StatusRPC(q *Query) (*coretypes.ResultStatus, error) {
 
 // ABCIInfoRPC returns information about the ABCI application
 func ABCIInfoRPC(q *Query) (*coretypes.ResultABCIInfo, error) {
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	res, err := q.Client.RPCClient.ABCIInfo(ctx)
 	if err != nil {
@@ -100,8 +93,7 @@ func ABCIInfoRPC(q *Query) (*coretypes.ResultABCIInfo, error) {
 
 // ABCIQueryRPC returns data from a particular path in the ABCI application
 func ABCIQueryRPC(q *Query, path string, data string, prove bool) (*coretypes.ResultABCIQuery, error) {
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	// If height is not specified, default value is 0, query the latest available block then
 	opts := rpcclient.ABCIQueryOptions{
