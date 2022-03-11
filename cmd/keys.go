@@ -290,7 +290,7 @@ type KeyEnumeration struct {
 // keysEnumerateCmd respresents the `keys enumerate` command
 func keysEnumerateCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "enumerate [name]",
+		Use:     "enumerate [key-or-address]",
 		Aliases: []string{"e"},
 		Short:   "enumerates the address for a given key across all configured chains",
 		Long:    "if no name is passed, name in config is used",
