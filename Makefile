@@ -1,7 +1,7 @@
 VERSION := $(shell git describe --tags)
 COMMIT  := $(shell git log -1 --format='%H')
 
-all: install
+all: test install
 
 LD_FLAGS = -X github.com/strangelove-ventures/lens/cmd.Version=$(VERSION) \
 	-X github.com/strangelove-ventures/lens/cmd.Commit=$(COMMIT) \
@@ -11,6 +11,9 @@ BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 build:
 	@echo "Building 20/20 vision"
 	@go build -mod readonly $(BUILD_FLAGS) -o build/lens main.go
+
+test:
+	@go test -mod=readonly -race ./...
 
 install:
 	@echo "Installing Lens"
