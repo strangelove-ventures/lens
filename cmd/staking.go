@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/strangelove-ventures/lens/client/query"
 	"strings"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
@@ -9,9 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/client/query"
 )
 
-func stakingDelegateCmd() *cobra.Command {
+func stakingDelegateCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegate [validator-addr] [amount] ",
 		Args:  cobra.ExactArgs(2),
@@ -23,13 +23,12 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 		),
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			var (
 				delAddr sdk.AccAddress
 				err     error
 			)
 
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 
 			if args[2] != cl.Config.Key {
 				cl.Config.Key = args[2]
@@ -77,7 +76,7 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 	return cmd
 }
 
-func stakingRedelegateCmd() *cobra.Command {
+func stakingRedelegateCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "redelegate [from] [src-validator-addr] [dst-validator-addr] [amount]",
 		Short: "redelegate tokens from one validator to another",
@@ -89,7 +88,7 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 `,
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			key, _ := cmd.Flags().GetString(FlagFrom)
 			delAddr, err := cl.AccountFromKeyOrAddress(key)
 			if err != nil {
@@ -127,7 +126,7 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 	return cmd
 }
 
-func stakingDelegationsCmd() *cobra.Command {
+func stakingDelegationsCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegations [delegator-addr]",
 		Short: "query all delegations for a delegator address",
@@ -138,7 +137,7 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 `),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			pr, err := sdkclient.ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
@@ -161,7 +160,7 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 	return cmd
 }
 
-func stakingDelegationCmd() *cobra.Command {
+func stakingDelegationCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegation [delegator-addr] [validator-addr]",
 		Short: "query a delegation based on a delegator address and validator address",
@@ -172,7 +171,7 @@ $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p co
 `),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			cq := query.Query{Client: cl, Options: query.DefaultOptions()}
 			delegator := args[0]
 			validator := args[1]
@@ -189,7 +188,7 @@ $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p co
 	return cmd
 }
 
-func stakingValidatorDelegationsCmd() *cobra.Command {
+func stakingValidatorDelegationsCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "validator-delegations [validator-addr]",
 		Aliases: []string{"valdel", "vd"},
@@ -201,7 +200,7 @@ $ lens query staking validator-delegations [validator address (valoper)]
 `),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			pr, err := sdkclient.ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err

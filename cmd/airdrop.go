@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -14,14 +13,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func airdropCmd() *cobra.Command {
+func airdropCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "airdrop [airdrop.json] [denom] [exclude] [key]?",
 		Short: "Airdrop coins to a specified address",
 		Long:  "The airdrop file consists of map[string]float64 where the key is the address on the target chain and the value is the amount of coins to be airdropped to that address/1e6 (i.e. atom instead of uatom). The airdrop command 1. checks the addresses in the file to ensure that they are valid for the given chain l",
 		Args:  cobra.RangeArgs(3, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			keyNameOrAddress := ""
 			if len(args) == 3 {
 				keyNameOrAddress = cl.Config.Key
@@ -33,11 +32,7 @@ func airdropCmd() *cobra.Command {
 				return err
 			}
 
-			f, err := os.Open(args[0])
-			if err != nil {
-				return err
-			}
-			bz, err := ioutil.ReadAll(f)
+			bz, err := os.ReadFile(args[0])
 			if err != nil {
 				return err
 			}
@@ -52,6 +47,7 @@ func airdropCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			defer exclude.Close()
 
 			scanner := bufio.NewScanner(exclude)
 
@@ -76,8 +72,8 @@ func airdropCmd() *cobra.Command {
 					dropAddress++
 
 				}
-				fmt.Printf("Airdrop total: %f %s\n", dropTotal, denom)
-				fmt.Printf("Airdrop address count: %d\n", dropAddress)
+				fmt.Fprintf(cmd.OutOrStdout(), "Airdrop total: %f %s\n", dropTotal, denom)
+				fmt.Fprintf(cmd.OutOrStdout(), "Airdrop address count: %d\n", dropAddress)
 				return nil
 			}
 
@@ -105,17 +101,17 @@ func airdropCmd() *cobra.Command {
 
 				if len(multiMsg.Outputs) > maxSends-1 {
 					completion := float64(sent) / float64(len(airdrop))
-					fmt.Printf("(%f) sending %s to %d addresses\n", completion, amount.String(), len(multiMsg.Outputs))
+					fmt.Fprintf(cmd.OutOrStdout(), "(%f) sending %s to %d addresses\n", completion, amount.String(), len(multiMsg.Outputs))
 					multiMsg.Inputs = append(multiMsg.Inputs, banktypes.Input{cl.MustEncodeAccAddr(address), sdk.NewCoins(amount)})
 					retry.Do(func() error {
-						fmt.Printf("sending tx\n")
+						fmt.Fprintf(cmd.OutOrStdout(), "sending tx\n")
 						res, err := cl.SendMsgs(cmd.Context(), []sdk.Msg{multiMsg})
 						if err != nil || res.Code != 0 {
 							if err != nil {
-								fmt.Printf("failed to send airdrop: %s\n", err)
+								fmt.Fprintf(cmd.OutOrStdout(), "failed to send airdrop: %s\n", err)
 								return err
 							}
-							fmt.Printf("failed to send airdrop: %s\n", res.RawLog)
+							fmt.Fprintf(cmd.OutOrStdout(), "failed to send airdrop: %s\n", res.RawLog)
 							err = fmt.Errorf("failed to send airdrop")
 							time.Sleep(time.Second * 10)
 							return err

@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/strangelove-ventures/lens/client"
@@ -27,42 +26,43 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // tendermintCmd represents the tendermint command
-func tendermintCmd() *cobra.Command {
+func tendermintCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "tendermint",
 		Aliases: []string{"tm"},
 		Short:   "all tendermint query commands",
 	}
 	cmd.AddCommand(
-		abciInfoCmd(),
-		abciQueryCmd(),
-		blockCmd(),
-		blockByHashCmd(),
-		blockResultsCmd(),
+		abciInfoCmd(lc),
+		abciQueryCmd(lc),
+		blockCmd(lc),
+		blockByHashCmd(lc),
+		blockResultsCmd(lc),
 		blockSearchCmd(),
-		consensusParamsCmd(),
-		consensusStateCmd(),
-		dumpConsensusStateCmd(),
-		healthCmd(),
-		netInfoCmd(),
-		numUnconfirmedTxs(),
-		statusCmd(),
-		queryTxCmd(),
+		consensusParamsCmd(lc),
+		consensusStateCmd(lc),
+		dumpConsensusStateCmd(lc),
+		healthCmd(lc),
+		netInfoCmd(v, lc),
+		numUnconfirmedTxs(v, lc),
+		statusCmd(lc),
+		queryTxCmd(v, lc),
 	)
 	return cmd
 }
 
-func abciInfoCmd() *cobra.Command {
+func abciInfoCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "abci-info",
 		Aliases: []string{"abcii"},
 		Short:   "queries for block height, app name and app hash",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			query := query.Query{Client: cl, Options: query.DefaultOptions()}
 
 			res, err := query.ABCIInfo()
@@ -75,24 +75,23 @@ func abciInfoCmd() *cobra.Command {
 	return cmd
 }
 
-func abciQueryCmd() *cobra.Command {
+func abciQueryCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "abci-query [path] [data] [height]",
 		Aliases: []string{"qabci"},
 		Short:   "query the abci interface for tendermint directly",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			path := args[0]
 			data := args[1]
-			prove := false // Hookup to a flag
+			prove := false // TODO: Hookup to a flag
 			height, err := ReadHeight(cmd.Flags())
 			if err != nil {
 				return err
 			}
 			options := query.QueryOptions{Pagination: client.DefaultPageRequest(), Height: height}
 			query := query.Query{Client: cl, Options: &options}
-
 			res, err := query.ABCIQuery(path, data, prove)
 			if err != nil {
 				return err
@@ -104,14 +103,14 @@ func abciQueryCmd() *cobra.Command {
 	return cmd
 }
 
-func blockCmd() *cobra.Command {
+func blockCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "block",
 		Aliases: []string{"bl", "blk"},
 		Short:   "query tendermint data for a block at a given height",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			height, err := ReadHeight(cmd.Flags())
 			if err != nil {
 				return err
@@ -130,14 +129,14 @@ func blockCmd() *cobra.Command {
 	return cmd
 }
 
-func blockByHashCmd() *cobra.Command {
+func blockByHashCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "block-by-hash [hash]",
 		Aliases: []string{"blhash", "blh", "bbh"},
 		Short:   "query tendermint for a given block by hash",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			query := query.Query{Client: cl, Options: query.DefaultOptions()}
 			hash := args[0]
 			res, err := query.BlockByHash(hash)
@@ -150,14 +149,14 @@ func blockByHashCmd() *cobra.Command {
 	return cmd
 }
 
-func blockResultsCmd() *cobra.Command {
+func blockResultsCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "block-results",
 		Aliases: []string{"blres"},
 		Short:   "query tendermint tx results for a given block by height",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			height, err := ReadHeight(cmd.Flags())
 			if err != nil {
 				return err
@@ -184,7 +183,7 @@ func blockSearchCmd() *cobra.Command {
 		// TODO: long explaination and example should include example queries
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("TODO")
+			fmt.Fprintln(cmd.OutOrStdout(), "TODO")
 			return nil
 		},
 	}
@@ -192,7 +191,7 @@ func blockSearchCmd() *cobra.Command {
 	return cmd
 }
 
-func consensusParamsCmd() *cobra.Command {
+func consensusParamsCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		// TODO: make this use a height flag and make height arg optional
 		Use:     "consensus-params [height]",
@@ -200,7 +199,7 @@ func consensusParamsCmd() *cobra.Command {
 		Short:   "query tendermint consensus params at a given height",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			height, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return err
@@ -210,18 +209,16 @@ func consensusParamsCmd() *cobra.Command {
 				return err
 			}
 			// TODO: figure out how to fix the base64 output here
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
 	return cmd
 }
 
-func consensusStateCmd() *cobra.Command {
+func consensusStateCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		// TODO: add special flag to this for network startup
 		// that runs query on timer and shows a progress bar
@@ -231,69 +228,63 @@ func consensusStateCmd() *cobra.Command {
 		Short:   "query current tendermint consensus state",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			block, err := cl.RPCClient.ConsensusState(cmd.Context())
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
 	return cmd
 }
 
-func dumpConsensusStateCmd() *cobra.Command {
+func dumpConsensusStateCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "dump-consensus-state",
 		Aliases: []string{"dump-cs", "csdump", "cs-dump", "dumpcs"},
 		Short:   "query detailed version of current tendermint consensus state",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			block, err := cl.RPCClient.DumpConsensusState(cmd.Context())
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
 	return cmd
 }
 
-func healthCmd() *cobra.Command {
+func healthCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "health",
 		Aliases: []string{"h", "ok"},
 		Short:   "query to see if node server is online",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			block, err := cl.RPCClient.Health(cmd.Context())
 			if err != nil {
 				return err
 			}
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
 	return cmd
 }
 
-func netInfoCmd() *cobra.Command {
+func netInfoCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	// TODO: add flag for pulling out comma seperated list of peers
 	// and also filter out private IPs and other ill formed peers
 	// _{*extraCredit*}_
@@ -303,7 +294,7 @@ func netInfoCmd() *cobra.Command {
 		Short:   "query for p2p network connection information",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			peers, err := cmd.Flags().GetBool("peers")
 			if err != nil {
 				return err
@@ -313,29 +304,28 @@ func netInfoCmd() *cobra.Command {
 				return err
 			}
 			if !peers {
-				bz, err := json.MarshalIndent(block, "", "  ")
-				if err != nil {
+				if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 					return err
 				}
-				fmt.Println(string(bz))
 				return nil
 			}
-			peersList := ""
+			peersList := make([]string, 0, len(block.Peers))
 			for _, peer := range block.Peers {
 				url, err := url.Parse(peer.NodeInfo.ListenAddr)
 				if err != nil {
+					fmt.Fprintf(cmd.ErrOrStderr(), "error parsing addr %q: %v\n", peer.NodeInfo.ListenAddr, err)
 					continue
 				}
-				peersList += fmt.Sprintf("%s@%s:%s,", peer.NodeInfo.ID(), peer.RemoteIP, url.Port())
+				peersList = append(peersList, fmt.Sprintf("%s@%s:%s", peer.NodeInfo.ID(), peer.RemoteIP, url.Port()))
 			}
-			fmt.Println(strings.TrimSuffix(peersList, ","))
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Join(peersList, ","))
 			return nil
 		},
 	}
-	return peersFlag(cmd)
+	return peersFlag(cmd, v)
 }
 
-func numUnconfirmedTxs() *cobra.Command {
+func numUnconfirmedTxs(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	// TODO: add example for parsing these txs
 	// _{*extraCredit*}_
 	cmd := &cobra.Command{
@@ -344,7 +334,7 @@ func numUnconfirmedTxs() *cobra.Command {
 		Short:   "query for number of unconfirmed txs",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			limit, err := cmd.Flags().GetInt("limit")
 			if err != nil {
 				return err
@@ -356,25 +346,23 @@ func numUnconfirmedTxs() *cobra.Command {
 			// for _, txbz := range block.Txs {
 			// 	fmt.Printf("%X\n", tmtypes.Tx(txbz).Hash())
 			// }
-			bz, err := json.MarshalIndent(block, "", "  ")
-			if err != nil {
+			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
-	return limitFlag(cmd)
+	return limitFlag(cmd, v)
 }
 
-func statusCmd() *cobra.Command {
+func statusCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "status",
 		Aliases: []string{"stat", "s"},
 		Short:   "query the status of a node",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			query := query.Query{Client: cl, Options: query.DefaultOptions()}
 
 			status, err := query.Status()
@@ -387,13 +375,13 @@ func statusCmd() *cobra.Command {
 	return cmd
 }
 
-func queryTxCmd() *cobra.Command {
+func queryTxCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tx [hash]",
 		Short: "query for a transaction by hash",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			prove, err := cmd.Flags().GetBool("prove")
 			if err != nil {
 				return err
@@ -407,8 +395,7 @@ func queryTxCmd() *cobra.Command {
 				return err
 			}
 			return cl.PrintObject(block)
-
 		},
 	}
-	return proveFlag(cmd)
+	return proveFlag(cmd, v)
 }

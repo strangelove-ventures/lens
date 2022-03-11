@@ -1,16 +1,19 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"sort"
 	"strings"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -18,32 +21,31 @@ const (
 	defaultCoinType uint32 = sdk.CoinType
 )
 
-var (
-	// FlagAccountPrefix allows the user to override the prefix for a given account
-	FlagAccountPrefix = ""
-)
-
 // keysCmd represents the keys command
-func keysCmd() *cobra.Command {
+func keysCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
+	// flagAccountPrefix allows the user to override the prefix for a given account.
+	// Scoped to keysCmd so that concurrent test runs don't encounter a data race.
+	var flagAccountPrefix string
+
 	cmd := &cobra.Command{
 		Use:     "keys",
 		Aliases: []string{"k"},
 		Short:   "manage keys held by the relayer for each chain",
 	}
 
-	cmd.AddCommand(keysAddCmd())
-	cmd.AddCommand(keysRestoreCmd())
-	cmd.AddCommand(keysDeleteCmd())
-	cmd.AddCommand(keysListCmd())
-	cmd.AddCommand(keysShowCmd())
-	cmd.AddCommand(keysEnumerateCmd())
-	cmd.AddCommand(keysExportCmd())
+	cmd.AddCommand(keysAddCmd(lc))
+	cmd.AddCommand(keysRestoreCmd(lc))
+	cmd.AddCommand(keysDeleteCmd(v, lc))
+	cmd.AddCommand(keysListCmd(lc))
+	cmd.AddCommand(keysShowCmd(lc, &flagAccountPrefix))
+	cmd.AddCommand(keysEnumerateCmd(lc))
+	cmd.AddCommand(keysExportCmd(lc))
 
 	return cmd
 }
 
 // keysAddCmd respresents the `keys add` command
-func keysAddCmd() *cobra.Command {
+func keysAddCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "add [name]",
 		Aliases: []string{"a"},
@@ -55,7 +57,7 @@ $ %s keys add
 $ %s keys add test_key
 $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			var keyName string
 			if len(args) == 0 {
 				keyName = cl.Config.Key
@@ -71,12 +73,14 @@ $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 				return err
 			}
 
-			out, err := json.Marshal(&ko)
-			if err != nil {
+			// Not calling writeJSON because this is one case that does not use indentation.
+			// (Was that intentional?)
+			enc := json.NewEncoder(cmd.OutOrStdout())
+			enc.SetEscapeHTML(false)
+			if err := enc.Encode(&ko); err != nil {
 				return err
 			}
 
-			fmt.Println(string(out))
 			return nil
 		},
 	}
@@ -87,7 +91,7 @@ $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 }
 
 // keysRestoreCmd respresents the `keys add` command
-func keysRestoreCmd() *cobra.Command {
+func keysRestoreCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "restore [name]",
 		Aliases: []string{"r"},
@@ -97,22 +101,24 @@ func keysRestoreCmd() *cobra.Command {
 $ %s keys restore --chain ibc-0 testkey
 $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			keyName := args[0]
 			if cl.KeyExists(keyName) {
 				return errKeyExists(keyName)
 			}
 
-			fmt.Print("Enter mnemonic 🔑: ")
-			mnemonic, _ := terminal.ReadPassword(0)
-			fmt.Println()
+			mnemonic, err := readMnemonic(cmd.InOrStdin(), cmd.ErrOrStderr())
+			if err != nil {
+				// Can happen when there is an issue with the terminal.
+				return fmt.Errorf("failed to read mnemonic: %w", err)
+			}
 
 			address, err := cl.RestoreKey(keyName, string(mnemonic))
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(address)
+			fmt.Fprintln(cmd.OutOrStdout(), address)
 			return nil
 		},
 	}
@@ -121,8 +127,30 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 	return cmd
 }
 
-// keysDeleteCmd respresents the `keys delete` command
-func keysDeleteCmd() *cobra.Command {
+// readMnemonic reads a password in terminal mode if stdin is a terminal,
+// otherwise it returns all of stdin with the trailing newline removed.
+func readMnemonic(stdin io.Reader, stderr io.Writer) ([]byte, error) {
+	type fder interface {
+		Fd() uintptr
+	}
+
+	if f, ok := stdin.(fder); ok {
+		fmt.Fprint(stderr, "Enter mnemonic 🔑: ")
+		mnemonic, err := term.ReadPassword(int(f.Fd()))
+		fmt.Fprintln(stderr)
+		return mnemonic, err
+	}
+
+	in, err := io.ReadAll(stdin)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.TrimSuffix(in, []byte("\n")), nil
+}
+
+// keysDeleteCmd represents the `keys delete` command.
+func keysDeleteCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete [name]",
 		Aliases: []string{"d"},
@@ -133,7 +161,7 @@ $ %s keys delete ibc-0 -y
 $ %s keys delete ibc-1 key2 -y
 $ %s k d ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			chainName := cl.Config.ChainID
 			keyName := args[0]
 			if !cl.KeyExists(keyName) {
@@ -141,8 +169,8 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 			}
 
 			if skip, _ := cmd.Flags().GetBool("skip"); !skip {
-				fmt.Printf("Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, chainName)
-				if !askForConfirmation() {
+				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, chainName)
+				if !askForConfirmation(cmd) {
 					return nil
 				}
 			}
@@ -151,18 +179,18 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 				panic(err)
 			}
 
-			fmt.Printf("key %s deleted\n", keyName)
+			fmt.Fprintf(cmd.OutOrStdout(), "key %s deleted\n", keyName)
 			return nil
 		},
 	}
 
-	return skipConfirm(cmd)
+	return skipConfirm(cmd, v)
 }
 
-func askForConfirmation() bool {
+func askForConfirmation(cmd *cobra.Command) bool {
 	var response string
 
-	_, err := fmt.Scanln(&response)
+	_, err := fmt.Fscanln(cmd.InOrStdin(), &response)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -173,13 +201,13 @@ func askForConfirmation() bool {
 	case "n", "no":
 		return false
 	default:
-		fmt.Println("please type (y)es or (n)o and then press enter")
-		return askForConfirmation()
+		fmt.Fprintln(cmd.OutOrStdout(), "please type (y)es or (n)o and then press enter")
+		return askForConfirmation(cmd)
 	}
 }
 
 // keysListCmd respresents the `keys list` command
-func keysListCmd() *cobra.Command {
+func keysListCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"l"},
@@ -189,14 +217,19 @@ func keysListCmd() *cobra.Command {
 $ %s keys list ibc-0
 $ %s k l ibc-1`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			info, err := cl.ListAddresses()
 			if err != nil {
 				return err
 			}
 
+			if len(info) == 0 {
+				fmt.Fprintln(cmd.ErrOrStderr(), "WARNING: no keys found")
+				return nil
+			}
+
 			for key, val := range info {
-				fmt.Printf("key(%s) -> %s\n", key, val)
+				fmt.Fprintf(cmd.OutOrStdout(), "key(%s) -> %s\n", key, val)
 			}
 
 			return nil
@@ -207,7 +240,7 @@ $ %s k l ibc-1`, appName, appName)),
 }
 
 // keysShowCmd respresents the `keys show` command
-func keysShowCmd() *cobra.Command {
+func keysShowCmd(lc *lensConfig, flagAccountPrefix *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show [name]",
 		Aliases: []string{"s"},
@@ -219,7 +252,7 @@ $ %s keys show ibc-0
 $ %s keys show ibc-1 key2
 $ %s k s ibc-2 testkey`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			var keyName string
 			if len(args) == 0 {
 				keyName = cl.Config.Key
@@ -230,8 +263,8 @@ $ %s k s ibc-2 testkey`, appName, appName, appName)),
 				return errKeyDoesntExist(keyName)
 			}
 
-			if FlagAccountPrefix != "" {
-				cl.Config.AccountPrefix = FlagAccountPrefix
+			if *flagAccountPrefix != "" {
+				cl.Config.AccountPrefix = *flagAccountPrefix
 			}
 
 			address, err := cl.ShowAddress(keyName)
@@ -239,12 +272,12 @@ $ %s k s ibc-2 testkey`, appName, appName, appName)),
 				return err
 			}
 
-			fmt.Println(address)
+			fmt.Fprintln(cmd.OutOrStdout(), address)
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVar(&FlagAccountPrefix, "prefix", "", "Encode the key with the user specified prefix")
+	cmd.Flags().StringVar(flagAccountPrefix, "prefix", "", "Encode the key with the user specified prefix")
 
 	return cmd
 }
@@ -255,7 +288,7 @@ type KeyEnumeration struct {
 }
 
 // keysEnumerateCmd respresents the `keys enumerate` command
-func keysEnumerateCmd() *cobra.Command {
+func keysEnumerateCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "enumerate [name]",
 		Aliases: []string{"e"},
@@ -267,7 +300,7 @@ $ %s keys enumerate
 $ %s keys enumerate key2
 $ %s k e key2`, appName, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			var keyName string
 			if len(args) == 0 {
 				keyName = cl.Config.Key
@@ -279,15 +312,15 @@ $ %s k e key2`, appName, appName, appName)),
 				return err
 			}
 
-			var chains []string
-			for chain := range config.Chains {
+			chains := make([]string, 0, len(lc.config.Chains))
+			for chain := range lc.config.Chains {
 				chains = append(chains, chain)
 			}
 			sort.Strings(chains)
 
 			addresses := make(map[string]string)
 			for _, chain := range chains {
-				client := config.GetClient(chain)
+				client := lc.config.GetClient(chain)
 				address, err := client.EncodeBech32AccAddr(account)
 				if err != nil {
 					return err
@@ -305,7 +338,7 @@ $ %s k e key2`, appName, appName, appName)),
 }
 
 // keysExportCmd respresents the `keys export` command
-func keysExportCmd() *cobra.Command {
+func keysExportCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "export [name]",
 		Aliases: []string{"e"},
@@ -315,7 +348,7 @@ func keysExportCmd() *cobra.Command {
 $ %s keys export ibc-0 testkey
 $ %s k e ibc-2 testkey`, appName, appName)),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := config.GetDefaultClient()
+			cl := lc.config.GetDefaultClient()
 			keyName := args[1]
 			if !cl.KeyExists(keyName) {
 				return errKeyDoesntExist(keyName)
