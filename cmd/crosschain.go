@@ -44,9 +44,10 @@ func crosschainBankQueryCmd(lc *lensConfig) *cobra.Command {
 
 func getEnabledChainbalancesCmd(lc *lensConfig) *cobra.Command {
 	return &cobra.Command{
-		Use:   "balances",
-		Args:  cobra.MinimumNArgs(1),
-		Short: "get balances across chains",
+		Use:   "balances [key-or-address]",
+		Args:  cobra.RangeArgs(0, 1),
+		Short: "get balances across all configured chains",
+		Long:  "if no key or addresss is passed, the key on default chain is used to enumerate through all configured chains",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			combineBalances, err := cmd.Flags().GetBool("combined")
 			if err != nil {
