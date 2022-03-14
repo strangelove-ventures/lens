@@ -18,13 +18,15 @@ package cmd
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/strangelove-ventures/lens/client"
+	"github.com/strangelove-ventures/lens/client/query"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
 )
 
 // tendermintCmd represents the tendermint command
@@ -61,15 +63,13 @@ func abciInfoCmd(lc *lensConfig) *cobra.Command {
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := lc.config.GetDefaultClient()
-			info, err := cl.RPCClient.ABCIInfo(cmd.Context())
+			query := query.Query{Client: cl, Options: query.DefaultOptions()}
+
+			res, err := query.ABCIInfo()
 			if err != nil {
 				return err
 			}
-
-			if err := writeJSON(cmd.OutOrStdout(), info); err != nil {
-				return err
-			}
-			return nil
+			return cl.PrintObject(res)
 		},
 	}
 	return cmd
@@ -84,26 +84,19 @@ func abciQueryCmd(lc *lensConfig) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := lc.config.GetDefaultClient()
 			path := args[0]
-			data := []byte(args[1])
-			height, err := strconv.ParseInt(args[2], 10, 64)
+			data := args[1]
+			prove := false // TODO: Hookup to a flag
+			height, err := ReadHeight(cmd.Flags())
 			if err != nil {
 				return err
 			}
-
-			// TODO: wire up prove
-			opts := rpcclient.ABCIQueryOptions{
-				Height: height,
-				Prove:  false,
-			}
-
-			info, err := cl.RPCClient.ABCIQueryWithOptions(cmd.Context(), path, data, opts)
+			options := query.QueryOptions{Pagination: client.DefaultPageRequest(), Height: height}
+			query := query.Query{Client: cl, Options: &options}
+			res, err := query.ABCIQuery(path, data, prove)
 			if err != nil {
 				return err
 			}
-			if err := writeJSON(cmd.OutOrStdout(), info); err != nil {
-				return err
-			}
-			return nil
+			return cl.PrintObject(res)
 		},
 	}
 	// TODO: add prove flag
@@ -112,50 +105,45 @@ func abciQueryCmd(lc *lensConfig) *cobra.Command {
 
 func blockCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
-		// TODO: make this use a height flag and make height arg optional
-		Use:     "block [height]",
-		Aliases: []string{"bl"},
-		Short:   "query tendermint data for a block at given height",
-		Args:    cobra.ExactArgs(1),
+		Use:     "block",
+		Aliases: []string{"bl", "blk"},
+		Short:   "query tendermint data for a block at a given height",
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := lc.config.GetDefaultClient()
-			height, err := strconv.ParseInt(args[0], 10, 64)
+			height, err := ReadHeight(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			block, err := cl.RPCClient.Block(cmd.Context(), &height)
+			options := query.QueryOptions{Pagination: client.DefaultPageRequest(), Height: height}
+			query := query.Query{Client: cl, Options: &options}
+
+			block, err := query.Block()
 			if err != nil {
 				return err
 			}
-			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
-				return err
-			}
-			return nil
+			return cl.PrintObject(block)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 
 func blockByHashCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "block-by-hash [hash]",
-		Aliases: []string{"blhash", "blh"},
+		Aliases: []string{"blhash", "blh", "bbh"},
 		Short:   "query tendermint for a given block by hash",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := lc.config.GetDefaultClient()
-			h, err := hex.DecodeString(args[0])
+			query := query.Query{Client: cl, Options: query.DefaultOptions()}
+			hash := args[0]
+			res, err := query.BlockByHash(hash)
 			if err != nil {
 				return err
 			}
-			block, err := cl.RPCClient.BlockByHash(cmd.Context(), h)
-			if err != nil {
-				return err
-			}
-			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
-				return err
-			}
-			return nil
+			return cl.PrintObject(res)
 		},
 	}
 	return cmd
@@ -163,27 +151,27 @@ func blockByHashCmd(lc *lensConfig) *cobra.Command {
 
 func blockResultsCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "block-results [height]",
+		Use:     "block-results",
 		Aliases: []string{"blres"},
 		Short:   "query tendermint tx results for a given block by height",
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := lc.config.GetDefaultClient()
-			height, err := strconv.ParseInt(args[0], 10, 64)
+			height, err := ReadHeight(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			block, err := cl.RPCClient.BlockResults(cmd.Context(), &height)
+			options := query.QueryOptions{Pagination: client.DefaultPageRequest(), Height: height}
+			query := query.Query{Client: cl, Options: &options}
+
+			block, err := query.BlockResults()
 			if err != nil {
 				return err
 			}
-			// TODO: figure out how to fix the base64 output here
-			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
-				return err
-			}
-			return nil
+			return cl.PrintObject(block)
 		},
 	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }
 
@@ -371,19 +359,17 @@ func statusCmd(lc *lensConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "status",
 		Aliases: []string{"stat", "s"},
-		Short:   "query status of the node",
+		Short:   "query the status of a node",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := lc.config.GetDefaultClient()
-			block, err := cl.RPCClient.Status(cmd.Context())
+			query := query.Query{Client: cl, Options: query.DefaultOptions()}
+
+			status, err := query.Status()
 			if err != nil {
 				return err
 			}
-
-			if err := writeJSON(cmd.OutOrStdout(), block); err != nil {
-				return err
-			}
-			return nil
+			return cl.PrintObject(status)
 		},
 	}
 	return cmd

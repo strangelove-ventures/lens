@@ -1,22 +1,14 @@
 package query
 
 import (
-	"context"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"google.golang.org/grpc/metadata"
-	"strconv"
-	"time"
 )
 
 // BalanceWithAddressRPC returns the balance of all coins for a single account.
 func BalanceWithAddressRPC(q *Query, address string) (*bankTypes.QueryAllBalancesResponse, error) {
 	req := &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: q.Options.Pagination}
 	queryClient := bankTypes.NewQueryClient(q.Client)
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	strHeight := strconv.Itoa(int(q.Options.Height))
-	ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, strHeight)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	res, err := queryClient.AllBalances(ctx, req)
 	if err != nil {
@@ -30,10 +22,7 @@ func BalanceWithAddressRPC(q *Query, address string) (*bankTypes.QueryAllBalance
 func TotalSupplyRPC(q *Query) (*bankTypes.QueryTotalSupplyResponse, error) {
 	req := &bankTypes.QueryTotalSupplyRequest{Pagination: q.Options.Pagination}
 	queryClient := bankTypes.NewQueryClient(q.Client)
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	strHeight := strconv.Itoa(int(q.Options.Height))
-	ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, strHeight)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	res, err := queryClient.TotalSupply(ctx, req)
 	if err != nil {
@@ -46,10 +35,7 @@ func TotalSupplyRPC(q *Query) (*bankTypes.QueryTotalSupplyResponse, error) {
 func DenomsMetadataRPC(q *Query) (*bankTypes.QueryDenomsMetadataResponse, error) {
 	req := &bankTypes.QueryDenomsMetadataRequest{Pagination: q.Options.Pagination}
 	queryClient := bankTypes.NewQueryClient(q.Client)
-	timeout, _ := time.ParseDuration(q.Client.Config.Timeout) // Timeout is validated in the config so no error check
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	strHeight := strconv.Itoa(int(q.Options.Height))
-	ctx = metadata.AppendToOutgoingContext(ctx, grpctypes.GRPCBlockHeightHeader, strHeight)
+	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	res, err := queryClient.DenomsMetadata(ctx, req)
 	if err != nil {

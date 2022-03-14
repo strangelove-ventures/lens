@@ -187,3 +187,39 @@ $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p co
 
 	return cmd
 }
+
+func stakingValidatorDelegationsCmd(lc *lensConfig) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "validator-delegations [validator-addr]",
+		Aliases: []string{"valdel", "vd"},
+		Short:   "query all delegations for a validator address",
+		Long: strings.TrimSpace(`query delegations for an individual validator.
+
+Example:
+$ lens query staking validator-delegations [validator address (valoper)]
+`),
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := lc.config.GetDefaultClient()
+			pr, err := sdkclient.ReadPageRequest(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			height, err := ReadHeight(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			validator := args[0]
+			options := query.QueryOptions{Pagination: pr, Height: height}
+			query := query.Query{cl, &options}
+			response, err := query.ValidatorDelegations(validator)
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(response)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	flags.AddPaginationFlagsToCmd(cmd, "validator-delegations")
+	return cmd
+}

@@ -97,6 +97,7 @@ func distributionQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 		distributionCommunityPoolCmd(lc),
 		distributionRewardsCmd(lc),
 		distributionSlashesCmd(v, lc),
+		distributionDelegatorValidatorsCmd(lc),
 	)
 
 	return cmd
@@ -176,7 +177,7 @@ func stakingQueryCmd(lc *lensConfig) *cobra.Command {
 		// stakingRedelegationsCmd(),
 		// stakingValidatorCmd(),
 		// stakingValidatorsCmd(),
-		// stakingValidatorDelegationsCmd(),
+		stakingValidatorDelegationsCmd(lc),
 		// stakingValidatorUnbondingDelegationsCmd(),
 		// stakingValidatorRedelegationsCmd(),
 		// stakingHistoricalInfoCmd(),
