@@ -10,13 +10,13 @@ import (
 	query "github.com/strangelove-ventures/lens/client/query"
 )
 
-func bankSendCmd(lc *lensConfig) *cobra.Command {
+func bankSendCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "send [from] [to] [amount]",
 		Short: "send coins from one address to another",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			fromAddr, err := cl.AccountFromKeyOrAddress(args[0])
 			if err != nil {
 				return err
@@ -54,14 +54,14 @@ func bankSendCmd(lc *lensConfig) *cobra.Command {
 
 // ========== Querier Functions ==========
 
-func bankBalanceCmd(lc *lensConfig) *cobra.Command {
+func bankBalanceCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "balances [key-or-address]",
 		Aliases: []string{"bal", "b"},
 		Short:   "query the account balance for a key or address (if none is specified, the balance of the default account is returned)",
 		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			pr, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
@@ -95,14 +95,14 @@ func bankBalanceCmd(lc *lensConfig) *cobra.Command {
 	return cmd
 }
 
-func bankTotalSupplyCmd(lc *lensConfig) *cobra.Command {
+func bankTotalSupplyCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "total-supply",
 		Aliases: []string{"totalsupply", "tot", "ts", "totsupplys"},
 		Short:   "query the total supply of coins in the chain",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			pr, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
@@ -125,14 +125,14 @@ func bankTotalSupplyCmd(lc *lensConfig) *cobra.Command {
 	return cmd
 }
 
-func bankDenomsMetadataCmd(lc *lensConfig) *cobra.Command {
+func bankDenomsMetadataCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "denoms-metadata",
 		Aliases: []string{"denoms", "d"},
 		Short:   "query the denoms metadata",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			pr, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err

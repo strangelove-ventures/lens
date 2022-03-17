@@ -2,15 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/strangelove-ventures/lens/client/query"
 	"strconv"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/strangelove-ventures/lens/client/query"
 )
 
 const (
@@ -22,7 +21,7 @@ const (
 // if so then we should make the first arg mandatory and further args be []sdk.ValAddr
 // and make the []sdk.ValAddr optional. This way we don't need any of the flags except
 // commission
-func distributionWithdrawRewardsCmd(lc *lensConfig) *cobra.Command {
+func distributionWithdrawRewardsCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "withdraw-rewards [validator-addr] [from]",
 		Short: "Withdraw rewards from a given delegation address, and optionally withdraw validator commission if the delegation address given is a validator operator",
@@ -37,7 +36,7 @@ $ lens tx withdraw-rewards --from mykey --all
 		),
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			key := ""
 			if len(args) == 1 {
 				key = cl.Config.Key
@@ -95,12 +94,12 @@ $ lens tx withdraw-rewards --from mykey --all
 	return cmd
 }
 
-func distributionParamsCmd(lc *lensConfig) *cobra.Command {
+func distributionParamsCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "params",
 		Short: "query things about a chain's distribution params",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 
 			params, err := cl.QueryDistributionParams(cmd.Context())
 			if err != nil {
@@ -114,12 +113,12 @@ func distributionParamsCmd(lc *lensConfig) *cobra.Command {
 	return cmd
 }
 
-func distributionCommunityPoolCmd(lc *lensConfig) *cobra.Command {
+func distributionCommunityPoolCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "community-pool",
 		Short: "query things about a chain's community pool",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 
 			pool, err := cl.QueryDistributionCommunityPool(cmd.Context())
 			if err != nil {
@@ -133,13 +132,13 @@ func distributionCommunityPoolCmd(lc *lensConfig) *cobra.Command {
 	return cmd
 }
 
-func distributionCommissionCmd(lc *lensConfig) *cobra.Command {
+func distributionCommissionCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "commission [validator-address]",
 		Args:  cobra.ExactArgs(1),
 		Short: "query a specific validator's commission",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			address, err := cl.DecodeBech32ValAddr(args[0])
 			if err != nil {
 				return err
@@ -157,13 +156,13 @@ func distributionCommissionCmd(lc *lensConfig) *cobra.Command {
 	return cmd
 }
 
-func distributionRewardsCmd(lc *lensConfig) *cobra.Command {
+func distributionRewardsCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rewards [key-or-delegator-address] [validator-address]",
 		Short: "query things about a delegator's rewards",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			delAddr, err := cl.AccountFromKeyOrAddress(args[0])
 			if err != nil {
 				return err
@@ -186,13 +185,13 @@ func distributionRewardsCmd(lc *lensConfig) *cobra.Command {
 	return cmd
 }
 
-func distributionSlashesCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
+func distributionSlashesCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "slashes [validator-address] [start-height] [end-height]",
 		Short: "query things about a validator's slashes on a chain",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 
 			pageReq, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
@@ -223,16 +222,16 @@ func distributionSlashesCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 		},
 	}
 
-	return paginationFlags(cmd, v)
+	return paginationFlags(cmd, a.Viper)
 }
 
-func distributionValidatorRewardsCmd(lc *lensConfig) *cobra.Command {
+func distributionValidatorRewardsCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validator-outstanding-rewards [address]",
 		Short: "query things about a validator's (and all their delegators) outstanding rewards on a chain",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 
 			address, err := cl.DecodeBech32ValAddr(args[0])
 			if err != nil {
@@ -250,7 +249,7 @@ func distributionValidatorRewardsCmd(lc *lensConfig) *cobra.Command {
 	return cmd
 }
 
-func distributionDelegatorValidatorsCmd(lc *lensConfig) *cobra.Command {
+func distributionDelegatorValidatorsCmd(a *appState) *cobra.Command {
 	var delegator string
 	cmd := &cobra.Command{
 		Use:     "delegator-validators [delegator_address]",
@@ -270,7 +269,7 @@ func distributionDelegatorValidatorsCmd(lc *lensConfig) *cobra.Command {
 			}
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			// Check if the address has a valid format
 			if len(delegator) > 0 {
 				_, err := cl.DecodeBech32AccAddr(delegator)

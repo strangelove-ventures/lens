@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/strangelove-ventures/lens/client"
 	"gopkg.in/yaml.v2"
 )
@@ -37,17 +35,6 @@ func createConfig(home string, debug bool) error {
 		return err
 	}
 
-	return nil
-}
-
-func overwriteConfig(v *viper.Viper, cfg *Config) error {
-	home := v.GetString("home")
-	cfgPath := path.Join(home, "config.yaml")
-	if err := os.WriteFile(cfgPath, cfg.MustYAML(), 0600); err != nil {
-		return err
-	}
-
-	log.Printf("updated lens configuration at %s", cfgPath)
 	return nil
 }
 
@@ -104,7 +91,7 @@ func defaultConfig(keyHome string, debug bool) []byte {
 
 // initConfig reads in config file and ENV variables if set.
 // This is called as a persistent pre-run command of the root command.
-func initConfig(cmd *cobra.Command, v *viper.Viper, lc *lensConfig) error {
+func initConfig(cmd *cobra.Command, a *appState) error {
 	home, err := cmd.PersistentFlags().GetString(flags.FlagHome)
 	if err != nil {
 		return err
@@ -115,7 +102,6 @@ func initConfig(cmd *cobra.Command, v *viper.Viper, lc *lensConfig) error {
 		return err
 	}
 
-	lc.config = Config{}
 	cfgPath := path.Join(home, "config.yaml")
 	_, err = os.Stat(cfgPath)
 	if err != nil {
@@ -124,34 +110,34 @@ func initConfig(cmd *cobra.Command, v *viper.Viper, lc *lensConfig) error {
 			return err
 		}
 	}
-	v.SetConfigFile(cfgPath)
-	err = v.ReadInConfig()
+	a.Viper.SetConfigFile(cfgPath)
+	err = a.Viper.ReadInConfig()
 	if err != nil {
 		return fmt.Errorf("failed to read in config: %w", err)
 	}
 
 	// read the config file bytes
-	file, err := os.ReadFile(v.ConfigFileUsed())
+	file, err := os.ReadFile(a.Viper.ConfigFileUsed())
 	if err != nil {
 		return fmt.Errorf("error reading config file: %w", err)
 	}
 
 	// unmarshall them into the struct
-	if err = yaml.Unmarshal(file, &lc.config); err != nil {
+	if err = yaml.Unmarshal(file, &a.Config); err != nil {
 		return fmt.Errorf("error unmarshalling config: %w", err)
 	}
 
 	// instantiate chain client
 	// TODO: this is a bit of a hack, we should probably have a
 	// better way to inject modules into the client
-	lc.config.cl = make(map[string]*client.ChainClient)
-	for name, chain := range lc.config.Chains {
+	a.Config.cl = make(map[string]*client.ChainClient)
+	for name, chain := range a.Config.Chains {
 		chain.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
 		cl, err := client.NewChainClient(chain, home, cmd.InOrStdin(), cmd.OutOrStdout())
 		if err != nil {
 			return fmt.Errorf("error creating chain client: %w", err)
 		}
-		lc.config.cl[name] = cl
+		a.Config.cl[name] = cl
 	}
 
 	// override chain if needed
@@ -161,7 +147,7 @@ func initConfig(cmd *cobra.Command, v *viper.Viper, lc *lensConfig) error {
 			return err
 		}
 
-		lc.config.DefaultChain = defaultChain
+		a.Config.DefaultChain = defaultChain
 	}
 
 	if cmd.PersistentFlags().Changed("output") {
@@ -171,13 +157,13 @@ func initConfig(cmd *cobra.Command, v *viper.Viper, lc *lensConfig) error {
 		}
 
 		// Should output be a global configuration item?
-		for chain := range lc.config.Chains {
-			lc.config.Chains[chain].OutputFormat = output
+		for chain := range a.Config.Chains {
+			a.Config.Chains[chain].OutputFormat = output
 		}
 	}
 
 	// validate configuration
-	if err := validateConfig(&lc.config); err != nil {
+	if err := validateConfig(a.Config); err != nil {
 		return fmt.Errorf("error validating config: %w", err)
 	}
 	return nil

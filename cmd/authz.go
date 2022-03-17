@@ -3,10 +3,9 @@ package cmd
 import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-func authzGrantsCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
+func authzGrantsCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "grants [grantor] [grantee] [msg_type]?",
 		Aliases: []string{"grants"},
@@ -17,7 +16,7 @@ func authzGrantsCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 			// and the grantee client. This will allow for use of a
 			// ledger as the grantor (i.e. cosmoshub-ledger in the config)
 			// and test keyringbacked for the grantee (i.e. cosmoshub)
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			pageReq, err := ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
@@ -53,14 +52,14 @@ func authzGrantsCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 			return cl.PrintObject(res)
 		},
 	}
-	return paginationFlags(cmd, v)
+	return paginationFlags(cmd, a.Viper)
 }
 
 // TODO: rethink UX here. We should break this up into a number
 // of smaller commands. For example, we should have a grantSend,
 // grantStake, grantWithdraw, grantVote, grantValidator, etc...
 // authzGrantAuthorizationCmd returns the authz grant authorization command for this module
-func authzGrantAuthorizationCmd(lc *lensConfig) *cobra.Command {
+func authzGrantAuthorizationCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "grant [grantor] [grantee] [role]",
 		Aliases: []string{"grant"},
@@ -89,7 +88,7 @@ func authzGrantAuthorizationCmd(lc *lensConfig) *cobra.Command {
 }
 
 // authzRevokeAuthorizationCmd returns the authz revoke authorization command for this module
-func authzRevokeAuthorizationCmd(lc *lensConfig) *cobra.Command {
+func authzRevokeAuthorizationCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "revoke [grantee] [msg_type] [grantor]?",
 		Aliases: []string{"r"},
@@ -100,7 +99,7 @@ func authzRevokeAuthorizationCmd(lc *lensConfig) *cobra.Command {
 			// and the grantee client. This will allow for use of a
 			// ledger as the grantor (i.e. cosmoshub-ledger in the config)
 			// and test keyringbacked for the grantee (i.e. cosmoshub)
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			var key string
 			if len(args) == 3 {
 				key = args[2]
@@ -128,7 +127,7 @@ func authzRevokeAuthorizationCmd(lc *lensConfig) *cobra.Command {
 }
 
 // authzExecAuthorizationCmd returns the authz exec authorization command for this module
-func authzExecAuthorizationCmd(lc *lensConfig) *cobra.Command {
+func authzExecAuthorizationCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "exec [msg_tx_json_file] [grantee]?",
 		Aliases: []string{"exec"},
