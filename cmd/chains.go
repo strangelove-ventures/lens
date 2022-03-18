@@ -45,7 +45,7 @@ func cmdChainsRegistryList(lc *lensConfig) *cobra.Command {
 		Aliases: []string{"rl"},
 		Short:   "list chains available for configuration from the registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chains, err := chain_registry.DefaultChainRegistry().ListChains()
+			chains, err := chain_registry.DefaultChainRegistry().ListChains(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -63,7 +63,7 @@ func cmdChainsAdd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 		Short:   "add configuration for a chain or a number of chains from the chain registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registry := chain_registry.DefaultChainRegistry()
-			allChains, err := registry.ListChains()
+			allChains, err := registry.ListChains(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -81,13 +81,13 @@ func cmdChainsAdd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 					continue
 				}
 
-				chainInfo, err := registry.GetChain(chain)
+				chainInfo, err := registry.GetChain(cmd.Context(), chain)
 				if err != nil {
 					log.Printf("error getting chain: %s", err)
 					continue
 				}
 
-				chainConfig, err := chainInfo.GetChainConfig()
+				chainConfig, err := chainInfo.GetChainConfig(cmd.Context())
 				if err != nil {
 					log.Printf("error generating chain config: %s", err)
 					continue

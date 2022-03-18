@@ -87,12 +87,12 @@ func (c ChainInfo) GetAllRPCEndpoints() (out []string, err error) {
 	return
 }
 
-func IsHealthyRPC(endpoint string) error {
+func IsHealthyRPC(ctx context.Context, endpoint string) error {
 	cl, err := client.NewRPCClient(endpoint, 5*time.Second)
 	if err != nil {
 		return err
 	}
-	stat, err := cl.Status(context.Background())
+	stat, err := cl.Status(ctx)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func IsHealthyRPC(endpoint string) error {
 	return nil
 }
 
-func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
+func (c ChainInfo) GetRPCEndpoints(ctx context.Context) (out []string, err error) {
 	allRPCEndpoints, err := c.GetAllRPCEndpoints()
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
 	for _, endpoint := range allRPCEndpoints {
 		endpoint := endpoint
 		eg.Go(func() error {
-			err := IsHealthyRPC(endpoint)
+			err := IsHealthyRPC(ctx, endpoint)
 			if err != nil {
 				log.Printf("ignoring endpoint %s due to error %s", endpoint, err)
 				return nil
@@ -133,8 +133,8 @@ func (c ChainInfo) GetRPCEndpoints() (out []string, err error) {
 	return endpoints, nil
 }
 
-func (c ChainInfo) GetRandomRPCEndpoint() (string, error) {
-	rpcs, err := c.GetRPCEndpoints()
+func (c ChainInfo) GetRandomRPCEndpoint(ctx context.Context) (string, error) {
+	rpcs, err := c.GetRPCEndpoints(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -147,12 +147,12 @@ func (c ChainInfo) GetRandomRPCEndpoint() (string, error) {
 	return rpcs[randomGenerator.Intn(len(rpcs))], nil
 }
 
-func (c ChainInfo) GetAssetList() (AssetList, error) {
+func (c ChainInfo) GetAssetList(ctx context.Context) (AssetList, error) {
 	cl := github.NewClient(http.DefaultClient)
 
 	chainFileName := path.Join(c.ChainName, "assetlist.json")
 	ch, _, res, err := cl.Repositories.GetContents(
-		context.Background(),
+		ctx,
 		"cosmos",
 		"chain-registry",
 		chainFileName,
@@ -173,11 +173,11 @@ func (c ChainInfo) GetAssetList() (AssetList, error) {
 	return assetList, nil
 }
 
-func (c ChainInfo) GetChainConfig() (*client.ChainClientConfig, error) {
+func (c ChainInfo) GetChainConfig(ctx context.Context) (*client.ChainClientConfig, error) {
 	debug := viper.GetBool("debug")
 	home := viper.GetString("home")
 
-	assetList, err := c.GetAssetList()
+	assetList, err := c.GetAssetList(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (c ChainInfo) GetChainConfig() (*client.ChainClientConfig, error) {
 		gasPrices = fmt.Sprintf("%.2f%s", 0.01, assetList.Assets[0].Base)
 	}
 
-	rpc, err := c.GetRandomRPCEndpoint()
+	rpc, err := c.GetRandomRPCEndpoint(ctx)
 	if err != nil {
 		return nil, err
 	}
