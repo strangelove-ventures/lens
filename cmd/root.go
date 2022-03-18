@@ -28,22 +28,15 @@ import (
 
 const appName = "lens"
 
-type lensConfig struct {
-	homePath       string
-	overridenChain string
-	debug          bool
-	config         Config
-}
-
 // NewRootCmd returns the root command for relayer.
 func NewRootCmd() *cobra.Command {
-	// Use a local viper instance scoped to a root command,
-	// so that tests don't concurrently access a single viper instance.
-	v := viper.New()
+	// Use a local app state instance scoped to the new root command,
+	// so that tests don't concurrently access the state.
+	a := &appState{
+		Viper: viper.New(),
+	}
 
 	defaultHome := os.ExpandEnv("$HOME/.lens")
-
-	var lc lensConfig
 
 	// RootCmd represents the base command when called without any subcommands
 	var rootCmd = &cobra.Command{
@@ -53,7 +46,7 @@ func NewRootCmd() *cobra.Command {
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
 		// reads `homeDir/config.yaml` into `var config *Config` before each command
-		if err := initConfig(rootCmd, v, &lc); err != nil {
+		if err := initConfig(rootCmd, a); err != nil {
 			return err
 		}
 
@@ -61,36 +54,36 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	// --home flag
-	rootCmd.PersistentFlags().StringVar(&lc.homePath, flags.FlagHome, defaultHome, "set home directory")
-	if err := v.BindPFlag(flags.FlagHome, rootCmd.PersistentFlags().Lookup(flags.FlagHome)); err != nil {
+	rootCmd.PersistentFlags().StringVar(&a.HomePath, flags.FlagHome, defaultHome, "set home directory")
+	if err := a.Viper.BindPFlag(flags.FlagHome, rootCmd.PersistentFlags().Lookup(flags.FlagHome)); err != nil {
 		panic(err)
 	}
 
 	// --debug flag
-	rootCmd.PersistentFlags().BoolVarP(&lc.debug, "debug", "d", false, "debug output")
-	if err := v.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
+	rootCmd.PersistentFlags().BoolVarP(&a.Debug, "debug", "d", false, "debug output")
+	if err := a.Viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
 		panic(err)
 	}
 
 	rootCmd.PersistentFlags().StringP("output", "o", "json", "output format (json, indent, yaml)")
-	if err := v.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output")); err != nil {
+	if err := a.Viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output")); err != nil {
 		panic(err)
 	}
 
-	rootCmd.PersistentFlags().StringVar(&lc.overridenChain, "chain", "", "override default chain")
-	if err := v.BindPFlag("chain", rootCmd.PersistentFlags().Lookup("chain")); err != nil {
+	rootCmd.PersistentFlags().StringVar(&a.OverriddenChain, "chain", "", "override default chain")
+	if err := a.Viper.BindPFlag("chain", rootCmd.PersistentFlags().Lookup("chain")); err != nil {
 		panic(err)
 	}
 
 	rootCmd.AddCommand(
-		chainsCmd(v, &lc),
-		keysCmd(v, &lc),
-		queryCmd(v, &lc),
-		tendermintCmd(v, &lc),
-		crosschainCmd(&lc),
-		txCmd(&lc),
+		chainsCmd(a),
+		keysCmd(a),
+		queryCmd(a),
+		tendermintCmd(a),
+		crosschainCmd(a),
+		txCmd(a),
 		versionCmd(),
-		airdropCmd(&lc),
+		airdropCmd(a),
 	)
 
 	return rootCmd

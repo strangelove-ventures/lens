@@ -5,7 +5,7 @@ import (
 )
 
 // TxCommand registers a new tx command.
-func txCmd(lc *lensConfig) *cobra.Command {
+func txCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tx",
 		Short: "broadcast transactions to a chain",
@@ -13,12 +13,12 @@ func txCmd(lc *lensConfig) *cobra.Command {
 
 	cmd.AddCommand(
 		authTxCmd(),
-		authzTxCmd(lc),
-		bankTxCmd(lc),
-		distributionTxCmd(lc),
+		authzTxCmd(a),
+		bankTxCmd(a),
+		distributionTxCmd(a),
 		feegrantTxCmd(),
 		govTxCmd(),
-		stakingTxCmd(lc),
+		stakingTxCmd(a),
 		slashingTxCmd(),
 	)
 
@@ -40,7 +40,7 @@ func authTxCmd() *cobra.Command {
 }
 
 // authzTxCmd returns the authz tx commands for this module
-func authzTxCmd(lc *lensConfig) *cobra.Command {
+func authzTxCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "authz",
 		Aliases: []string{"az"},
@@ -48,29 +48,29 @@ func authzTxCmd(lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		authzGrantAuthorizationCmd(lc),
-		authzRevokeAuthorizationCmd(lc),
-		authzExecAuthorizationCmd(lc),
+		authzGrantAuthorizationCmd(a),
+		authzRevokeAuthorizationCmd(a),
+		authzExecAuthorizationCmd(a),
 	)
 
 	return cmd
 }
 
 // bankTxCmd returns the bank tx commands for this module
-func bankTxCmd(lc *lensConfig) *cobra.Command {
+func bankTxCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "bank",
 		Aliases: []string{"b", "bnk"},
 		Short:   "bank transaction commands",
 	}
 
-	cmd.AddCommand(bankSendCmd(lc))
+	cmd.AddCommand(bankSendCmd(a))
 
 	return cmd
 }
 
 // distributionTxCmd returns the distribution tx commands for this module
-func distributionTxCmd(lc *lensConfig) *cobra.Command {
+func distributionTxCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "distribution",
 		Aliases: []string{"dist", "distr", "d"},
@@ -78,7 +78,7 @@ func distributionTxCmd(lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		distributionWithdrawRewardsCmd(lc),
+		distributionWithdrawRewardsCmd(a),
 		// distributionSetWithdrawAddressCmd(),
 		// distributionFundCommunityPoolCmd(),
 	)
@@ -103,7 +103,7 @@ func feegrantTxCmd() *cobra.Command {
 }
 
 // stakingTxCmd returns the staking tx commands for this module
-func stakingTxCmd(lc *lensConfig) *cobra.Command {
+func stakingTxCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "staking",
 		Aliases: []string{"stake", "stk"},
@@ -111,8 +111,8 @@ func stakingTxCmd(lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		stakingDelegateCmd(lc),
-		stakingRedelegateCmd(lc),
+		stakingDelegateCmd(a),
+		stakingRedelegateCmd(a),
 		// stakingCreateValidatorCmd(),
 		// stakingEditValidatorCmd(),
 		// stakingUnbondCmd(),

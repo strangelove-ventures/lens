@@ -2,11 +2,10 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // queryCmd represents the query command tree.
-func queryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
+func queryCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "query",
 		Aliases: []string{"q"},
@@ -14,11 +13,11 @@ func queryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		authQueryCmd(v, lc),
-		authzQueryCmd(v, lc),
-		bankQueryCmd(lc),
-		distributionQueryCmd(v, lc),
-		stakingQueryCmd(lc),
+		authQueryCmd(a),
+		authzQueryCmd(a),
+		bankQueryCmd(a),
+		distributionQueryCmd(a),
+		stakingQueryCmd(a),
 	)
 
 	if false {
@@ -34,7 +33,7 @@ func queryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 }
 
 // authQueryCmd returns the transaction commands for this module
-func authQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
+func authQueryCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "auth",
 		Aliases: []string{"a"},
@@ -42,16 +41,16 @@ func authQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		authAccountCmd(lc),
-		authAccountsCmd(v, lc),
-		authParamsCmd(lc),
+		authAccountCmd(a),
+		authAccountsCmd(a),
+		authParamsCmd(a),
 	)
 
 	return cmd
 }
 
 // authzQueryCmd returns the authz query commands for this module
-func authzQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
+func authzQueryCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "authz",
 		Aliases: []string{"authz"},
@@ -59,14 +58,14 @@ func authzQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		authzGrantsCmd(v, lc),
+		authzGrantsCmd(a),
 	)
 
 	return cmd
 }
 
 // bankQueryCmd  returns the transaction commands for this module
-func bankQueryCmd(lc *lensConfig) *cobra.Command {
+func bankQueryCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "bank",
 		Aliases: []string{"b"},
@@ -74,16 +73,16 @@ func bankQueryCmd(lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		bankBalanceCmd(lc),
-		bankTotalSupplyCmd(lc),
-		bankDenomsMetadataCmd(lc),
+		bankBalanceCmd(a),
+		bankTotalSupplyCmd(a),
+		bankDenomsMetadataCmd(a),
 	)
 
 	return cmd
 }
 
 // distributionQueryCmd returns the distribution query commands for this module
-func distributionQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
+func distributionQueryCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "distribution",
 		Aliases: []string{"dist", "distr", "d"},
@@ -91,13 +90,13 @@ func distributionQueryCmd(v *viper.Viper, lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		distributionParamsCmd(lc),
-		distributionValidatorRewardsCmd(lc),
-		distributionCommissionCmd(lc),
-		distributionCommunityPoolCmd(lc),
-		distributionRewardsCmd(lc),
-		distributionSlashesCmd(v, lc),
-		distributionDelegatorValidatorsCmd(lc),
+		distributionParamsCmd(a),
+		distributionValidatorRewardsCmd(a),
+		distributionCommissionCmd(a),
+		distributionCommunityPoolCmd(a),
+		distributionRewardsCmd(a),
+		distributionSlashesCmd(a),
+		distributionDelegatorValidatorsCmd(a),
 	)
 
 	return cmd
@@ -161,7 +160,7 @@ func slashingQueryCmd() *cobra.Command {
 }
 
 // stakingQueryCmd returns the staking query commands for this module
-func stakingQueryCmd(lc *lensConfig) *cobra.Command {
+func stakingQueryCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "staking",
 		Aliases: []string{"stake", "s"},
@@ -169,15 +168,15 @@ func stakingQueryCmd(lc *lensConfig) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		stakingDelegationCmd(lc),
-		stakingDelegationsCmd(lc),
+		stakingDelegationCmd(a),
+		stakingDelegationsCmd(a),
 		// stakingUnbondingDelegationCmd(),
 		// stakingUnbondingDelegationsCmd(),
 		// stakingRedelegationCmd(),
 		// stakingRedelegationsCmd(),
 		// stakingValidatorCmd(),
 		// stakingValidatorsCmd(),
-		stakingValidatorDelegationsCmd(lc),
+		stakingValidatorDelegationsCmd(a),
 		// stakingValidatorUnbondingDelegationsCmd(),
 		// stakingValidatorRedelegationsCmd(),
 		// stakingHistoricalInfoCmd(),

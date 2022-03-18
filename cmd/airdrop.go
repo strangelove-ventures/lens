@@ -13,14 +13,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func airdropCmd(lc *lensConfig) *cobra.Command {
+func airdropCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "airdrop [airdrop.json] [denom] [exclude] [key]?",
 		Short: "Airdrop coins to a specified address",
 		Long:  "The airdrop file consists of map[string]float64 where the key is the address on the target chain and the value is the amount of coins to be airdropped to that address/1e6 (i.e. atom instead of uatom). The airdrop command 1. checks the addresses in the file to ensure that they are valid for the given chain l",
 		Args:  cobra.RangeArgs(3, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cl := lc.config.GetDefaultClient()
+			cl := a.Config.GetDefaultClient()
 			keyNameOrAddress := ""
 			if len(args) == 3 {
 				keyNameOrAddress = cl.Config.Key
