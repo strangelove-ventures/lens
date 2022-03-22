@@ -22,14 +22,27 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
-
 	"github.com/spf13/viper"
+	provtypes "github.com/tendermint/tendermint/light/provider"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
 )
 
 const appName = "lens"
 
+// ClientOverrides specifies an RPCClient and LightProvider
+// to use for a specific chain.
+//
+// This should only be set during tests.
+type ClientOverrides struct {
+	RPCClient     rpcclient.Client
+	LightProvider provtypes.Provider
+}
+
 // NewRootCmd returns the root command for relayer.
-func NewRootCmd() *cobra.Command {
+//
+// o is used to override rpc clients and light providers for test.
+// If o is nil, reasonable default values are used.
+func NewRootCmd(o map[string]ClientOverrides) *cobra.Command {
 	// Use a local app state instance scoped to the new root command,
 	// so that tests don't concurrently access the state.
 	a := &appState{
@@ -46,7 +59,7 @@ func NewRootCmd() *cobra.Command {
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
 		// reads `homeDir/config.yaml` into `var config *Config` before each command
-		if err := initConfig(rootCmd, a); err != nil {
+		if err := initConfig(rootCmd, a, o); err != nil {
 			return err
 		}
 
@@ -94,7 +107,7 @@ func NewRootCmd() *cobra.Command {
 func Execute() {
 	cobra.EnableCommandSorting = false
 
-	rootCmd := NewRootCmd()
+	rootCmd := NewRootCmd(nil)
 	rootCmd.SilenceUsage = true
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 

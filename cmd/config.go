@@ -91,7 +91,7 @@ func defaultConfig(keyHome string, debug bool) []byte {
 
 // initConfig reads in config file and ENV variables if set.
 // This is called as a persistent pre-run command of the root command.
-func initConfig(cmd *cobra.Command, a *appState) error {
+func initConfig(cmd *cobra.Command, a *appState, o map[string]ClientOverrides) error {
 	home, err := cmd.PersistentFlags().GetString(flags.FlagHome)
 	if err != nil {
 		return err
@@ -136,6 +136,15 @@ func initConfig(cmd *cobra.Command, a *appState) error {
 		cl, err := client.NewChainClient(chain, home, cmd.InOrStdin(), cmd.OutOrStdout())
 		if err != nil {
 			return fmt.Errorf("error creating chain client: %w", err)
+		}
+		// If overrides are present (should only happen in test), modify the client to use those overrides.
+		if o != nil {
+			if rc := o[name].RPCClient; rc != nil {
+				cl.RPCClient = rc
+			}
+			if lp := o[name].LightProvider; lp != nil {
+				cl.LightProvider = lp
+			}
 		}
 		a.Config.cl[name] = cl
 	}

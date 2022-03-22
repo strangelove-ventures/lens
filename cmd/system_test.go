@@ -11,6 +11,8 @@ import (
 // System is a system under test.
 type System struct {
 	HomeDir string
+
+	clientOverrides map[string]cmd.ClientOverrides
 }
 
 // NewSystem creates a new system with a home dir associated with a temp dir belonging to t.
@@ -26,6 +28,15 @@ func NewSystem(t *testing.T) *System {
 	return &System{
 		HomeDir: homeDir,
 	}
+}
+
+// OverrideClients sets the client override mapping for the chain with the given name.
+// This override applies to all subsequent command invocations for this System.
+func (s *System) OverrideClients(name string, o cmd.ClientOverrides) {
+	if s.clientOverrides == nil {
+		s.clientOverrides = map[string]cmd.ClientOverrides{}
+	}
+	s.clientOverrides[name] = o
 }
 
 // RunResult is the stdout and stderr resulting from a call to (*System).Run,
@@ -45,7 +56,7 @@ func (s *System) Run(args ...string) RunResult {
 // providing in as the command's standard input,
 // and returns a RunResult that has its Stdout and Stderr populated.
 func (s *System) RunWithInput(in io.Reader, args ...string) RunResult {
-	rootCmd := cmd.NewRootCmd()
+	rootCmd := cmd.NewRootCmd(s.clientOverrides)
 	rootCmd.SetIn(in)
 	// cmd.Execute also sets SilenceUsage,
 	// so match that here for more correct assertions.
