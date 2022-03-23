@@ -4,8 +4,8 @@ import (
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
-// DelegationRPC returns the delegations to a particular validator
-func DelegationRPC(q *Query, delegator, validator string) (*stakingTypes.DelegationResponse, error) {
+// delegationRPC returns the delegations to a particular validator
+func delegationRPC(q *Query, delegator, validator string) (*stakingTypes.DelegationResponse, error) {
 	queryClient := stakingTypes.NewQueryClient(q.Client)
 	params := &stakingTypes.QueryDelegationRequest{
 		DelegatorAddr: delegator,
@@ -21,8 +21,8 @@ func DelegationRPC(q *Query, delegator, validator string) (*stakingTypes.Delegat
 	return res.DelegationResponse, nil
 }
 
-// DelegationsRPC returns all the delegations
-func DelegationsRPC(q *Query, delegator string) (*stakingTypes.QueryDelegatorDelegationsResponse, error) {
+// delegationsRPC returns all the delegations
+func delegationsRPC(q *Query, delegator string) (*stakingTypes.QueryDelegatorDelegationsResponse, error) {
 	queryClient := stakingTypes.NewQueryClient(q.Client)
 	params := &stakingTypes.QueryDelegatorDelegationsRequest{
 		DelegatorAddr: delegator,
@@ -38,8 +38,8 @@ func DelegationsRPC(q *Query, delegator string) (*stakingTypes.QueryDelegatorDel
 	return res, nil
 }
 
-// ValidatorDelegationssRPC returns all the delegations for a validator
-func ValidatorDelegationssRPC(q *Query, validator string) (*stakingTypes.QueryValidatorDelegationsResponse, error) {
+// validatorDelegationssRPC returns all the delegations for a validator
+func validatorDelegationssRPC(q *Query, validator string) (*stakingTypes.QueryValidatorDelegationsResponse, error) {
 	// ensure the validator parameter is a valid validator address
 	_, err := q.Client.DecodeBech32ValAddr(validator)
 	if err != nil {

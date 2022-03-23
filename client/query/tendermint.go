@@ -6,8 +6,8 @@ import (
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-// BlockRPC returns information about a block
-func BlockRPC(q *Query) (*coretypes.ResultBlock, error) {
+// blockRPC returns information about a block
+func blockRPC(q *Query) (*coretypes.ResultBlock, error) {
 	var height int64
 	ctx, cancel := q.GetQueryContext()
 	defer cancel()
@@ -29,8 +29,8 @@ func BlockRPC(q *Query) (*coretypes.ResultBlock, error) {
 	return res, nil
 }
 
-// BlockByHashRPC returns information about a block by hash
-func BlockByHashRPC(q *Query, hash string) (*coretypes.ResultBlock, error) {
+// blockByHashRPC returns information about a block by hash
+func blockByHashRPC(q *Query, hash string) (*coretypes.ResultBlock, error) {
 	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	h, err := hex.DecodeString(hash)
@@ -44,8 +44,8 @@ func BlockByHashRPC(q *Query, hash string) (*coretypes.ResultBlock, error) {
 	return res, nil
 }
 
-// BlockResultsRPC returns information about a block by hash
-func BlockResultsRPC(q *Query) (*coretypes.ResultBlockResults, error) {
+// blockResultsRPC returns information about a block by hash
+func blockResultsRPC(q *Query) (*coretypes.ResultBlockResults, error) {
 	var height int64
 	ctx, cancel := q.GetQueryContext()
 	defer cancel()
@@ -67,8 +67,8 @@ func BlockResultsRPC(q *Query) (*coretypes.ResultBlockResults, error) {
 	return res, nil
 }
 
-// StatusRPC returns information about a node status
-func StatusRPC(q *Query) (*coretypes.ResultStatus, error) {
+// statusRPC returns information about a node status
+func statusRPC(q *Query) (*coretypes.ResultStatus, error) {
 	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	res, err := q.Client.RPCClient.Status(ctx)
@@ -79,8 +79,8 @@ func StatusRPC(q *Query) (*coretypes.ResultStatus, error) {
 	return res, nil
 }
 
-// ABCIInfoRPC returns information about the ABCI application
-func ABCIInfoRPC(q *Query) (*coretypes.ResultABCIInfo, error) {
+// abciInfoRPC returns information about the ABCI application
+func abciInfoRPC(q *Query) (*coretypes.ResultABCIInfo, error) {
 	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	res, err := q.Client.RPCClient.ABCIInfo(ctx)
@@ -91,8 +91,8 @@ func ABCIInfoRPC(q *Query) (*coretypes.ResultABCIInfo, error) {
 	return res, nil
 }
 
-// ABCIQueryRPC returns data from a particular path in the ABCI application
-func ABCIQueryRPC(q *Query, path string, data string, prove bool) (*coretypes.ResultABCIQuery, error) {
+// abciQueryRPC returns data from a particular path in the ABCI application
+func abciQueryRPC(q *Query, path string, data string, prove bool) (*coretypes.ResultABCIQuery, error) {
 	ctx, cancel := q.GetQueryContext()
 	defer cancel()
 	// If height is not specified, default value is 0, query the latest available block then

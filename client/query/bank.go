@@ -5,7 +5,7 @@ import (
 )
 
 // BalanceWithAddressRPC returns the balance of all coins for a single account.
-func BalanceWithAddressRPC(q *Query, address string) (*bankTypes.QueryAllBalancesResponse, error) {
+func balanceWithAddressRPC(q *Query, address string) (*bankTypes.QueryAllBalancesResponse, error) {
 	req := &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: q.Options.Pagination}
 	queryClient := bankTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -18,8 +18,8 @@ func BalanceWithAddressRPC(q *Query, address string) (*bankTypes.QueryAllBalance
 	return res, nil
 }
 
-// TotalSupplyRPC returns the supply of all coins
-func TotalSupplyRPC(q *Query) (*bankTypes.QueryTotalSupplyResponse, error) {
+// totalSupplyRPC returns the supply of all coins
+func totalSupplyRPC(q *Query) (*bankTypes.QueryTotalSupplyResponse, error) {
 	req := &bankTypes.QueryTotalSupplyRequest{Pagination: q.Options.Pagination}
 	queryClient := bankTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -31,8 +31,8 @@ func TotalSupplyRPC(q *Query) (*bankTypes.QueryTotalSupplyResponse, error) {
 	return res, nil
 }
 
-// DenomsMetadataRPC returns the metadata for all denoms
-func DenomsMetadataRPC(q *Query) (*bankTypes.QueryDenomsMetadataResponse, error) {
+// denomsMetadataRPC returns the metadata for all denoms
+func denomsMetadataRPC(q *Query) (*bankTypes.QueryDenomsMetadataResponse, error) {
 	req := &bankTypes.QueryDenomsMetadataRequest{Pagination: q.Options.Pagination}
 	queryClient := bankTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
