@@ -15,11 +15,13 @@ import (
 
 type CosmosGithubRegistry struct{}
 
-func (c CosmosGithubRegistry) ListChains() ([]string, error) {
+func (c CosmosGithubRegistry) ListChains(ctx context.Context) ([]string, error) {
 	client := github.NewClient(http.DefaultClient)
 	var chains []string
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Minute*5)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute*5)
+	defer cancel()
+
 	tree, res, err := client.Git.GetTree(
 		ctx,
 		"cosmos",
@@ -38,12 +40,12 @@ func (c CosmosGithubRegistry) ListChains() ([]string, error) {
 	return chains, nil
 }
 
-func (c CosmosGithubRegistry) GetChain(name string) (ChainInfo, error) {
+func (c CosmosGithubRegistry) GetChain(ctx context.Context, name string) (ChainInfo, error) {
 	client := github.NewClient(http.DefaultClient)
 
 	chainFileName := path.Join(name, "chain.json")
 	fileContent, _, res, err := client.Repositories.GetContents(
-		context.Background(),
+		ctx,
 		"cosmos",
 		"chain-registry",
 		chainFileName,

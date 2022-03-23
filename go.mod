@@ -9,13 +9,13 @@ require (
 	github.com/cosmos/ibc-go/v2 v2.0.3
 	github.com/cosmos/relayer v1.0.1-0.20220211165707-31d6f6c6d3ae
 	github.com/gogo/protobuf v1.3.3
-	github.com/google/go-cmp v0.5.6
+	github.com/google/go-cmp v0.5.7
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/tendermint/tendermint v0.34.14
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
