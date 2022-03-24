@@ -148,7 +148,7 @@ func (cc *ChainClient) TxServiceBroadcast(ctx context.Context, req *tx.Broadcast
 		return nil, status.Error(codes.InvalidArgument, "invalid empty tx")
 	}
 
-	resp, err := cc.BroadcastTx(context.Background(), req.TxBytes)
+	resp, err := cc.BroadcastTx(ctx, req.TxBytes)
 	if err != nil {
 		return nil, err
 	}

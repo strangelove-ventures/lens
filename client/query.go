@@ -49,12 +49,12 @@ func (cc *ChainClient) queryDenomTraces(offset, limit uint64, height int64) ([]t
 	return transfers.DenomTraces, nil
 }
 
-func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI, error) {
+func (cc *ChainClient) QueryAccount(ctx context.Context, address sdk.AccAddress) (authtypes.AccountI, error) {
 	addr, err := cc.EncodeBech32AccAddr(address)
 	if err != nil {
 		return nil, err
 	}
-	res, err := authtypes.NewQueryClient(cc).Account(context.Background(), &authtypes.QueryAccountRequest{Address: addr})
+	res, err := authtypes.NewQueryClient(cc).Account(ctx, &authtypes.QueryAccountRequest{Address: addr})
 	if err != nil {
 		return nil, err
 	}
