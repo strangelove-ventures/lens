@@ -14,11 +14,11 @@ import (
 
 // queryBalanceWithAddress returns the amount of coins in the relayer account with address as input
 // TODO add pagination support
-func (cc *ChainClient) queryBalanceWithAddress(address string) (sdk.Coins, error) {
+func (cc *ChainClient) queryBalanceWithAddress(ctx context.Context, address string) (sdk.Coins, error) {
 	p := &bankTypes.QueryAllBalancesRequest{Address: address, Pagination: DefaultPageRequest()}
 	queryClient := bankTypes.NewQueryClient(cc)
 
-	res, err := queryClient.AllBalances(context.Background(), p)
+	res, err := queryClient.AllBalances(ctx, p)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +26,8 @@ func (cc *ChainClient) queryBalanceWithAddress(address string) (sdk.Coins, error
 	return res.Balances, nil
 }
 
-func (cc *ChainClient) queryLatestHeight() (int64, error) {
-	stat, err := cc.RPCClient.Status(context.Background())
+func (cc *ChainClient) queryLatestHeight(ctx context.Context) (int64, error) {
+	stat, err := cc.RPCClient.Status(ctx)
 	if err != nil {
 		return -1, err
 	} else if stat.SyncInfo.CatchingUp {
@@ -38,23 +38,25 @@ func (cc *ChainClient) queryLatestHeight() (int64, error) {
 
 // queryDenomTraces returns all the denom traces from a given chain
 // TODO add pagination support
-func (cc *ChainClient) queryDenomTraces(offset, limit uint64, height int64) ([]transfertypes.DenomTrace, error) {
-	transfers, err := transfertypes.NewQueryClient(cc).DenomTraces(context.Background(),
+func (cc *ChainClient) queryDenomTraces(ctx context.Context, offset, limit uint64, height int64) ([]transfertypes.DenomTrace, error) {
+	transfers, err := transfertypes.NewQueryClient(cc).DenomTraces(
+		ctx,
 		&transfertypes.QueryDenomTracesRequest{
 			Pagination: DefaultPageRequest(),
-		})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 	return transfers.DenomTraces, nil
 }
 
-func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI, error) {
+func (cc *ChainClient) QueryAccount(ctx context.Context, address sdk.AccAddress) (authtypes.AccountI, error) {
 	addr, err := cc.EncodeBech32AccAddr(address)
 	if err != nil {
 		return nil, err
 	}
-	res, err := authtypes.NewQueryClient(cc).Account(context.Background(), &authtypes.QueryAccountRequest{Address: addr})
+	res, err := authtypes.NewQueryClient(cc).Account(ctx, &authtypes.QueryAccountRequest{Address: addr})
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +69,12 @@ func (cc *ChainClient) QueryAccount(address sdk.AccAddress) (authtypes.AccountI,
 
 // QueryBalanceWithDenomTraces is a helper function for query balance
 func (cc *ChainClient) QueryBalanceWithDenomTraces(ctx context.Context, address sdk.AccAddress, pageReq *query.PageRequest) (sdk.Coins, error) {
-	coins, err := cc.queryBalanceWithAddress(cc.MustEncodeAccAddr(address))
+	coins, err := cc.queryBalanceWithAddress(ctx, cc.MustEncodeAccAddr(address))
 	if err != nil {
 		return nil, err
 	}
 
-	h, err := cc.queryLatestHeight()
+	h, err := cc.queryLatestHeight(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +84,7 @@ func (cc *ChainClient) QueryBalanceWithDenomTraces(ctx context.Context, address 
 	// so maybe we need a QueryAllDenomTraces function
 	// that will paginate the responses automatically
 	// TODO fix pagination here later
-	dts, err := cc.queryDenomTraces(0, 1000, h)
+	dts, err := cc.queryDenomTraces(ctx, 0, 1000, h)
 	if err != nil {
 		return nil, err
 	}

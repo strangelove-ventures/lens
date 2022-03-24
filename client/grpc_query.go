@@ -127,7 +127,7 @@ func (cc *ChainClient) RunGRPCQuery(ctx context.Context, method string, req inte
 		Prove:  prove,
 	}
 
-	abciRes, err := cc.QueryABCI(abciReq)
+	abciRes, err := cc.QueryABCI(ctx, abciReq)
 	if err != nil {
 		return abci.ResponseQuery{}, nil, err
 	}
@@ -148,7 +148,7 @@ func (cc *ChainClient) TxServiceBroadcast(ctx context.Context, req *tx.Broadcast
 		return nil, status.Error(codes.InvalidArgument, "invalid empty tx")
 	}
 
-	resp, err := cc.BroadcastTx(context.Background(), req.TxBytes)
+	resp, err := cc.BroadcastTx(ctx, req.TxBytes)
 	if err != nil {
 		return nil, err
 	}
