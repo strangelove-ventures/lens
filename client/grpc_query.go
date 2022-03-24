@@ -127,7 +127,7 @@ func (cc *ChainClient) RunGRPCQuery(ctx context.Context, method string, req inte
 		Prove:  prove,
 	}
 
-	abciRes, err := cc.QueryABCI(abciReq)
+	abciRes, err := cc.QueryABCI(ctx, abciReq)
 	if err != nil {
 		return abci.ResponseQuery{}, nil, err
 	}

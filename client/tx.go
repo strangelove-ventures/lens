@@ -3,9 +3,9 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/avast/retry-go"
 	"strings"
 
+	"github.com/avast/retry-go"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -60,7 +60,7 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
 	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
-	_, adjusted, err := cc.CalculateGas(txf, msgs...)
+	_, adjusted, err := cc.CalculateGas(ctx, txf, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 	return txf, nil
 }
 
-func (cc *ChainClient) CalculateGas(txf tx.Factory, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
+func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
 	var (
 		txBytes []byte
 		err     error
@@ -191,7 +191,7 @@ func (cc *ChainClient) CalculateGas(txf tx.Factory, msgs ...sdk.Msg) (txtypes.Si
 	}
 
 	if err = retry.Do(func() error {
-		res, err = cc.QueryABCI(simQuery)
+		res, err = cc.QueryABCI(ctx, simQuery)
 		if err != nil {
 			return err
 		}
@@ -212,12 +212,12 @@ func (cc *ChainClient) CalculateGas(txf tx.Factory, msgs ...sdk.Msg) (txtypes.Si
 	return simRes, uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
 }
 
-func (cc *ChainClient) QueryABCI(req abci.RequestQuery) (abci.ResponseQuery, error) {
+func (cc *ChainClient) QueryABCI(ctx context.Context, req abci.RequestQuery) (abci.ResponseQuery, error) {
 	opts := rpcclient.ABCIQueryOptions{
 		Height: req.Height,
 		Prove:  req.Prove,
 	}
-	result, err := cc.RPCClient.ABCIQueryWithOptions(context.Background(), req.Path, req.Data, opts)
+	result, err := cc.RPCClient.ABCIQueryWithOptions(ctx, req.Path, req.Data, opts)
 	if err != nil {
 		return abci.ResponseQuery{}, err
 	}
