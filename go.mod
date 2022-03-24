@@ -1,4 +1,4 @@
-module github.com/strangelove-ventures/lens
+module github.com/DefiantLabs/lens
 
 go 1.17
 
