@@ -17,7 +17,7 @@ type Query struct {
 //Tx queries
 
 // Tx returns the Tx and all contained messages/TxResponse.
-func (q *Query) Tx() (*txTypes.GetTxsEventResponse, error) {
+func (q *Query) TxByHeight() (*txTypes.GetTxsEventResponse, error) {
 	return TxsAtHeightRPC(q, q.Options.Height)
 }
 
