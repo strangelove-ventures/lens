@@ -1,6 +1,10 @@
 package chain_registry
 
-import "context"
+import (
+	"context"
+
+	"go.uber.org/zap"
+)
 
 type ChainRegistry interface {
 	GetChain(ctx context.Context, name string) (ChainInfo, error)
@@ -8,6 +12,6 @@ type ChainRegistry interface {
 	SourceLink() string
 }
 
-func DefaultChainRegistry() ChainRegistry {
-	return CosmosGithubRegistry{}
+func DefaultChainRegistry(log *zap.Logger) ChainRegistry {
+	return NewCosmosGithubRegistry(log.With(zap.String("registry", "cosmos_github")))
 }

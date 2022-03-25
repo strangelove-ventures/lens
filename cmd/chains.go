@@ -44,7 +44,7 @@ func cmdChainsRegistryList(a *appState) *cobra.Command {
 		Aliases: []string{"rl"},
 		Short:   "list chains available for configuration from the registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chains, err := chain_registry.DefaultChainRegistry().ListChains(cmd.Context())
+			chains, err := chain_registry.DefaultChainRegistry(a.Log).ListChains(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -61,7 +61,7 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 		Aliases: []string{"a"},
 		Short:   "add configuration for a chain or a number of chains from the chain registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			registry := chain_registry.DefaultChainRegistry()
+			registry := chain_registry.DefaultChainRegistry(a.Log)
 			allChains, err := registry.ListChains(cmd.Context())
 			if err != nil {
 				return err

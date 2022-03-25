@@ -11,9 +11,16 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
-type CosmosGithubRegistry struct{}
+type CosmosGithubRegistry struct {
+	log *zap.Logger
+}
+
+func NewCosmosGithubRegistry(log *zap.Logger) {
+	return CosmosGithubRegistry{log: log}
+}
 
 func (c CosmosGithubRegistry) ListChains(ctx context.Context) ([]string, error) {
 	client := github.NewClient(http.DefaultClient)
@@ -59,7 +66,7 @@ func (c CosmosGithubRegistry) GetChain(ctx context.Context, name string) (ChainI
 		return ChainInfo{}, err
 	}
 
-	var result ChainInfo
+	result := NewChainInfo(c.log.With(zap.String("chain_name", name)))
 	if err := json.Unmarshal([]byte(content), &result); err != nil {
 		return ChainInfo{}, err
 	}
