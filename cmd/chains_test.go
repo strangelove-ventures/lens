@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/strangelove-ventures/lens/client"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestChainsShow_MissingArg(t *testing.T) {
@@ -15,7 +16,7 @@ func TestChainsShow_MissingArg(t *testing.T) {
 
 	sys := NewSystem(t)
 
-	res := sys.Run("chains", "show")
+	res := sys.Run(zaptest.NewLogger(t), "chains", "show")
 	require.Error(t, res.Err)
 	require.Contains(t, res.Stderr.String(), "available names are: cosmoshub, osmosis")
 	require.Empty(t, res.Stdout.String())
@@ -52,7 +53,7 @@ func TestChainsSetDefault_Invalid(t *testing.T) {
 
 	sys := NewSystem(t)
 
-	res := sys.Run("chains", "set-default", "not_a_valid_chain_name")
+	res := sys.Run(zaptest.NewLogger(t), "chains", "set-default", "not_a_valid_chain_name")
 	require.Error(t, res.Err)
 	require.Empty(t, res.Stdout.String())
 	require.Contains(t, res.Stderr.String(), "chain not_a_valid_chain_name not found")

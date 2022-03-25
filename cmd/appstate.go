@@ -1,15 +1,20 @@
 package cmd
 
 import (
-	"log"
 	"os"
 	"path"
 
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 // appState is the modifiable state of the application.
 type appState struct {
+	// Log is the root logger of the application.
+	// Consumers are expected to store and use local copies of the logger
+	// after modifying with the .With method.
+	Log *zap.Logger
+
 	Viper *viper.Viper
 
 	HomePath        string
@@ -31,6 +36,6 @@ func (a *appState) OverwriteConfig(cfg *Config) error {
 	}
 
 	a.Config = cfg
-	log.Printf("updated lens configuration at %s", cfgPath)
+	a.Log.Info("Updated lens configuration", zap.String("path", cfgPath))
 	return nil
 }
