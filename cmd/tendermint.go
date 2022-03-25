@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/strangelove-ventures/lens/client"
 	"github.com/strangelove-ventures/lens/client/query"
+	"go.uber.org/zap"
 )
 
 // tendermintCmd represents the tendermint command
@@ -312,7 +313,11 @@ func netInfoCmd(a *appState) *cobra.Command {
 			for _, peer := range block.Peers {
 				url, err := url.Parse(peer.NodeInfo.ListenAddr)
 				if err != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "error parsing addr %q: %v\n", peer.NodeInfo.ListenAddr, err)
+					a.Log.Info(
+						"Failed to parse URL",
+						zap.String("url", peer.NodeInfo.ListenAddr),
+						zap.Error(err),
+					)
 					continue
 				}
 				peersList = append(peersList, fmt.Sprintf("%s@%s:%s", peer.NodeInfo.ID(), peer.RemoteIP, url.Port()))

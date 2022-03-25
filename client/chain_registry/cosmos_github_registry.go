@@ -18,7 +18,7 @@ type CosmosGithubRegistry struct {
 	log *zap.Logger
 }
 
-func NewCosmosGithubRegistry(log *zap.Logger) {
+func NewCosmosGithubRegistry(log *zap.Logger) CosmosGithubRegistry {
 	return CosmosGithubRegistry{log: log}
 }
 
