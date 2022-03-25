@@ -1,7 +1,10 @@
-package client
+package client_test
 
 import (
 	"testing"
+
+	"github.com/strangelove-ventures/lens/client"
+	"go.uber.org/zap/zaptest"
 )
 
 // TestKeyRestore restores a test mnemonic
@@ -10,7 +13,15 @@ func TestKeyRestore(t *testing.T) {
 	mnemonic := "blind master acoustic speak victory lend kiss grab glad help demand hood roast zone lend sponsor level cheap truck kingdom apology token hover reunion"
 	expectedAddress := "cosmos15cw268ckjj2hgq8q3jf68slwjjcjlvxy57je2u"
 
-	cl := GetTestClient()
+	homepath := t.TempDir()
+	cl, err := client.NewChainClient(
+		zaptest.NewLogger(t),
+		client.GetCosmosHubConfig(homepath, true),
+		homepath, nil, nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 	_ = cl.DeleteKey(keyName) // Delete if test is being run again
 	address, err := cl.RestoreKey(keyName, mnemonic)
 	if err != nil {

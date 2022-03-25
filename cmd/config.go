@@ -7,9 +7,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types/module"
-
 	"github.com/spf13/cobra"
 	"github.com/strangelove-ventures/lens/client"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
 
@@ -133,7 +133,13 @@ func initConfig(cmd *cobra.Command, a *appState, o map[string]ClientOverrides) e
 	a.Config.cl = make(map[string]*client.ChainClient)
 	for name, chain := range a.Config.Chains {
 		chain.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
-		cl, err := client.NewChainClient(chain, home, cmd.InOrStdin(), cmd.OutOrStdout())
+		cl, err := client.NewChainClient(
+			a.Log.With(zap.String("chain", name)),
+			chain,
+			home,
+			cmd.InOrStdin(),
+			cmd.OutOrStdout(),
+		)
 		if err != nil {
 			return fmt.Errorf("error creating chain client: %w", err)
 		}

@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"sort"
 	"strings"
 
-	"golang.org/x/term"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+	"golang.org/x/term"
 )
 
 const (
@@ -171,7 +170,7 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 
 			if skip, _ := cmd.Flags().GetBool("skip"); !skip {
 				fmt.Fprintf(cmd.OutOrStdout(), "Are you sure you want to delete key(%s) from chain(%s)? (Y/n)\n", keyName, chainName)
-				if !askForConfirmation(cmd) {
+				if !askForConfirmation(a.Log, cmd) {
 					return nil
 				}
 			}
@@ -188,12 +187,12 @@ $ %s k d ibc-2 testkey`, appName, appName, appName)),
 	return skipConfirm(cmd, a.Viper)
 }
 
-func askForConfirmation(cmd *cobra.Command) bool {
+func askForConfirmation(log *zap.Logger, cmd *cobra.Command) bool {
 	var response string
 
 	_, err := fmt.Fscanln(cmd.InOrStdin(), &response)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to read input", zap.Error(err))
 	}
 
 	switch strings.ToLower(response) {
@@ -203,7 +202,7 @@ func askForConfirmation(cmd *cobra.Command) bool {
 		return false
 	default:
 		fmt.Fprintln(cmd.OutOrStdout(), "please type (y)es or (n)o and then press enter")
-		return askForConfirmation(cmd)
+		return askForConfirmation(log, cmd)
 	}
 }
 

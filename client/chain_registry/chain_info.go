@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -15,10 +14,13 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/spf13/viper"
 	"github.com/strangelove-ventures/lens/client"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
 type ChainInfo struct {
+	log *zap.Logger
+
 	Schema       string `json:"$schema"`
 	ChainName    string `json:"chain_name"`
 	Status       string `json:"status"`
@@ -58,6 +60,12 @@ type ChainInfo struct {
 			Provider string `json:"provider"`
 		} `json:"rest"`
 	} `json:"apis"`
+}
+
+// NewChainInfo returns a ChainInfo that is uninitialized other than the provided zap.Logger.
+// Typically, the caller will unmarshal JSON content into the ChainInfo after initialization.
+func NewChainInfo(log *zap.Logger) ChainInfo {
+	return ChainInfo{log: log}
 }
 
 func (c ChainInfo) GetAllRPCEndpoints() (out []string, err error) {
@@ -117,11 +125,15 @@ func (c ChainInfo) GetRPCEndpoints(ctx context.Context) (out []string, err error
 		eg.Go(func() error {
 			err := IsHealthyRPC(ctx, endpoint)
 			if err != nil {
-				log.Printf("ignoring endpoint %s due to error %s", endpoint, err)
+				c.log.Info(
+					"Ignoring endpoint due to error",
+					zap.String("endpoint", endpoint),
+					zap.Error(err),
+				)
 				return nil
 			}
 
-			log.Printf("verified healthy endpoint %s", endpoint)
+			c.log.Info("Verified healthy endpoint", zap.String("endpoint", endpoint))
 			endpoints = append(endpoints, endpoint)
 			return nil
 		})

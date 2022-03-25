@@ -19,12 +19,17 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	zaplogfmt "github.com/jsternberg/zap-logfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	provtypes "github.com/tendermint/tendermint/light/provider"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"golang.org/x/term"
 )
 
 const appName = "lens"
@@ -42,10 +47,12 @@ type ClientOverrides struct {
 //
 // o is used to override rpc clients and light providers for test.
 // If o is nil, reasonable default values are used.
-func NewRootCmd(o map[string]ClientOverrides) *cobra.Command {
+func NewRootCmd(log *zap.Logger, atom zap.AtomicLevel, o map[string]ClientOverrides) *cobra.Command {
 	// Use a local app state instance scoped to the new root command,
 	// so that tests don't concurrently access the state.
 	a := &appState{
+		Log: log,
+
 		Viper: viper.New(),
 	}
 
@@ -58,6 +65,11 @@ func NewRootCmd(o map[string]ClientOverrides) *cobra.Command {
 	}
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
+		// Inside persistent pre-run because this takes effect after flags are parsed.
+		if a.Viper.GetBool("debug") {
+			atom.SetLevel(zapcore.DebugLevel)
+		}
+
 		// reads `homeDir/config.yaml` into `var config *Config` before each command
 		if err := initConfig(rootCmd, a, o); err != nil {
 			return err
@@ -107,13 +119,41 @@ func NewRootCmd(o map[string]ClientOverrides) *cobra.Command {
 func Execute() {
 	cobra.EnableCommandSorting = false
 
-	rootCmd := NewRootCmd(nil)
+	log, atom := rootLogger()
+	defer log.Sync()
+
+	rootCmd := NewRootCmd(log, atom, nil)
 	rootCmd.SilenceUsage = true
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	if err := rootCmd.Execute(); err != nil {
+		log.Sync()
 		os.Exit(1)
 	}
+}
+
+func rootLogger() (*zap.Logger, zap.AtomicLevel) {
+	config := zap.NewProductionEncoderConfig()
+	config.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+		encoder.AppendString(ts.UTC().Format("2006-01-02T15:04:05.000000Z07:00"))
+	}
+	config.LevelKey = "lvl"
+
+	var enc zapcore.Encoder
+	if term.IsTerminal(int(os.Stderr.Fd())) {
+		// When a user runs relayer in the foreground, use easier to read output.
+		enc = zapcore.NewConsoleEncoder(config)
+	} else {
+		// Otherwise, use consistent logfmt format for simplistic machine processing.
+		enc = zaplogfmt.NewEncoder(config)
+	}
+
+	atom := zap.NewAtomicLevel()
+	return zap.New(zapcore.NewCore(
+		enc,
+		os.Stderr,
+		atom,
+	)), atom
 }
 
 // writeJSON encodes the given object to the given writer.

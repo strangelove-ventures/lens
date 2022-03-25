@@ -4,20 +4,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/avast/retry-go"
 	"io"
 	"path"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
-	"github.com/tendermint/tendermint/libs/log"
 	provtypes "github.com/tendermint/tendermint/light/provider"
 	prov "github.com/tendermint/tendermint/light/provider/http"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	libclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,6 +30,8 @@ var (
 )
 
 type ChainClient struct {
+	log *zap.Logger
+
 	Config         *ChainClientConfig
 	Keybase        keyring.Keyring
 	KeyringOptions []keyring.Option
@@ -39,19 +41,19 @@ type ChainClient struct {
 	Output         io.Writer
 	// TODO: GRPC Client type?
 
-	Codec  Codec
-	Logger log.Logger
+	Codec Codec
 }
 
-func NewChainClient(ccc *ChainClientConfig, homepath string, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {
+func NewChainClient(log *zap.Logger, ccc *ChainClientConfig, homepath string, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {
 	ccc.KeyDirectory = keysDir(homepath, ccc.ChainID)
 	cc := &ChainClient{
+		log: log,
+
 		KeyringOptions: kro,
 		Config:         ccc,
 		Input:          input,
 		Output:         output,
 		Codec:          MakeCodec(ccc.Modules),
-		Logger:         log.NewTMLogger(log.NewSyncWriter(output)),
 	}
 	if err := cc.Init(); err != nil {
 		return nil, err
@@ -123,11 +125,6 @@ func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.Acc
 
 func keysDir(home, chainID string) string {
 	return path.Join(home, "keys", chainID)
-}
-
-// Log takes a string and logs the data
-func (cc *ChainClient) Log(s string) {
-	cc.Logger.Info(s)
 }
 
 // TODO: actually do something different here have a couple of levels of verbosity

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -10,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/strangelove-ventures/lens/client/chain_registry"
-
 	"github.com/spf13/cobra"
+	"github.com/strangelove-ventures/lens/client/chain_registry"
+	"go.uber.org/zap"
 )
 
 func chainsCmd(a *appState) *cobra.Command {
@@ -44,7 +43,7 @@ func cmdChainsRegistryList(a *appState) *cobra.Command {
 		Aliases: []string{"rl"},
 		Short:   "list chains available for configuration from the registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chains, err := chain_registry.DefaultChainRegistry().ListChains(cmd.Context())
+			chains, err := chain_registry.DefaultChainRegistry(a.Log).ListChains(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -61,7 +60,7 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 		Aliases: []string{"a"},
 		Short:   "add configuration for a chain or a number of chains from the chain registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			registry := chain_registry.DefaultChainRegistry()
+			registry := chain_registry.DefaultChainRegistry(a.Log)
 			allChains, err := registry.ListChains(cmd.Context())
 			if err != nil {
 				return err
@@ -76,19 +75,31 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 				}
 
 				if !found {
-					log.Printf("unable to find chain %s in %s", chain, registry.SourceLink())
+					a.Log.Info(
+						"Unable to find chain",
+						zap.String("name", chain),
+						zap.String("url", registry.SourceLink()),
+					)
 					continue
 				}
 
 				chainInfo, err := registry.GetChain(cmd.Context(), chain)
 				if err != nil {
-					log.Printf("error getting chain: %s", err)
+					a.Log.Info(
+						"Failed to get chain",
+						zap.String("name", chain),
+						zap.Error(err),
+					)
 					continue
 				}
 
 				chainConfig, err := chainInfo.GetChainConfig(cmd.Context())
 				if err != nil {
-					log.Printf("error generating chain config: %s", err)
+					a.Log.Info(
+						"Failed to generate chain config",
+						zap.String("name", chain),
+						zap.Error(err),
+					)
 					continue
 				}
 
