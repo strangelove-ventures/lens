@@ -7,7 +7,6 @@ require (
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/ibc-go/v2 v2.0.3
-	github.com/cosmos/relayer v1.0.1-0.20220211165707-31d6f6c6d3ae
 	github.com/gogo/protobuf v1.3.3
 	github.com/google/go-cmp v0.5.7
 	github.com/google/go-github v17.0.0+incompatible
