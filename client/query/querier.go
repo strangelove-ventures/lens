@@ -1,6 +1,7 @@
 package query
 
 import (
+	txTypes "github.com/cosmos/cosmos-sdk/types/tx"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -11,6 +12,13 @@ import (
 type Query struct {
 	Client  *client.ChainClient
 	Options *QueryOptions
+}
+
+//Tx queries
+
+// Tx returns the Tx and all contained messages/TxResponse.
+func (q *Query) Tx() (*txTypes.GetTxsEventResponse, error) {
+	return TxsAtHeightRPC(q, q.Options.Height)
 }
 
 // Bank queries
