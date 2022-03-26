@@ -28,16 +28,16 @@ func (cc *ChainClient) KeystoreCreated(path string) bool {
 	return true
 }
 
-func (cc *ChainClient) AddKey(name string) (output *KeyOutput, err error) {
-	ko, err := cc.KeyAddOrRestore(name, 118)
+func (cc *ChainClient) AddKey(name string, coinType uint32) (output *KeyOutput, err error) {
+	ko, err := cc.KeyAddOrRestore(name, coinType)
 	if err != nil {
 		return nil, err
 	}
 	return ko, nil
 }
 
-func (cc *ChainClient) RestoreKey(name, mnemonic string) (address string, err error) {
-	ko, err := cc.KeyAddOrRestore(name, 118, mnemonic)
+func (cc *ChainClient) RestoreKey(name, mnemonic string, coinType uint32) (address string, err error) {
+	ko, err := cc.KeyAddOrRestore(name, coinType, mnemonic)
 	if err != nil {
 		return "", err
 	}

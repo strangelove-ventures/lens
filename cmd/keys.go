@@ -68,7 +68,12 @@ $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 				return errKeyExists(keyName)
 			}
 
-			ko, err := cl.AddKey(keyName)
+			coinType, err := cmd.Flags().GetUint32(flagCoinType)
+			if err != nil {
+				return err
+			}
+
+			ko, err := cl.AddKey(keyName, coinType)
 			if err != nil {
 				return err
 			}
@@ -84,7 +89,6 @@ $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 			return nil
 		},
 	}
-	// TODO: wire this up
 	cmd.Flags().Uint32(flagCoinType, defaultCoinType, "coin type number for HD derivation")
 
 	return cmd
@@ -113,7 +117,12 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 				return fmt.Errorf("failed to read mnemonic: %w", err)
 			}
 
-			address, err := cl.RestoreKey(keyName, string(mnemonic))
+			coinType, err := cmd.Flags().GetUint32(flagCoinType)
+			if err != nil {
+				return err
+			}
+
+			address, err := cl.RestoreKey(keyName, string(mnemonic), coinType)
 			if err != nil {
 				return err
 			}
@@ -122,7 +131,6 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 			return nil
 		},
 	}
-	// TODO: wire this up
 	cmd.Flags().Uint32(flagCoinType, defaultCoinType, "coin type number for HD derivation")
 	return cmd
 }
