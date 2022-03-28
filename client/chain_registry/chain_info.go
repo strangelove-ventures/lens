@@ -11,7 +11,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v43/github"
 	"github.com/spf13/viper"
 	"github.com/strangelove-ventures/lens/client"
 	"go.uber.org/zap"
