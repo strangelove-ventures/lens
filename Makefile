@@ -3,8 +3,8 @@ COMMIT  := $(shell git log -1 --format='%H')
 
 all: test install
 
-LD_FLAGS = -X github.com/strangelove-ventures/lens/cmd.Version=$(VERSION) \
-	-X github.com/strangelove-ventures/lens/cmd.Commit=$(COMMIT) \
+LD_FLAGS = -X github.com/volumefi/lens/cmd.Version=$(VERSION) \
+	-X github.com/volumefi/lens/cmd.Commit=$(COMMIT) \
 
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 

@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/spf13/cobra"
-	"github.com/strangelove-ventures/lens/client/query"
+	"github.com/volumefi/lens/client/query"
 )
 
 func stakingDelegateCmd(a *appState) *cobra.Command {

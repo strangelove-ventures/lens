@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/spf13/cobra"
-	"github.com/strangelove-ventures/lens/client"
+	"github.com/volumefi/lens/client"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )

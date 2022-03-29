@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/strangelove-ventures/lens/cmd"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/bytes"
@@ -15,6 +14,7 @@ import (
 	"github.com/tendermint/tendermint/rpc/client/mocks"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
+	"github.com/volumefi/lens/cmd"
 )
 
 func TestTendermintBlock_SpecificHeight(t *testing.T) {

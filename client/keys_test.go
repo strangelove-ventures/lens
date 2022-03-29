@@ -3,7 +3,7 @@ package client_test
 import (
 	"testing"
 
-	"github.com/strangelove-ventures/lens/client"
+	"github.com/volumefi/lens/client"
 	"go.uber.org/zap/zaptest"
 )
 

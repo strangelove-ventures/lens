@@ -20,7 +20,7 @@ This is the start of ideas around how to implement the cosmos client libraries i
 ## **--INSTALL--**
 ---
 ```bash
-git clone https://github.com/strangelove-ventures/lens.git
+git clone https://github.com/volumefi/lens.git
 
 cd lens
 

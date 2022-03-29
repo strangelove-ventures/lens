@@ -1,4 +1,4 @@
-module github.com/strangelove-ventures/lens
+module github.com/volumefi/lens
 
 go 1.17
 

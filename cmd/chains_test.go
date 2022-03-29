@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/strangelove-ventures/lens/client"
 	"github.com/stretchr/testify/require"
+	"github.com/volumefi/lens/client"
 	"go.uber.org/zap/zaptest"
 )
 

@@ -24,8 +24,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
-	"github.com/strangelove-ventures/lens/client"
-	"github.com/strangelove-ventures/lens/client/query"
+	"github.com/volumefi/lens/client"
+	"github.com/volumefi/lens/client/query"
 	"go.uber.org/zap"
 )
 

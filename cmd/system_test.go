@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/strangelove-ventures/lens/cmd"
+	"github.com/volumefi/lens/cmd"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )

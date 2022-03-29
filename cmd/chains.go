@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/strangelove-ventures/lens/client/chain_registry"
+	"github.com/volumefi/lens/client/chain_registry"
 	"go.uber.org/zap"
 )
 

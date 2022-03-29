@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/go-github/v43/github"
 	"github.com/spf13/viper"
-	"github.com/strangelove-ventures/lens/client"
+	"github.com/volumefi/lens/client"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
