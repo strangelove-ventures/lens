@@ -249,7 +249,7 @@ func dynamicInspect(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, meth
 			if err != nil {
 				a.Log.Info(
 					"Error resolving service",
-					zap.String("service_name", svcDesc.GetFullyQualifiedName()),
+					zap.String("service_name", svc),
 					zap.Error(err),
 				)
 				continue
