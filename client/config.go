@@ -60,6 +60,7 @@ type ChainClientConfig struct {
 	KeyDirectory   string                  `json:"key-directory" yaml:"key-directory"`
 	Debug          bool                    `json:"debug" yaml:"debug"`
 	Timeout        string                  `json:"timeout" yaml:"timeout"`
+	BlockTimeout   string                  `json:"block-timeout" yaml:"block-timeout"`
 	OutputFormat   string                  `json:"output-format" yaml:"output-format"`
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
@@ -68,6 +69,11 @@ type ChainClientConfig struct {
 func (ccc *ChainClientConfig) Validate() error {
 	if _, err := time.ParseDuration(ccc.Timeout); err != nil {
 		return err
+	}
+	if ccc.BlockTimeout != "" {
+		if _, err := time.ParseDuration(ccc.BlockTimeout); err != nil {
+			return err
+		}
 	}
 	return nil
 }

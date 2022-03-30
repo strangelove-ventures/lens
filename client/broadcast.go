@@ -15,16 +15,30 @@ import (
 )
 
 const (
-	defaultBroadcastWaitTimeout = time.Minute
+	defaultBroadcastWaitTimeout = 10 * time.Minute
 )
 
 func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (*sdk.TxResponse, error) {
+	var (
+		blockTimeout time.Duration = defaultBroadcastWaitTimeout
+		err          error
+	)
+
+	if cc.Config.BlockTimeout != "" {
+		blockTimeout, err = time.ParseDuration(cc.Config.BlockTimeout)
+		if err != nil {
+			// Did you call Validate() method on ChainClientConfig struct
+			// before coming here?
+			return nil, err
+		}
+	}
+
 	return broadcastTx(
 		ctx,
 		cc.RPCClient,
 		cc.Codec.TxConfig.TxDecoder(),
 		tx,
-		defaultBroadcastWaitTimeout,
+		blockTimeout,
 	)
 }
 
@@ -37,6 +51,9 @@ type rpcTxBroadcaster interface {
 	// BroadcastTxAsync(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
 }
 
+// broadcastTx broadcasts a TX and then waits for the TX to be included in the block.
+// The waiting will either be canceled after the waitTimeout has run out or the context
+// exited.
 func broadcastTx(
 	ctx context.Context,
 	broadcaster rpcTxBroadcaster,
