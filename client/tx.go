@@ -83,6 +83,7 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 
 	err = func() error {
 		done := cc.SetSDKContext()
+		// ensure that we allways call done, even in case of an error or panic
 		defer done()
 		if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
 			return err
