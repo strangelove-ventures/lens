@@ -52,6 +52,8 @@ func (e GRPCServiceNotFoundError) Error() string {
 
 var _ error = GRPCMethodNotFoundError{}
 
+// GRPCMethodNotFoundError is used when a requested gRPC method does not exist.
+// Its error message includes the provided available services.
 type GRPCMethodNotFoundError struct {
 	TargetService string
 	Requested     string

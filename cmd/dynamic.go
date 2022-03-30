@@ -129,7 +129,7 @@ func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, method
 
 	svcDesc, err := c.ResolveService(serviceName)
 	if err != nil {
-		if strings.Contains(err.Error(), "Service not found") {
+		if grpcreflect.IsElementNotFoundError(err) {
 			// If we can list the available services, return a more useful error.
 			services, svcErr := c.ListServices()
 			if svcErr == nil {
@@ -275,9 +275,20 @@ func dynamicInspect(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, meth
 	a.Log.Debug("Resolving requested service", zap.String("service_name", serviceName))
 	svcDesc, err := c.ResolveService(serviceName)
 	if err != nil {
+		if grpcreflect.IsElementNotFoundError(err) {
+			// Return a descriptive error if we can't resolve the given service
+			// but can list the other services.
+			services, err := c.ListServices()
+			if err == nil {
+				return GRPCServiceNotFoundError{
+					Requested: serviceName,
+					Available: services,
+				}
+			}
+		}
+
 		a.Log.Info(
 			"Error resolving service",
-			zap.String("service_name", svcDesc.GetFullyQualifiedName()),
 			zap.Error(err),
 		)
 		return err
