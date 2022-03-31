@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/fullstorydev/grpcurl"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoprint"
@@ -436,23 +435,6 @@ func dialGRPC(cmd *cobra.Command, a *appState, addr string) (*grpc.ClientConn, e
 	}
 
 	return conn, nil
-}
-
-type reflectClientAnyResolver struct {
-	c *grpcreflect.Client
-}
-
-var _ jsonpb.AnyResolver = reflectClientAnyResolver{}
-
-func (r reflectClientAnyResolver) Resolve(typeURL string) (proto.Message, error) {
-	// Unclear if it is always safe to trim the leading slash here.
-	typeURL = strings.TrimPrefix(typeURL, "/")
-	d, err := r.c.ResolveMessage(typeURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return d.AsProto(), nil
 }
 
 func chooseGRPCAddr(a *appState, addrOrChainName string) (string, error) {
