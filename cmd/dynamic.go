@@ -7,18 +7,20 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fullstorydev/grpcurl"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/jhump/protoreflect/dynamic"
-	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
+	"google.golang.org/grpc/status"
 )
 
 func dynamicCmd(a *appState) *cobra.Command {
@@ -82,29 +84,28 @@ $ echo '{"validator_address": "..."}' | %[1]s dyn q my-chain cosmos.distribution
 				return fmt.Errorf("method name may not be empty")
 			}
 
-			var in []byte
+			var in io.Reader
 			if len(args) > 3 {
 				if strings.HasPrefix(args[3], "@") {
 					// @file format.
 					name := strings.TrimPrefix(args[3], "@")
-					in, err = os.ReadFile(name)
+					f, err := os.Open(name)
 					if err != nil {
-						return fmt.Errorf("failed to read input file: %w", err)
+						return fmt.Errorf("failed to open input file: %w", err)
 					}
+					defer f.Close()
+					in = f
 				} else {
 					// Provided explicit value on command line.
-					in = []byte(args[3])
+					in = strings.NewReader(args[3])
 				}
 			} else if useStdin, _ := cmd.Flags().GetBool(stdinFlag); useStdin {
 				// Provided --stdin.
-				in, err = io.ReadAll(cmd.InOrStdin())
-				if err != nil {
-					return fmt.Errorf("error reading from stdin: %w", err)
-				}
+				in = cmd.InOrStdin()
 			} else {
 				// Didn't provide command line argument and didn't use --stdin.
 				// Default to empty object for input.
-				in = []byte("{}")
+				in = strings.NewReader("{}")
 			}
 
 			return dynamicQuery(cmd, a, gRPCAddr, serviceName, methodName, in)
@@ -116,7 +117,7 @@ $ echo '{"validator_address": "..."}' | %[1]s dyn q my-chain cosmos.distribution
 	return cmd
 }
 
-func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, methodName string, input []byte) error {
+func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, methodName string, input io.Reader) error {
 	conn, err := dialGRPC(cmd, a, gRPCAddr)
 	if err != nil {
 		return err
@@ -152,38 +153,35 @@ func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, method
 		}
 	}
 
-	inMsgDesc := methodDesc.GetInputType() // TODO: check for nil input type?
-	inputMsg := dynamic.NewMessage(inMsgDesc)
+	src := grpcurl.DescriptorSourceFromServer(cmd.Context(), c)
 
-	if err := inputMsg.UnmarshalJSON(input); err != nil {
-		return fmt.Errorf("failed to marshal input into message of type %s: %w", inMsgDesc.GetFullyQualifiedName(), err)
-	}
-
-	dynClient := grpcdynamic.NewStub(conn)
-	if methodDesc.IsClientStreaming() || methodDesc.IsServerStreaming() {
-		return fmt.Errorf("TODO: handle client/server streaming")
-	}
-
-	output, err := dynClient.InvokeRpc(cmd.Context(), methodDesc, inputMsg)
+	parser, formatter, err := grpcurl.RequestParserAndFormatter(
+		grpcurl.FormatJSON,
+		src,
+		input,
+		grpcurl.FormatOptions{},
+	)
 	if err != nil {
+		return fmt.Errorf("failed to construct parser or formatter: %w", err)
+	}
+
+	h := grpcEventHandler{
+		log:       a.Log.With(zap.String("sys", "grpc_event_handler")),
+		w:         cmd.OutOrStdout(),
+		formatter: formatter,
+	}
+	if err := grpcurl.InvokeRPC(
+		cmd.Context(),
+		src,
+		conn,
+		serviceName+"/"+methodName,
+		nil,
+		h,
+		parser.Next,
+	); err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
 
-	// Convert to a dynamic message, so that we can use the AnyResolver
-	// based on the client that can resolve not-yet-known messages.
-	dynOutput, err := dynamic.AsDynamicMessage(output)
-	if err != nil {
-		return fmt.Errorf("failed to convert output to dynamic message: %w", err)
-	}
-	j, err := dynOutput.MarshalJSONPB(&jsonpb.Marshaler{
-		// For Any fields, resolve through the client.
-		AnyResolver: reflectClientAnyResolver{c: c},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to serialize output message: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), string(j))
 	return nil
 }
 
@@ -231,11 +229,6 @@ func dynamicInspect(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, meth
 	c := grpcreflect.NewClient(cmd.Context(), stub)
 	defer c.Reset()
 
-	pp := &protoprint.Printer{
-		SortElements:             true,
-		ForceFullyQualifiedNames: true,
-	}
-
 	if serviceName == "" {
 		a.Log.Debug("Listing all services")
 
@@ -255,18 +248,6 @@ func dynamicInspect(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, meth
 				continue
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), svcDesc.GetFullyQualifiedName())
-			continue
-
-			proto, err := pp.PrintProtoToString(svcDesc)
-			if err != nil {
-				a.Log.Info(
-					"Error converting to proto string",
-					zap.String("service_name", svcDesc.GetFullyQualifiedName()),
-					zap.Error(err),
-				)
-				continue
-			}
-			fmt.Fprintln(cmd.OutOrStdout(), proto)
 		}
 
 		return nil
@@ -292,6 +273,11 @@ func dynamicInspect(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, meth
 			zap.Error(err),
 		)
 		return err
+	}
+
+	pp := &protoprint.Printer{
+		SortElements:             true,
+		ForceFullyQualifiedNames: true,
 	}
 
 	if methodName == "" {
@@ -486,4 +472,32 @@ func chooseGRPCAddr(a *appState, addrOrChainName string) (string, error) {
 	}
 
 	return gRPCAddr, nil
+}
+
+// grpcEventHandler satisfies grpcurl.InvocationEventHandler, for the InvokeRPC function.
+type grpcEventHandler struct {
+	log *zap.Logger
+
+	w         io.Writer
+	formatter grpcurl.Formatter
+}
+
+func (h grpcEventHandler) OnResolveMethod(*desc.MethodDescriptor)        {}
+func (h grpcEventHandler) OnSendHeaders(metadata.MD)                     {}
+func (h grpcEventHandler) OnReceiveHeaders(metadata.MD)                  {}
+func (h grpcEventHandler) OnReceiveTrailers(*status.Status, metadata.MD) {}
+
+func (h grpcEventHandler) OnReceiveResponse(msg proto.Message) {
+	s, err := h.formatter(msg)
+	if err != nil {
+		// On failure to format, attempt to log something meaningful.
+		typeName := "unknown"
+		dyn, dErr := dynamic.AsDynamicMessage(msg)
+		if dErr == nil {
+			typeName = dyn.GetMessageDescriptor().GetFullyQualifiedName()
+		}
+		h.log.Info("Failed to format message", zap.String("type_name", typeName))
+		return
+	}
+	fmt.Fprintln(h.w, s)
 }
