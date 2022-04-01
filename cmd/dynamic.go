@@ -461,12 +461,12 @@ var _ jsonpb.AnyResolver = reflectClientAnyResolver{}
 func (r reflectClientAnyResolver) Resolve(typeURL string) (proto.Message, error) {
 	// Unclear if it is always safe to trim the leading slash here.
 	typeURL = strings.TrimPrefix(typeURL, "/")
-	d, err := r.c.ResolveMessage(typeURL)
+	messageDesc, err := r.c.ResolveMessage(typeURL)
 	if err != nil {
 		return nil, err
 	}
 
-	return d.AsProto(), nil
+	return dynamic.NewMessage(messageDesc), nil
 }
 
 func chooseGRPCAddr(a *appState, addrOrChainName string) (string, error) {
