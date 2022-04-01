@@ -179,7 +179,7 @@ $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p co
 			if err != nil {
 				return err
 			}
-			return cl.PrintObject(response)
+			return cl.PrintObject(response.DelegationResponse)
 		},
 	}
 

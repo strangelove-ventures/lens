@@ -5,20 +5,19 @@ import (
 )
 
 // DelegationRPC returns the delegations to a particular validator
-func DelegationRPC(q *Query, delegator, validator string) (*stakingTypes.DelegationResponse, error) {
+func DelegationRPC(q *Query, delegator, validator string) (*stakingTypes.QueryDelegationResponse, error) {
 	queryClient := stakingTypes.NewQueryClient(q.Client)
-	params := &stakingTypes.QueryDelegationRequest{
+	req := &stakingTypes.QueryDelegationRequest{
 		DelegatorAddr: delegator,
 		ValidatorAddr: validator,
 	}
 	ctx, cancel := q.GetQueryContext()
 	defer cancel()
-	res, err := queryClient.Delegation(ctx, params)
+	res, err := queryClient.Delegation(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-
-	return res.DelegationResponse, nil
+	return res, nil
 }
 
 // DelegationsRPC returns all the delegations

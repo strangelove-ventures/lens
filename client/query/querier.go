@@ -36,7 +36,7 @@ func (q *Query) DenomsMetadata() (*bankTypes.QueryDenomsMetadataResponse, error)
 // Staking queries
 
 // Delegation returns the delegations to a particular validator
-func (q *Query) Delegation(delegator, validator string) (*stakingTypes.DelegationResponse, error) {
+func (q *Query) Delegation(delegator, validator string) (*stakingTypes.QueryDelegationResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
 	return DelegationRPC(q, delegator, validator)
 }
