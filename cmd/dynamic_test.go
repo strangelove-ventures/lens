@@ -99,7 +99,7 @@ func TestDynamicQuery_ChainID(t *testing.T) {
 	// ServerSockets will be empty since this is a new gRPC server
 	// that has no other connections.
 	res := sys.MustRun(t, "dynamic", "query", "cosmoshub", "grpc.channelz.v1.Channelz", "GetServerSockets")
-	require.JSONEq(t, res.Stdout.String(), `{"end":true}`)
+	require.Equal(t, res.Stdout.String(), `{"end":true}`+"\n")
 	require.Empty(t, res.Stderr.String())
 }
 
@@ -113,7 +113,7 @@ func TestDynamicQuery_AddressLiteral(t *testing.T) {
 	// ServerSockets will be empty since this is a new gRPC server
 	// that has no other connections.
 	res := sys.MustRun(t, "dynamic", "query", gRPCAddr, "grpc.channelz.v1.Channelz", "GetServerSockets")
-	require.JSONEq(t, res.Stdout.String(), `{"end":true}`)
+	require.Equal(t, res.Stdout.String(), `{"end":true}`+"\n")
 	require.Empty(t, res.Stderr.String())
 }
 
@@ -182,7 +182,7 @@ func TestDynamicQuery_InputVariations(t *testing.T) {
 
 	serverID := serversResp.Server[0].Ref.ServerID
 	input := fmt.Sprintf(`{"server_id":%s}`, serverID)
-	wantResp := fmt.Sprintf(`"serverId": %q`, serverID)
+	wantResp := fmt.Sprintf(`{"serverId":%q}`, serverID)
 
 	t.Run("explicit argument", func(t *testing.T) {
 		res := sys.MustRun(t, "dynamic", "query", gRPCAddr, "grpc.channelz.v1.Channelz", "GetServer", input)
