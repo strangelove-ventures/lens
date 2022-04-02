@@ -43,8 +43,8 @@ func distribution_DelegatorValidatorsRPC(q *Query, address string) (*distTypes.Q
 	return res, nil
 }
 
-// distribution_DelegationRewardsRequestRPC returns rewards for a single delegator/validator tuple
-func distribution_DelegationRewardsRequestRPC(q *Query, delegator string, validator string) (*distTypes.QueryDelegationRewardsResponse, error) {
+// distribution_DelegationRewardsRPC returns rewards for a single delegator/validator tuple
+func distribution_DelegationRewardsRPC(q *Query, delegator string, validator string) (*distTypes.QueryDelegationRewardsResponse, error) {
 	req := &distTypes.QueryDelegationRewardsRequest{DelegatorAddress: delegator, ValidatorAddress: validator}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()

@@ -148,7 +148,7 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 			}
 			options := query.QueryOptions{Pagination: pr, Height: height}
 			query := query.Query{cl, &options}
-			response, err := query.Delegations(args[0])
+			response, err := query.Staking_DelegatorDelegations(args[0])
 			if err != nil {
 				return err
 			}
@@ -175,7 +175,7 @@ $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p co
 			cq := query.Query{Client: cl, Options: query.DefaultOptions()}
 			delegator := args[0]
 			validator := args[1]
-			response, err := cq.Delegation(delegator, validator)
+			response, err := cq.Staking_Delegation(delegator, validator)
 			if err != nil {
 				return err
 			}
@@ -212,7 +212,7 @@ $ lens query staking validator-delegations [validator address (valoper)]
 			validator := args[0]
 			options := query.QueryOptions{Pagination: pr, Height: height}
 			query := query.Query{cl, &options}
-			response, err := query.ValidatorDelegations(validator)
+			response, err := query.Staking_ValidatorDelegations(validator)
 			if err != nil {
 				return err
 			}

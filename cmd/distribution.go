@@ -54,7 +54,7 @@ $ lens tx withdraw-rewards --from mykey --all
 			query := query.Query{Client: cl, Options: query.DefaultOptions()}
 			if all, _ := cmd.Flags().GetBool(FlagAll); all {
 
-				resp, err := query.DelegatorValidators(encodedAddr)
+				resp, err := query.Distribution_DelegatorValidators(encodedAddr)
 				if err != nil {
 					return err
 				}
@@ -275,7 +275,6 @@ func distributionDelegatorValidatorsCmd(a *appState) *cobra.Command {
 				_, err := cl.DecodeBech32AccAddr(delegator)
 				if err != nil {
 					return fmt.Errorf("\n please specify a valid delegator's address for chain '%s'. Address should start with '%s'", cl.Config.ChainID, cl.Config.AccountPrefix)
-					return err
 				}
 			}
 
@@ -297,7 +296,7 @@ func distributionDelegatorValidatorsCmd(a *appState) *cobra.Command {
 
 			options := query.QueryOptions{Pagination: pr, Height: height}
 			query := query.Query{Client: cl, Options: &options}
-			delValidators, err := query.DelegatorValidators(encodedAddr)
+			delValidators, err := query.Distribution_DelegatorValidators(encodedAddr)
 			if err != nil {
 				return err
 			}
