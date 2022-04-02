@@ -3,10 +3,11 @@ package cmd
 import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/types/query"
+	tmquery "github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/strangelove-ventures/lens/client/query"
 )
 
 func peersFlag(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
@@ -65,7 +66,7 @@ func paginationFlags(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 }
 
 // ReadPageRequest reads and builds the necessary page request flags for pagination.
-func ReadPageRequest(flagSet *pflag.FlagSet) (*query.PageRequest, error) {
+func ReadPageRequest(flagSet *pflag.FlagSet) (*tmquery.PageRequest, error) {
 	pageKey, _ := flagSet.GetString(flags.FlagPageKey)
 	offset, _ := flagSet.GetUint64(flags.FlagOffset)
 	limit, _ := flagSet.GetUint64(flags.FlagLimit)
@@ -81,7 +82,7 @@ func ReadPageRequest(flagSet *pflag.FlagSet) (*query.PageRequest, error) {
 		offset = (page - 1) * limit
 	}
 
-	return &query.PageRequest{
+	return &tmquery.PageRequest{
 		Key:        []byte(pageKey),
 		Offset:     offset,
 		Limit:      limit,
@@ -101,4 +102,18 @@ func ReadHeight(flagSet *pflag.FlagSet) (int64, error) {
 	} else {
 		return 0, nil
 	}
+}
+
+func queryOptionsFromFlags(flags *pflag.FlagSet) (*query.QueryOptions, error) {
+	// Query options
+	pr, err := ReadPageRequest(flags)
+	if err != nil {
+		return nil, err
+	}
+	height, err := ReadHeight(flags)
+	if err != nil {
+		return nil, err
+	}
+
+	return &query.QueryOptions{Pagination: pr, Height: height}, nil
 }

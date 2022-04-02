@@ -170,18 +170,18 @@ func stakingQueryCmd(a *appState) *cobra.Command {
 	cmd.AddCommand(
 		stakingDelegationCmd(a),
 		stakingDelegationsCmd(a),
-		// stakingUnbondingDelegationCmd(),
-		// stakingUnbondingDelegationsCmd(),
+		stakingUnbondingDelegationCmd(a),
+		stakingUnbondingDelegationsCmd(a),
 		// stakingRedelegationCmd(),
 		// stakingRedelegationsCmd(),
-		// stakingValidatorCmd(),
-		// stakingValidatorsCmd(),
+		stakingValidatorCmd(a),
+		stakingValidatorsCmd(a),
 		stakingValidatorDelegationsCmd(a),
 		// stakingValidatorUnbondingDelegationsCmd(),
 		// stakingValidatorRedelegationsCmd(),
 		// stakingHistoricalInfoCmd(),
-		// stakingParamsCmd(),
-		// stakingPoolCmd(),
+		stakingParamsCmd(a),
+		stakingPoolCmd(a),
 	)
 
 	return cmd
