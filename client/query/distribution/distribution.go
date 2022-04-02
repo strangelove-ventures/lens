@@ -1,11 +1,12 @@
-package query
+package distribution
 
 import (
 	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/strangelove-ventures/lens/client/query"
 )
 
-// DistributionParamsRPC returns the distribution params
-func DistributionParamsRPC(q *Query, address string) (*distTypes.QueryParamsResponse, error) {
+// ParamsRPC returns the distribution params
+func ParamsRPC(q *query.Query) (*distTypes.QueryParamsResponse, error) {
 	req := &distTypes.QueryParamsRequest{}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -18,7 +19,7 @@ func DistributionParamsRPC(q *Query, address string) (*distTypes.QueryParamsResp
 }
 
 // ValidatorSlashes returns slash events for a given validator
-func ValidatorSlashesRPC(q *Query, address string, start_height uint64, end_height uint64) (*distTypes.QueryValidatorSlashesResponse, error) {
+func ValidatorSlashesRPC(q *query.Query, address string, start_height uint64, end_height uint64) (*distTypes.QueryValidatorSlashesResponse, error) {
 	req := &distTypes.QueryValidatorSlashesRequest{ValidatorAddress: address, StartingHeight: start_height, EndingHeight: end_height}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -31,7 +32,7 @@ func ValidatorSlashesRPC(q *Query, address string, start_height uint64, end_heig
 }
 
 // DelegatorValidatorsRPC returns the validators of a delegator
-func DelegatorValidatorsRPC(q *Query, address string) (*distTypes.QueryDelegatorValidatorsResponse, error) {
+func DelegatorValidatorsRPC(q *query.Query, address string) (*distTypes.QueryDelegatorValidatorsResponse, error) {
 	req := &distTypes.QueryDelegatorValidatorsRequest{DelegatorAddress: address}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -44,7 +45,7 @@ func DelegatorValidatorsRPC(q *Query, address string) (*distTypes.QueryDelegator
 }
 
 // DelegationRewardsRequestRPC returns rewards for a single delegator/validator tuple
-func DelegationRewardsRequestRPC(q *Query, delegator string, validator string) (*distTypes.QueryDelegationRewardsResponse, error) {
+func DelegationRewardsRequestRPC(q *query.Query, delegator string, validator string) (*distTypes.QueryDelegationRewardsResponse, error) {
 	req := &distTypes.QueryDelegationRewardsRequest{DelegatorAddress: delegator, ValidatorAddress: validator}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -57,7 +58,7 @@ func DelegationRewardsRequestRPC(q *Query, delegator string, validator string) (
 }
 
 // DelegationRewardsRequestRPC returns total outstanding rewards for a delegator across one or more validators
-func DelegationTotalRewardsRPC(q *Query, address string) (*distTypes.QueryDelegationTotalRewardsResponse, error) {
+func DelegationTotalRewardsRPC(q *query.Query, address string) (*distTypes.QueryDelegationTotalRewardsResponse, error) {
 	req := &distTypes.QueryDelegationTotalRewardsRequest{DelegatorAddress: address}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -70,7 +71,7 @@ func DelegationTotalRewardsRPC(q *Query, address string) (*distTypes.QueryDelega
 }
 
 // ValidatorCommissionRPC returns outstanding commission for a validator
-func ValidatorCommissionRPC(q *Query, address string) (*distTypes.QueryValidatorCommissionResponse, error) {
+func ValidatorCommissionRPC(q *query.Query, address string) (*distTypes.QueryValidatorCommissionResponse, error) {
 	req := &distTypes.QueryValidatorCommissionRequest{ValidatorAddress: address}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -83,7 +84,7 @@ func ValidatorCommissionRPC(q *Query, address string) (*distTypes.QueryValidator
 }
 
 // ValidatorOutstandingRewardsRPC returns total outstanding reward pool
-func ValidatorOutstandingRewardsRPC(q *Query, address string) (*distTypes.QueryValidatorOutstandingRewardsResponse, error) {
+func ValidatorOutstandingRewardsRPC(q *query.Query, address string) (*distTypes.QueryValidatorOutstandingRewardsResponse, error) {
 	req := &distTypes.QueryValidatorOutstandingRewardsRequest{ValidatorAddress: address}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -96,7 +97,7 @@ func ValidatorOutstandingRewardsRPC(q *Query, address string) (*distTypes.QueryV
 }
 
 // DelegatorWithdrawAddressRPC returns withdrawal address for given delegator
-func DelegatorWithdrawAddressRPC(q *Query, address string) (*distTypes.QueryDelegatorWithdrawAddressResponse, error) {
+func DelegatorWithdrawAddressRPC(q *query.Query, address string) (*distTypes.QueryDelegatorWithdrawAddressResponse, error) {
 	req := &distTypes.QueryDelegatorWithdrawAddressRequest{DelegatorAddress: address}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()
@@ -109,7 +110,7 @@ func DelegatorWithdrawAddressRPC(q *Query, address string) (*distTypes.QueryDele
 }
 
 // CommunityPoolRPC returns balance of community pool
-func CommunityPoolRPC(q *Query) (*distTypes.QueryCommunityPoolResponse, error) {
+func CommunityPoolRPC(q *query.Query) (*distTypes.QueryCommunityPoolResponse, error) {
 	req := &distTypes.QueryCommunityPoolRequest{}
 	queryClient := distTypes.NewQueryClient(q.Client)
 	ctx, cancel := q.GetQueryContext()

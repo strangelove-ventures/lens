@@ -1,11 +1,38 @@
-package query
+package staking
 
 import (
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/strangelove-ventures/lens/client/query"
 )
 
+// ParamsRPC returns the staking params
+func ParamsRPC(q *query.Query) (*stakingTypes.QueryParamsResponse, error) {
+	req := &stakingTypes.QueryParamsRequest{}
+	queryClient := stakingTypes.NewQueryClient(q.Client)
+	ctx, cancel := q.GetQueryContext()
+	defer cancel()
+	res, err := queryClient.Params(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// ParamsRPC returns the distribution params
+func PoolRPC(q *query.Query) (*stakingTypes.QueryPoolResponse, error) {
+	req := &stakingTypes.QueryPoolRequest{}
+	queryClient := stakingTypes.NewQueryClient(q.Client)
+	ctx, cancel := q.GetQueryContext()
+	defer cancel()
+	res, err := queryClient.Pool(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 // DelegationRPC returns the delegations to a particular validator
-func DelegationRPC(q *Query, delegator, validator string) (*stakingTypes.QueryDelegationResponse, error) {
+func DelegationRPC(q *query.Query, delegator, validator string) (*stakingTypes.QueryDelegationResponse, error) {
 	// ensure the delegator parameter is a valid account address
 	_, err := q.Client.DecodeBech32AccAddr(delegator)
 	if err != nil {
@@ -31,7 +58,7 @@ func DelegationRPC(q *Query, delegator, validator string) (*stakingTypes.QueryDe
 }
 
 // DelegatorDelegationsRPC returns all the delegations for a given delegator
-func DelegatorDelegationsRPC(q *Query, delegator string) (*stakingTypes.QueryDelegatorDelegationsResponse, error) {
+func DelegatorDelegationsRPC(q *query.Query, delegator string) (*stakingTypes.QueryDelegatorDelegationsResponse, error) {
 	// ensure the delegator parameter is a valid account address
 	_, err := q.Client.DecodeBech32AccAddr(delegator)
 	if err != nil {
@@ -52,7 +79,7 @@ func DelegatorDelegationsRPC(q *Query, delegator string) (*stakingTypes.QueryDel
 }
 
 // DelegationsRPC returns all the delegations
-func DelegatorUnbondingDelegationsRPC(q *Query, delegator string) (*stakingTypes.QueryDelegatorUnbondingDelegationsResponse, error) {
+func DelegatorUnbondingDelegationsRPC(q *query.Query, delegator string) (*stakingTypes.QueryDelegatorUnbondingDelegationsResponse, error) {
 	// ensure the delegator parameter is a valid account address
 	_, err := q.Client.DecodeBech32AccAddr(delegator)
 	if err != nil {
@@ -73,7 +100,7 @@ func DelegatorUnbondingDelegationsRPC(q *Query, delegator string) (*stakingTypes
 }
 
 // ValidatorsRPC returns all the validators for a given status
-func ValidatorsRPC(q *Query, status string) (*stakingTypes.QueryValidatorsResponse, error) {
+func ValidatorsRPC(q *query.Query, status string) (*stakingTypes.QueryValidatorsResponse, error) {
 	queryClient := stakingTypes.NewQueryClient(q.Client)
 	req := &stakingTypes.QueryValidatorsRequest{
 		Status:     status,
@@ -89,7 +116,7 @@ func ValidatorsRPC(q *Query, status string) (*stakingTypes.QueryValidatorsRespon
 }
 
 // ValidatorRPC returns all the validator for a given address
-func ValidatorRPC(q *Query, address string) (*stakingTypes.QueryValidatorResponse, error) {
+func ValidatorRPC(q *query.Query, address string) (*stakingTypes.QueryValidatorResponse, error) {
 	// ensure the validator parameter is a valid validator address
 	_, err := q.Client.DecodeBech32ValAddr(address)
 	if err != nil {
@@ -109,7 +136,7 @@ func ValidatorRPC(q *Query, address string) (*stakingTypes.QueryValidatorRespons
 }
 
 // ValidatorDelegationsRPC returns all the delegations for a validator
-func ValidatorDelegationsRPC(q *Query, validator string) (*stakingTypes.QueryValidatorDelegationsResponse, error) {
+func ValidatorDelegationsRPC(q *query.Query, validator string) (*stakingTypes.QueryValidatorDelegationsResponse, error) {
 	// ensure the validator parameter is a valid validator address
 	_, err := q.Client.DecodeBech32ValAddr(validator)
 	if err != nil {
@@ -130,7 +157,7 @@ func ValidatorDelegationsRPC(q *Query, validator string) (*stakingTypes.QueryVal
 }
 
 // ValidatorUnbondingDelegationsRPC returns all the unbonding delegations for a validator
-func ValidatorUnbondingDelegationsRPC(q *Query, validator string) (*stakingTypes.QueryValidatorUnbondingDelegationsResponse, error) {
+func ValidatorUnbondingDelegationsRPC(q *query.Query, validator string) (*stakingTypes.QueryValidatorUnbondingDelegationsResponse, error) {
 	// ensure the validator parameter is a valid validator address
 	_, err := q.Client.DecodeBech32ValAddr(validator)
 	if err != nil {
@@ -151,7 +178,7 @@ func ValidatorUnbondingDelegationsRPC(q *Query, validator string) (*stakingTypes
 }
 
 // ValidatorUnbondingDelegationsRPC returns all the unbonding delegations for a validator
-func RelegationsRPC(q *Query, delegator string, src_validator string, dst_validator string) (*stakingTypes.QueryRedelegationsResponse, error) {
+func RelegationsRPC(q *query.Query, delegator string, src_validator string, dst_validator string) (*stakingTypes.QueryRedelegationsResponse, error) {
 	// ensure the addresses are valid
 	_, err := q.Client.DecodeBech32AccAddr(delegator)
 	if err != nil {
@@ -182,7 +209,7 @@ func RelegationsRPC(q *Query, delegator string, src_validator string, dst_valida
 }
 
 // DelegatorValidatorsRPC returns all the validators for a given delegator
-func DelegatorValidatorsRPC(q *Query, delegator string) (*stakingTypes.QueryDelegatorValidatorsResponse, error) {
+func DelegatorValidatorsRPC(q *query.Query, delegator string) (*stakingTypes.QueryDelegatorValidatorsResponse, error) {
 	// ensure the delegator parameter is a valid account address
 	_, err := q.Client.DecodeBech32AccAddr(delegator)
 	if err != nil {
@@ -195,7 +222,47 @@ func DelegatorValidatorsRPC(q *Query, delegator string) (*stakingTypes.QueryDele
 	}
 	ctx, cancel := q.GetQueryContext()
 	defer cancel()
-	res, err := queryClient.DelegatorDelegations(ctx, req)
+	res, err := queryClient.DelegatorValidators(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// DelegatorValidatorRPC returns the validators for a given delegator
+func DelegatorValidatorRPC(q *query.Query, delegator string, validator string) (*stakingTypes.QueryDelegatorValidatorResponse, error) {
+	// ensure the delegator parameter is a valid account address
+	_, err := q.Client.DecodeBech32AccAddr(delegator)
+	if err != nil {
+		return nil, err
+	}
+	_, err = q.Client.DecodeBech32ValAddr(validator)
+	if err != nil {
+		return nil, err
+	}
+	queryClient := stakingTypes.NewQueryClient(q.Client)
+	req := &stakingTypes.QueryDelegatorValidatorRequest{
+		DelegatorAddr: delegator,
+		ValidatorAddr: validator,
+	}
+	ctx, cancel := q.GetQueryContext()
+	defer cancel()
+	res, err := queryClient.DelegatorValidator(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// DelegatorValidatorRPC returns the validators for a given delegator
+func HistoricalInfoRPC(q *query.Query, height int64) (*stakingTypes.QueryHistoricalInfoResponse, error) {
+	queryClient := stakingTypes.NewQueryClient(q.Client)
+	req := &stakingTypes.QueryHistoricalInfoRequest{
+		Height: height,
+	}
+	ctx, cancel := q.GetQueryContext()
+	defer cancel()
+	res, err := queryClient.HistoricalInfo(ctx, req)
 	if err != nil {
 		return nil, err
 	}
