@@ -16,21 +16,21 @@ type Query struct {
 // Bank queries
 
 // Balances returns the balance of all coins for a single account.
-func (q *Query) Balances(address string) (*bankTypes.QueryAllBalancesResponse, error) {
+func (q *Query) Bank_Balances(address string) (*bankTypes.QueryAllBalancesResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
-	return BalanceWithAddressRPC(q, address)
+	return bank_AllBalancesRPC(q, address)
 }
 
 // TotalSupply returns the supply of all coins
-func (q *Query) TotalSupply() (*bankTypes.QueryTotalSupplyResponse, error) {
+func (q *Query) Bank_TotalSupply() (*bankTypes.QueryTotalSupplyResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
-	return TotalSupplyRPC(q)
+	return bank_TotalSupplyRPC(q)
 }
 
 // DenomsMetadata returns the metadata for all denoms
-func (q *Query) DenomsMetadata() (*bankTypes.QueryDenomsMetadataResponse, error) {
+func (q *Query) Bank_DenomsMetadata() (*bankTypes.QueryDenomsMetadataResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
-	return DenomsMetadataRPC(q)
+	return bank_DenomsMetadataRPC(q)
 }
 
 // Staking queries
@@ -38,19 +38,19 @@ func (q *Query) DenomsMetadata() (*bankTypes.QueryDenomsMetadataResponse, error)
 // Delegation returns the delegations to a particular validator
 func (q *Query) Delegation(delegator, validator string) (*stakingTypes.QueryDelegationResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
-	return DelegationRPC(q, delegator, validator)
+	return staking_DelegationRPC(q, delegator, validator)
 }
 
 // Delegations returns all the delegations
-func (q *Query) Delegations(delegator string) (*stakingTypes.QueryDelegatorDelegationsResponse, error) {
+func (q *Query) DelegatorDelegations(delegator string) (*stakingTypes.QueryDelegatorDelegationsResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
-	return DelegationsRPC(q, delegator)
+	return staking_DelegatorDelegationsRPC(q, delegator)
 }
 
 // ValidatorDelegations returns all the delegations for a validator
 func (q *Query) ValidatorDelegations(validator string) (*stakingTypes.QueryValidatorDelegationsResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
-	return ValidatorDelegationssRPC(q, validator)
+	return staking_ValidatorDelegationsRPC(q, validator)
 }
 
 // Distribution queries
@@ -58,7 +58,7 @@ func (q *Query) ValidatorDelegations(validator string) (*stakingTypes.QueryValid
 // DelegatorValidators returns the validators of a delegator
 func (q *Query) DelegatorValidators(delegator string) (*distributionTypes.QueryDelegatorValidatorsResponse, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
-	return DelegatorValidatorsRPC(q, delegator)
+	return distribution_DelegatorValidatorsRPC(q, delegator)
 }
 
 // Tendermint queries
