@@ -118,7 +118,7 @@ func TxsRPC(q *Query, events []string) (*coretypes.ResultTxSearch, error) {
 		return nil, errors.New("must declare at least one event to search")
 	}
 
-	page := int(q.Options.Pagination.Offset / q.Options.Pagination.Limit)
+	page := int(q.Options.Pagination.Offset/q.Options.Pagination.Limit) + 1 // page is 1-indexed, not 0-indexed
 	limit := int(q.Options.Pagination.Limit)
 
 	res, err := q.Client.RPCClient.TxSearch(context.Background(), strings.Join(events, " AND "), true, &page, &limit, "")
