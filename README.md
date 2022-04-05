@@ -122,6 +122,5 @@ After generating or restoring a key, it should appear in your list by running: `
 To see the key encoded for use on other chains run `lens keys enumerate <key_name>`. 
 
 
-## --QUICKSTART EXAMPLES--
----
-
+## --EXAMPLES--
+Find examples of using Lens as a Go module in our [Examples Repository](https://github.com/strangelove-ventures/lens-examples)
