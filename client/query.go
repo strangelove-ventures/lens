@@ -2,7 +2,12 @@ package client
 
 import (
 	"context"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"strings"
+
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -212,6 +217,37 @@ func (cc *ChainClient) QueryTotalSupply(ctx context.Context, pageReq *query.Page
 
 func (cc *ChainClient) QueryDenomsMetadata(ctx context.Context, pageReq *query.PageRequest) (*bankTypes.QueryDenomsMetadataResponse, error) {
 	return bankTypes.NewQueryClient(cc).DenomsMetadata(ctx, &bankTypes.QueryDenomsMetadataRequest{Pagination: pageReq})
+}
+
+// QueryTx takes a hex encoded tx hash and decodes it before attempting to query the tx via the RPCClient.
+func (cc *ChainClient) QueryTx(ctx context.Context, hashHex string, prove bool) (*ctypes.ResultTx, error) {
+	hash, err := hex.DecodeString(hashHex)
+	if err != nil {
+		return nil, err
+	}
+
+	return cc.RPCClient.Tx(ctx, hash, prove)
+}
+
+// QueryTxs returns an array of transactions related to the specified event search criteria.
+func (cc *ChainClient) QueryTxs(ctx context.Context, page, limit int, events []string) ([]*ctypes.ResultTx, error) {
+	if len(events) == 0 {
+		return nil, errors.New("must declare at least one event to search")
+	}
+
+	if page <= 0 {
+		return nil, errors.New("page must greater than 0")
+	}
+
+	if limit <= 0 {
+		return nil, errors.New("limit must greater than 0")
+	}
+
+	res, err := cc.RPCClient.TxSearch(ctx, strings.Join(events, " AND "), true, &page, &limit, "")
+	if err != nil {
+		return nil, err
+	}
+	return res.Txs, nil
 }
 
 func DefaultPageRequest() *query.PageRequest {
