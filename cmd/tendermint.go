@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"encoding/hex"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -390,14 +389,12 @@ func queryTxCmd(a *appState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			h, err := hex.DecodeString(args[0])
+
+			block, err := cl.QueryTx(cmd.Context(), args[0], prove)
 			if err != nil {
 				return err
 			}
-			block, err := cl.RPCClient.Tx(cmd.Context(), h, prove)
-			if err != nil {
-				return err
-			}
+
 			return cl.PrintObject(block)
 		},
 	}
