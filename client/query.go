@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"strings"
+
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
