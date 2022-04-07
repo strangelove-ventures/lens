@@ -25,6 +25,13 @@ func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxR
 		return errRes, nil
 	}
 
+	if syncRes.Codespace == sdkerrors.RootCodespace && syncRes.Code == sdkerrors.ErrWrongSequence.ABCICode() {
+		// When the transaction was being built, it was the wrong sequence number.
+		// It is the caller's responsibility to rebuild the transaction
+		// with the correct sequence number.
+		return nil, sdkerrors.ErrWrongSequence
+	}
+
 	// TODO: maybe we need to check if the node has tx indexing enabled?
 	// if not, we need to find a new way to block until inclusion in a block
 
