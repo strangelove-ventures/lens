@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -168,20 +168,15 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 }
 
 func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
-	var (
-		txBytes []byte
-		err     error
-		res     abci.ResponseQuery
-		simRes  txtypes.SimulateResponse
-	)
-
-	if err = retry.Do(func() error {
+	var txBytes []byte
+	if err := retry.Do(func() error {
+		var err error
 		txBytes, err = BuildSimTx(txf, msgs...)
 		if err != nil {
 			return err
 		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
+		return nil
+	}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr); err != nil {
 		return txtypes.SimulateResponse{}, 0, err
 	}
 
@@ -190,22 +185,20 @@ func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, msgs ..
 		Data: txBytes,
 	}
 
-	if err = retry.Do(func() error {
+	var res abci.ResponseQuery
+	if err := retry.Do(func() error {
+		var err error
 		res, err = cc.QueryABCI(ctx, simQuery)
 		if err != nil {
 			return err
 		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
+		return nil
+	}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr); err != nil {
 		return txtypes.SimulateResponse{}, 0, err
 	}
 
-	if err = retry.Do(func() error {
-		if err = simRes.Unmarshal(res.Value); err != nil {
-			return err
-		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
+	var simRes txtypes.SimulateResponse
+	if err := simRes.Unmarshal(res.Value); err != nil {
 		return txtypes.SimulateResponse{}, 0, err
 	}
 
