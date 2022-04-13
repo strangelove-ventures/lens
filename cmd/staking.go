@@ -3,7 +3,6 @@ package cmd
 import (
 	"strings"
 
-	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -126,10 +125,56 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 	return cmd
 }
 
+func stakingParamsCmd(a *appState) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "parameters",
+		Aliases: []string{"params"},
+		Short:   "query things about a chain's staking params",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := a.Config.GetDefaultClient()
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
+			params, err := query.Staking_Params()
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(params.Params)
+		},
+	}
+
+	return cmd
+}
+
+func stakingPoolCmd(a *appState) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "pool",
+		Short: "query things about a chain's staking pool",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := a.Config.GetDefaultClient()
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
+			pool, err := query.Staking_Pool()
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(pool.Pool)
+		},
+	}
+
+	return cmd
+}
+
 func stakingDelegationsCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delegations [delegator-addr]",
-		Short: "query all delegations for a delegator address",
+		Use:     "delegations [delegator-addr]",
+		Aliases: []string{"dels"},
+		Short:   "query all delegations for a delegator address",
 		Long: strings.TrimSpace(`query delegations for an individual delegator on all validators.
 
 Example:
@@ -138,21 +183,16 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
-			pr, err := sdkclient.ReadPageRequest(cmd.Flags())
+			opts, err := queryOptionsFromFlags(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			height, err := ReadHeight(cmd.Flags())
+			query := query.Query{Client: cl, Options: opts}
+			response, err := query.Staking_DelegatorDelegations(args[0])
 			if err != nil {
 				return err
 			}
-			options := query.QueryOptions{Pagination: pr, Height: height}
-			query := query.Query{cl, &options}
-			response, err := query.Delegations(args[0])
-			if err != nil {
-				return err
-			}
-			return cl.PrintObject(response)
+			return cl.PrintObject(response.DelegationResponses)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
@@ -162,8 +202,9 @@ $ lens query staking delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
 
 func stakingDelegationCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delegation [delegator-addr] [validator-addr]",
-		Short: "query a delegation based on a delegator address and validator address",
+		Use:     "delegation [delegator-addr] [validator-addr]",
+		Aliases: []string{"del"},
+		Short:   "query a delegation based on a delegator address and validator address",
 		Long: strings.TrimSpace(`query delegations for an individual delegator on an individual validator.
 
 Example:
@@ -172,19 +213,86 @@ $ lens query staking delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p co
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
-			cq := query.Query{Client: cl, Options: query.DefaultOptions()}
-			delegator := args[0]
-			validator := args[1]
-			response, err := cq.Delegation(delegator, validator)
+			opts, err := queryOptionsFromFlags(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			return cl.PrintObject(response)
+			query := query.Query{Client: cl, Options: opts}
+			delegator := args[0]
+			validator := args[1]
+			response, err := query.Staking_Delegation(delegator, validator)
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(response.DelegationResponse)
 		},
 	}
 
 	flags.AddQueryFlagsToCmd(cmd)
 
+	return cmd
+}
+
+func stakingUnbondingDelegationCmd(a *appState) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "unbonding-delegation [delegator-addr] [validator-addr]",
+		Aliases: []string{"unbonding", "ubd"},
+		Short:   "query an unbonding delegation based on a delegator address and validator address",
+		Long: strings.TrimSpace(`query unbonding delegations for an individual delegator on an individual validator.
+
+Example:
+$ lens query staking unbonding-delegation cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p cosmosvaloper1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj
+`),
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := a.Config.GetDefaultClient()
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
+			delegator := args[0]
+			validator := args[1]
+			response, err := query.Staking_UnbondingDelegation(delegator, validator)
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(response.Unbond)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func stakingUnbondingDelegationsCmd(a *appState) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "unbonding-delegations [delegator-addr]",
+		Aliases: []string{"unbondings", "ubds"},
+		Short:   "query all unbonding delegations for a delegator address",
+		Long: strings.TrimSpace(`query delegations for an individual delegator on all validators.
+
+Example:
+$ lens query staking unbonding-delegations cosmos1gghjut3ccd8ay0zduzj64hwre2fxs9ld75ru9p
+`),
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := a.Config.GetDefaultClient()
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
+			response, err := query.Staking_DelegatorUnbondingDelegations(args[0])
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(response.UnbondingResponses)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	flags.AddPaginationFlagsToCmd(cmd, "unbonding-delegations")
 	return cmd
 }
 
@@ -201,18 +309,53 @@ $ lens query staking validator-delegations [validator address (valoper)]
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
-			pr, err := sdkclient.ReadPageRequest(cmd.Flags())
+			opts, err := queryOptionsFromFlags(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			height, err := ReadHeight(cmd.Flags())
+			query := query.Query{Client: cl, Options: opts}
+			response, err := query.Staking_ValidatorDelegations(args[0])
 			if err != nil {
 				return err
 			}
-			validator := args[0]
-			options := query.QueryOptions{Pagination: pr, Height: height}
-			query := query.Query{cl, &options}
-			response, err := query.ValidatorDelegations(validator)
+			return cl.PrintObject(response.DelegationResponses)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
+	flags.AddPaginationFlagsToCmd(cmd, "validator-delegations")
+	return cmd
+}
+
+func stakingValidatorsCmd(a *appState) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "validators [status]",
+		Aliases: []string{"vals", "vs"},
+		Short:   "query all validators for a status",
+		Long: strings.TrimSpace(`query validators.
+
+Example:
+$ lens query staking validators <bonded|unbonded|unbonding>
+`),
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := a.Config.GetDefaultClient()
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
+			var status string
+			switch args[0] {
+			case "bonded":
+				status = "BOND_STATUS_BONDED"
+			case "unbonded":
+				status = "BOND_STATUS_UNBONDED"
+			case "unbonding":
+				status = "BOND_STATUS_UNBONDING"
+			default:
+				status = "BOND_STATUS_BONDED"
+			}
+			response, err := query.Staking_Validators(status)
 			if err != nil {
 				return err
 			}
@@ -220,6 +363,36 @@ $ lens query staking validator-delegations [validator address (valoper)]
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
-	flags.AddPaginationFlagsToCmd(cmd, "validator-delegations")
+	flags.AddPaginationFlagsToCmd(cmd, "validators")
+	return cmd
+}
+
+func stakingValidatorCmd(a *appState) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "validator [address]",
+		Aliases: []string{"val", "v"},
+		Short:   "query validator for an address",
+		Long: strings.TrimSpace(`query validator.
+
+Example:
+$ lens query staking validator [valoper_address]
+`),
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cl := a.Config.GetDefaultClient()
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
+
+			response, err := query.Staking_Validator(args[0])
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(response)
+		},
+	}
+	flags.AddQueryFlagsToCmd(cmd)
 	return cmd
 }

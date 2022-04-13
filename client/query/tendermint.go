@@ -1,7 +1,11 @@
 package query
 
 import (
+	"context"
 	"encoding/hex"
+	"errors"
+	"strings"
+
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -101,6 +105,23 @@ func ABCIQueryRPC(q *Query, path string, data string, prove bool) (*coretypes.Re
 		Prove:  prove,
 	}
 	res, err := q.Client.RPCClient.ABCIQueryWithOptions(ctx, path, []byte(data), opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// QueryTxs returns an results of a TxSearch for a given tag
+func TxsRPC(q *Query, events []string) (*coretypes.ResultTxSearch, error) {
+	if len(events) == 0 {
+		return nil, errors.New("must declare at least one event to search")
+	}
+
+	page := int(q.Options.Pagination.Offset/q.Options.Pagination.Limit) + 1 // page is 1-indexed, not 0-indexed
+	limit := int(q.Options.Pagination.Limit)
+
+	res, err := q.Client.RPCClient.TxSearch(context.Background(), strings.Join(events, " AND "), true, &page, &limit, "")
 	if err != nil {
 		return nil, err
 	}
