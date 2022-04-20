@@ -10,6 +10,10 @@ import (
 	"github.com/strangelove-ventures/lens/client/query"
 )
 
+const (
+	gRPCSecureOnlyFlag = "secure-only"
+)
+
 func peersFlag(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	cmd.Flags().Bool("peers", false, "Comma-delimited list of peers to connect to for syncing")
 	v.BindPFlag("peers", cmd.Flags().Lookup("peers"))
@@ -31,6 +35,15 @@ func limitFlag(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 func skipConfirm(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	cmd.Flags().BoolP("skip", "y", false, "output using yaml")
 	v.BindPFlag("skip", cmd.Flags().Lookup("skip"))
+	return cmd
+}
+
+func gRPCFlags(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
+	cmd.Flags().Bool(gRPCSecureOnlyFlag, false, "do not fall back to skipping TLS verification when connecting to server")
+	if err := v.BindPFlag(gRPCSecureOnlyFlag, cmd.Flags().Lookup(gRPCSecureOnlyFlag)); err != nil {
+		panic(err)
+	}
+
 	return cmd
 }
 
