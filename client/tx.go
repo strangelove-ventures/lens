@@ -81,11 +81,19 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 		cc.Codec.Marshaler.MustMarshalJSON(msg)
 	}
 
-	done := cc.SetSDKContext()
-	if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+	err = func() error {
+		done := cc.SetSDKContext()
+		// ensure that we allways call done, even in case of an error or panic
+		defer done()
+		if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+			return err
+		}
+		return nil
+	}()
+
+	if err != nil {
 		return nil, err
 	}
-	done()
 
 	// Generate the transaction bytes
 	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
