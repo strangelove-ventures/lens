@@ -255,18 +255,6 @@ func dynamicInspect(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, meth
 				continue
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), svcDesc.GetFullyQualifiedName())
-			continue
-
-			proto, err := pp.PrintProtoToString(svcDesc)
-			if err != nil {
-				a.Log.Info(
-					"Error converting to proto string",
-					zap.String("service_name", svcDesc.GetFullyQualifiedName()),
-					zap.Error(err),
-				)
-				continue
-			}
-			fmt.Fprintln(cmd.OutOrStdout(), proto)
 		}
 
 		return nil
