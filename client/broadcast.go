@@ -14,15 +14,65 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxResponse, err error) {
+const (
+	defaultBroadcastWaitTimeout = 10 * time.Minute
+)
+
+func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (*sdk.TxResponse, error) {
+	var (
+		blockTimeout time.Duration = defaultBroadcastWaitTimeout
+		err          error
+	)
+
+	if cc.Config.BlockTimeout != "" {
+		blockTimeout, err = time.ParseDuration(cc.Config.BlockTimeout)
+		if err != nil {
+			// Did you call Validate() method on ChainClientConfig struct
+			// before coming here?
+			return nil, err
+		}
+	}
+
+	return broadcastTx(
+		ctx,
+		cc.RPCClient,
+		cc.Codec.TxConfig.TxDecoder(),
+		tx,
+		blockTimeout,
+	)
+}
+
+type rpcTxBroadcaster interface {
+	Tx(ctx context.Context, hash []byte, prove bool) (*ctypes.ResultTx, error)
+	BroadcastTxSync(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
+
+	// TODO: implement commit and async as well
+	// BroadcastTxCommit(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTxCommit, error)
+	// BroadcastTxAsync(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
+}
+
+// broadcastTx broadcasts a TX and then waits for the TX to be included in the block.
+// The waiting will either be canceled after the waitTimeout has run out or the context
+// exited.
+func broadcastTx(
+	ctx context.Context,
+	broadcaster rpcTxBroadcaster,
+	txDecoder sdk.TxDecoder,
+	tx []byte,
+	waitTimeout time.Duration,
+) (*sdk.TxResponse, error) {
 	// broadcast tx sync waits for check tx to pass
 	// NOTE: this can return w/ a timeout
 	// need to investigate if this will leave the tx
 	// in the mempool or we can retry the broadcast at that
 	// point
-	syncRes, err := cc.RPCClient.BroadcastTxSync(ctx, tx)
-	if errRes := CheckTendermintError(err, tx); errRes != nil || syncRes == nil {
-		return errRes, nil
+	syncRes, err := broadcaster.BroadcastTxSync(ctx, tx)
+	if err != nil {
+		errRes := CheckTendermintError(err, tx)
+		if errRes != nil {
+			return errRes, nil
+		}
+		return nil, err
 	}
 
 	if syncRes.Codespace == sdkerrors.RootCodespace && syncRes.Code == sdkerrors.ErrWrongSequence.ABCICode() {
@@ -36,23 +86,26 @@ func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (res *sdk.TxR
 	// if not, we need to find a new way to block until inclusion in a block
 
 	// wait for tx to be included in a block
+	exitAfter := time.After(waitTimeout)
 	for {
 		select {
+		case <-exitAfter:
+			return nil, fmt.Errorf("timed out after: %d; %w", waitTimeout, ErrTimeoutAfterWaitingForTxBroadcast)
 		// TODO: this is potentially less than optimal and may
 		// be better as something configurable
 		case <-time.After(time.Millisecond * 100):
-			resTx, err := cc.RPCClient.Tx(ctx, syncRes.Hash, false)
+			resTx, err := broadcaster.Tx(ctx, syncRes.Hash, false)
 			if err == nil {
-				return cc.mkTxResult(resTx)
+				return mkTxResult(txDecoder, resTx)
 			}
 		case <-ctx.Done():
-			return
+			return nil, ctx.Err()
 		}
 	}
 }
 
-func (cc *ChainClient) mkTxResult(resTx *ctypes.ResultTx) (*sdk.TxResponse, error) {
-	txb, err := cc.Codec.TxConfig.TxDecoder()(resTx.Tx)
+func mkTxResult(txDecoder sdk.TxDecoder, resTx *ctypes.ResultTx) (*sdk.TxResponse, error) {
+	txb, err := txDecoder(resTx.Tx)
 	if err != nil {
 		return nil, err
 	}
