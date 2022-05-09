@@ -22,6 +22,7 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
 	ibc "github.com/cosmos/ibc-go/v2/modules/core"
+	osmosisGamm "github.com/osmosis-labs/osmosis/v7/x/gamm"
 )
 
 var (
@@ -45,6 +46,7 @@ var (
 		upgrade.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 		ibc.AppModuleBasic{},
+		osmosisGamm.AppModuleBasic{},
 	}
 )
 
