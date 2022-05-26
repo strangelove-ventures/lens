@@ -4,6 +4,9 @@ import (
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distributionTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	connectiontypes "github.com/cosmos/ibc-go/v3/modules/core/03-connection/types"
+	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	"github.com/strangelove-ventures/lens/client"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -235,4 +238,60 @@ func (q *Query) ABCIInfo() (*coretypes.ResultABCIInfo, error) {
 func (q *Query) ABCIQuery(path string, data string, prove bool) (*coretypes.ResultABCIQuery, error) {
 	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
 	return ABCIQueryRPC(q, path, data, prove)
+}
+
+// IBC Queries
+
+// IBCQuery returns parameters for the IBC client submodule.
+func (q *Query) Ibc_ClientParams() (*clienttypes.QueryClientParamsResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ClientParamsRPC(q)
+}
+
+// Ibc_ClientState returns the client state for the specified IBC client.
+func (q *Query) Ibc_ClientState(clientId string) (*clienttypes.QueryClientStateResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ClientStateRPC(q, clientId)
+}
+
+// Ibc_ClientStates returns the client state for all IBC clients.
+func (q *Query) Ibc_ClientStates() (*clienttypes.QueryClientStatesResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ClientStatesRPC(q)
+}
+
+// Ibc_ConsensusState returns the consensus state for the specified IBC client and the given height.
+func (q *Query) Ibc_ConsensusState(clientId string, height clienttypes.Height) (*clienttypes.QueryConsensusStateResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ConsensusStateRPC(q, clientId, height)
+}
+
+// Ibc_ConsensusState returns all consensus states for the specified IBC client.
+func (q *Query) Ibc_ConsensusStates(clientId string) (*clienttypes.QueryConsensusStatesResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ConsensusStatesRPC(q, clientId)
+}
+
+// Ibc_Connection returns the connection state for the specified IBC connection.
+func (q *Query) Ibc_Connection(connectionId string) (*connectiontypes.QueryConnectionResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ConnectionRPC(q, connectionId)
+}
+
+// Ibc_Connections returns the connection state for all IBC connections.
+func (q *Query) Ibc_Connections() (*connectiontypes.QueryConnectionsResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ConnectionsRPC(q)
+}
+
+// Ibc_Channel returns the channel state for the specified IBC channel and port.
+func (q *Query) Ibc_Channel(channelId string, portId string) (*channeltypes.QueryChannelResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ChannelRPC(q, channelId, portId)
+}
+
+// Ibc_Channels returns the channel state for all IBC channels.
+func (q *Query) Ibc_Channels() (*channeltypes.QueryChannelsResponse, error) {
+	/// TODO: In the future have some logic to route the query to the appropriate client (gRPC or RPC)
+	return ibc_ChannelsRPC(q)
 }
