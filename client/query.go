@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	ctypes "github.com/tendermint/tendermint/rpc/coretypes"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"

@@ -3,7 +3,6 @@ package client
 import (
 	"time"
 
-	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authz "github.com/cosmos/cosmos-sdk/x/authz/module"
@@ -14,6 +13,7 @@ import (
 	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
 	feegrant "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/x/gov/client"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
@@ -34,7 +34,12 @@ var (
 		// TODO: add osmosis governance proposal types here
 		// TODO: add other proposal types here
 		gov.NewAppModuleBasic(
-			paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.ProposalHandler, upgradeclient.CancelProposalHandler,
+			[]client.ProposalHandler{
+				paramsclient.ProposalHandler,
+				distrclient.ProposalHandler,
+				upgradeclient.LegacyCancelProposalHandler,
+				upgradeclient.LegacyProposalHandler,
+			},
 		),
 		crisis.AppModuleBasic{},
 		distribution.AppModuleBasic{},
@@ -46,7 +51,6 @@ var (
 		upgrade.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 		ibc.AppModuleBasic{},
-		wasm.AppModuleBasic{},
 	}
 )
 

@@ -63,7 +63,7 @@ func NewChainClient(log *zap.Logger, ccc *ChainClientConfig, homepath string, in
 
 func (cc *ChainClient) Init() error {
 	// TODO: test key directory and return error if not created
-	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.KeyringOptions...)
+	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.Codec.Marshaler, cc.KeyringOptions...)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (cc *ChainClient) GetKeyAddress() (sdk.AccAddress, error) {
 	if err != nil {
 		return nil, err
 	}
-	return info.GetAddress(), nil
+	return info.GetAddress()
 }
 
 func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
@@ -101,7 +101,7 @@ func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 		return nil, err
 	}
 	httpClient.Timeout = timeout
-	rpcClient, err := rpchttp.NewWithClient(addr, "/websocket", httpClient)
+	rpcClient, err := rpchttp.NewWithClient(fmt.Sprintf("%s/websocket", addr), httpClient)
 	if err != nil {
 		return nil, err
 	}

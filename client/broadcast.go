@@ -9,8 +9,8 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/tendermint/tendermint/mempool"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	ctypes "github.com/tendermint/tendermint/rpc/coretypes"
+	"github.com/tendermint/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -91,7 +91,7 @@ func CheckTendermintError(err error, tx tmtypes.Tx) *sdk.TxResponse {
 	txHash := fmt.Sprintf("%X", tx.Hash())
 
 	switch {
-	case strings.Contains(errStr, strings.ToLower(mempool.ErrTxInCache.Error())):
+	case strings.Contains(errStr, strings.ToLower(types.ErrTxInCache.Error())):
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrTxInMempoolCache.ABCICode(),
 			Codespace: sdkerrors.ErrTxInMempoolCache.Codespace(),
