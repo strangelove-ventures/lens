@@ -78,7 +78,7 @@ func TestTendermintTx(t *testing.T) {
 		Tx:     []byte("some tx"),
 	}
 	mc := new(mocks.Client)
-	mc.On("Tx", mock.Anything, []byte{0x12, 0x34}, false).Return(&mockTx, nil)
+	mc.On("Tx", mock.Anything, bytes.HexBytes{0x12, 0x34}, false).Return(&mockTx, nil)
 
 	sys.OverrideClients("cosmoshub", cmd.ClientOverrides{
 		RPCClient: mc,

@@ -9,7 +9,8 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/tendermint/tendermint/libs/bytes"
+	ctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -41,11 +42,11 @@ func (m myFakeTx) ValidateBasic() error   { return nil }
 func (m myFakeTx) AsAny() *codectypes.Any { return &codectypes.Any{} }
 
 type fakeBroadcaster struct {
-	tx            func(context.Context, []byte, bool) (*ctypes.ResultTx, error)
+	tx            func(context.Context, bytes.HexBytes, bool) (*ctypes.ResultTx, error)
 	broadcastSync func(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
 }
 
-func (f fakeBroadcaster) Tx(ctx context.Context, hash []byte, prove bool) (*ctypes.ResultTx, error) {
+func (f fakeBroadcaster) Tx(ctx context.Context, hash bytes.HexBytes, prove bool) (*ctypes.ResultTx, error) {
 	if f.tx == nil {
 		return nil, nil
 	}
@@ -80,8 +81,8 @@ func TestBroadcast(t *testing.T) {
 						Hash: []byte(`123bob`),
 					}, nil
 				},
-				tx: func(_ context.Context, hash []byte, _ bool) (*ctypes.ResultTx, error) {
-					assert.Equal(t, []byte(`123bob`), hash)
+				tx: func(_ context.Context, hash bytes.HexBytes, _ bool) (*ctypes.ResultTx, error) {
+					assert.Equal(t, []byte(`123bob`), hash.Bytes())
 					return &ctypes.ResultTx{}, nil
 				},
 			},
@@ -104,7 +105,7 @@ func TestBroadcast(t *testing.T) {
 						Hash: []byte(`123bob`),
 					}, nil
 				},
-				tx: func(_ context.Context, hash []byte, _ bool) (*ctypes.ResultTx, error) {
+				tx: func(_ context.Context, hash bytes.HexBytes, _ bool) (*ctypes.ResultTx, error) {
 					<-time.After(time.Second)
 					// return doesn't matter because it will timeout before return will make sense
 					return nil, nil

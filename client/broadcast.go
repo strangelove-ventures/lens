@@ -9,6 +9,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/tendermint/tendermint/libs/bytes"
 	ctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	"github.com/tendermint/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -43,7 +44,7 @@ func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (*sdk.TxRespo
 }
 
 type rpcTxBroadcaster interface {
-	Tx(ctx context.Context, hash []byte, prove bool) (*ctypes.ResultTx, error)
+	Tx(ctx context.Context, hash bytes.HexBytes, prove bool) (*ctypes.ResultTx, error)
 	BroadcastTxSync(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
 
 	// TODO: implement commit and async as well

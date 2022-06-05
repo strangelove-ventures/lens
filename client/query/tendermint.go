@@ -3,6 +3,8 @@ package query
 import (
 	"context"
 	"encoding/hex"
+	"errors"
+	"strings"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/coretypes"
