@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/spf13/cobra"
@@ -117,7 +117,7 @@ func airdropCmd(a *appState) *cobra.Command {
 							return err
 						}
 						return nil
-					})
+					}, retry.Context(cmd.Context()))
 					multiMsg.Inputs = []banktypes.Input{}
 					multiMsg.Outputs = []banktypes.Output{}
 					amount = sdk.Coin{Denom: denom, Amount: sdk.NewInt(0)}

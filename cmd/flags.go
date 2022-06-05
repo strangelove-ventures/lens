@@ -3,10 +3,15 @@ package cmd
 import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/types/query"
+	tmquery "github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/strangelove-ventures/lens/client/query"
+)
+
+const (
+	gRPCSecureOnlyFlag = "secure-only"
 )
 
 func peersFlag(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
@@ -30,6 +35,15 @@ func limitFlag(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 func skipConfirm(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	cmd.Flags().BoolP("skip", "y", false, "output using yaml")
 	v.BindPFlag("skip", cmd.Flags().Lookup("skip"))
+	return cmd
+}
+
+func gRPCFlags(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
+	cmd.Flags().Bool(gRPCSecureOnlyFlag, false, "do not fall back to skipping TLS verification when connecting to server")
+	if err := v.BindPFlag(gRPCSecureOnlyFlag, cmd.Flags().Lookup(gRPCSecureOnlyFlag)); err != nil {
+		panic(err)
+	}
+
 	return cmd
 }
 
@@ -65,7 +79,7 @@ func paginationFlags(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 }
 
 // ReadPageRequest reads and builds the necessary page request flags for pagination.
-func ReadPageRequest(flagSet *pflag.FlagSet) (*query.PageRequest, error) {
+func ReadPageRequest(flagSet *pflag.FlagSet) (*tmquery.PageRequest, error) {
 	pageKey, _ := flagSet.GetString(flags.FlagPageKey)
 	offset, _ := flagSet.GetUint64(flags.FlagOffset)
 	limit, _ := flagSet.GetUint64(flags.FlagLimit)
@@ -81,7 +95,7 @@ func ReadPageRequest(flagSet *pflag.FlagSet) (*query.PageRequest, error) {
 		offset = (page - 1) * limit
 	}
 
-	return &query.PageRequest{
+	return &tmquery.PageRequest{
 		Key:        []byte(pageKey),
 		Offset:     offset,
 		Limit:      limit,
@@ -101,4 +115,18 @@ func ReadHeight(flagSet *pflag.FlagSet) (int64, error) {
 	} else {
 		return 0, nil
 	}
+}
+
+func queryOptionsFromFlags(flags *pflag.FlagSet) (*query.QueryOptions, error) {
+	// Query options
+	pr, err := ReadPageRequest(flags)
+	if err != nil {
+		return nil, err
+	}
+	height, err := ReadHeight(flags)
+	if err != nil {
+		return nil, err
+	}
+
+	return &query.QueryOptions{Pagination: pr, Height: height}, nil
 }

@@ -83,7 +83,7 @@ func bankBalanceCmd(a *appState) *cobra.Command {
 			encodedAddr := cl.MustEncodeAccAddr(address)
 			options := query.QueryOptions{Pagination: pr, Height: height}
 			query := query.Query{Client: cl, Options: &options}
-			balance, err := query.Balances(encodedAddr)
+			balance, err := query.Bank_Balances(encodedAddr)
 			if err != nil {
 				return err
 			}
@@ -113,7 +113,7 @@ func bankTotalSupplyCmd(a *appState) *cobra.Command {
 			}
 			options := query.QueryOptions{Pagination: pr, Height: height}
 			query := query.Query{Client: cl, Options: &options}
-			totalSupply, err := query.TotalSupply()
+			totalSupply, err := query.Bank_TotalSupply()
 			if err != nil {
 				return err
 			}
@@ -143,7 +143,7 @@ func bankDenomsMetadataCmd(a *appState) *cobra.Command {
 			}
 			options := query.QueryOptions{Pagination: pr, Height: height}
 			query := query.Query{Client: cl, Options: &options}
-			denoms, err := query.DenomsMetadata()
+			denoms, err := query.Bank_DenomsMetadata()
 			if err != nil {
 				return err
 			}

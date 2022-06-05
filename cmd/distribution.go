@@ -50,11 +50,14 @@ $ lens tx withdraw-rewards --from mykey --all
 			}
 			encodedAddr := cl.MustEncodeAccAddr(delAddr)
 			msgs := []sdk.Msg{}
-
-			query := query.Query{Client: cl, Options: query.DefaultOptions()}
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
 			if all, _ := cmd.Flags().GetBool(FlagAll); all {
 
-				resp, err := query.DelegatorValidators(encodedAddr)
+				resp, err := query.Distribution_DelegatorValidators(encodedAddr)
 				if err != nil {
 					return err
 				}
@@ -100,13 +103,16 @@ func distributionParamsCmd(a *appState) *cobra.Command {
 		Short: "query things about a chain's distribution params",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
-
-			params, err := cl.QueryDistributionParams(cmd.Context())
+			opts, err := queryOptionsFromFlags(cmd.Flags())
 			if err != nil {
 				return err
 			}
-
-			return cl.PrintObject(params)
+			query := query.Query{Client: cl, Options: opts}
+			params, err := query.Distribution_Params()
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(params.Params)
 		},
 	}
 
@@ -119,13 +125,16 @@ func distributionCommunityPoolCmd(a *appState) *cobra.Command {
 		Short: "query things about a chain's community pool",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
-
-			pool, err := cl.QueryDistributionCommunityPool(cmd.Context())
+			opts, err := queryOptionsFromFlags(cmd.Flags())
 			if err != nil {
 				return err
 			}
-
-			return cl.PrintObject(pool)
+			query := query.Query{Client: cl, Options: opts}
+			pool, err := query.Distribution_CommunityPool()
+			if err != nil {
+				return err
+			}
+			return cl.PrintObject(pool.Pool)
 		},
 	}
 
@@ -139,17 +148,17 @@ func distributionCommissionCmd(a *appState) *cobra.Command {
 		Short: "query a specific validator's commission",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
-			address, err := cl.DecodeBech32ValAddr(args[0])
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
+			commission, err := query.Distribution_ValidatorCommission(args[0])
 			if err != nil {
 				return err
 			}
 
-			commission, err := cl.QueryDistributionCommission(cmd.Context(), address)
-			if err != nil {
-				return err
-			}
-
-			return cl.PrintObject(commission)
+			return cl.PrintObject(commission.Commission)
 		},
 	}
 
@@ -163,6 +172,11 @@ func distributionRewardsCmd(a *appState) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
 			delAddr, err := cl.AccountFromKeyOrAddress(args[0])
 			if err != nil {
 				return err
@@ -173,12 +187,12 @@ func distributionRewardsCmd(a *appState) *cobra.Command {
 				return err
 			}
 
-			rewards, err := cl.QueryDistributionRewards(cmd.Context(), delAddr, valAddr)
+			rewards, err := query.Distribution_DelegationRewards(delAddr.String(), valAddr.String())
 			if err != nil {
 				return err
 			}
 
-			return cl.PrintObject(rewards)
+			return cl.PrintObject(rewards.Rewards)
 		},
 	}
 
@@ -192,11 +206,11 @@ func distributionSlashesCmd(a *appState) *cobra.Command {
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
-
-			pageReq, err := ReadPageRequest(cmd.Flags())
+			opts, err := queryOptionsFromFlags(cmd.Flags())
 			if err != nil {
 				return err
 			}
+			query := query.Query{Client: cl, Options: opts}
 
 			address, err := cl.DecodeBech32ValAddr(args[0])
 			if err != nil {
@@ -213,7 +227,7 @@ func distributionSlashesCmd(a *appState) *cobra.Command {
 				return err
 			}
 
-			slashes, err := cl.QueryDistributionSlashes(cmd.Context(), address, startHeight, endHeight, pageReq)
+			slashes, err := query.Distribution_ValidatorSlashes(address.String(), startHeight, endHeight)
 			if err != nil {
 				return err
 			}
@@ -232,18 +246,22 @@ func distributionValidatorRewardsCmd(a *appState) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cl := a.Config.GetDefaultClient()
-
+			opts, err := queryOptionsFromFlags(cmd.Flags())
+			if err != nil {
+				return err
+			}
+			query := query.Query{Client: cl, Options: opts}
 			address, err := cl.DecodeBech32ValAddr(args[0])
 			if err != nil {
 				return err
 			}
 
-			rewards, err := cl.QueryDistributionValidatorRewards(cmd.Context(), address)
+			rewards, err := query.Distribution_ValidatorOutstandingRewards(address.String())
 			if err != nil {
 				return err
 			}
 
-			return cl.PrintObject(rewards)
+			return cl.PrintObject(rewards.Rewards)
 		},
 	}
 	return cmd
@@ -275,7 +293,6 @@ func distributionDelegatorValidatorsCmd(a *appState) *cobra.Command {
 				_, err := cl.DecodeBech32AccAddr(delegator)
 				if err != nil {
 					return fmt.Errorf("\n please specify a valid delegator's address for chain '%s'. Address should start with '%s'", cl.Config.ChainID, cl.Config.AccountPrefix)
-					return err
 				}
 			}
 
@@ -285,23 +302,16 @@ func distributionDelegatorValidatorsCmd(a *appState) *cobra.Command {
 			}
 			encodedAddr := cl.MustEncodeAccAddr(address)
 
-			// Query options
-			pr, err := ReadPageRequest(cmd.Flags())
+			opts, err := queryOptionsFromFlags(cmd.Flags())
 			if err != nil {
 				return err
 			}
-			height, err := ReadHeight(cmd.Flags())
+			query := query.Query{Client: cl, Options: opts}
+			delValidators, err := query.Distribution_DelegatorValidators(encodedAddr)
 			if err != nil {
 				return err
 			}
-
-			options := query.QueryOptions{Pagination: pr, Height: height}
-			query := query.Query{Client: cl, Options: &options}
-			delValidators, err := query.DelegatorValidators(encodedAddr)
-			if err != nil {
-				return err
-			}
-			return cl.PrintObject(delValidators)
+			return cl.PrintObject(delValidators.Validators)
 		},
 	}
 	flags.AddQueryFlagsToCmd(cmd)
