@@ -8,10 +8,31 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/go-bip39"
+	ethhd "github.com/tharsis/ethermint/crypto/hd"
 )
 
+var (
+	// SupportedAlgorithms defines the list of signing algorithms used on Evmos:
+	//  - secp256k1     (Cosmos)
+	//  - eth_secp256k1 (Ethereum)
+	SupportedAlgorithms = keyring.SigningAlgoList{hd.Secp256k1, ethhd.EthSecp256k1}
+	// SupportedAlgorithmsLedger defines the list of signing algorithms used on Evmos for the Ledger device:
+	//  - secp256k1     (Cosmos)
+	//  - eth_secp256k1 (Ethereum)
+	SupportedAlgorithmsLedger = keyring.SigningAlgoList{hd.Secp256k1, ethhd.EthSecp256k1}
+)
+
+// Option defines a function keys options for the ethereum Secp256k1 curve.
+// It supports secp256k1 and eth_secp256k1 keys for accounts.
+func LensKeyringAlgoOptions() keyring.Option {
+	return func(options *keyring.Options) {
+		options.SupportedAlgos = SupportedAlgorithms
+		options.SupportedAlgosLedger = SupportedAlgorithmsLedger
+	}
+}
+
 func (cc *ChainClient) CreateKeystore(path string) error {
-	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.KeyringOptions...)
+	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, LensKeyringAlgoOptions())
 	if err != nil {
 		return err
 	}
@@ -28,16 +49,16 @@ func (cc *ChainClient) KeystoreCreated(path string) bool {
 	return true
 }
 
-func (cc *ChainClient) AddKey(name string, coinType uint32) (output *KeyOutput, err error) {
-	ko, err := cc.KeyAddOrRestore(name, coinType)
+func (cc *ChainClient) AddKey(name string, coinType uint32, algo hd.PubKeyType) (output *KeyOutput, err error) {
+	ko, err := cc.KeyAddOrRestore(name, coinType, algo)
 	if err != nil {
 		return nil, err
 	}
 	return ko, nil
 }
 
-func (cc *ChainClient) RestoreKey(name, mnemonic string, coinType uint32) (address string, err error) {
-	ko, err := cc.KeyAddOrRestore(name, coinType, mnemonic)
+func (cc *ChainClient) RestoreKey(name, mnemonic string, coinType uint32, algo hd.PubKeyType) (address string, err error) {
+	ko, err := cc.KeyAddOrRestore(name, coinType, algo, mnemonic)
 	if err != nil {
 		return "", err
 	}
@@ -93,9 +114,10 @@ func (cc *ChainClient) ExportPrivKeyArmor(keyName string) (armor string, err err
 	return cc.Keybase.ExportPrivKeyArmor(keyName, ckeys.DefaultKeyPass)
 }
 
-func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, mnemonic ...string) (*KeyOutput, error) {
+func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, algo hd.PubKeyType, mnemonic ...string) (*KeyOutput, error) {
 	var mnemonicStr string
 	var err error
+	var info keyring.Info
 
 	if len(mnemonic) > 0 {
 		mnemonicStr = mnemonic[0]
@@ -106,8 +128,18 @@ func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, mnemonic
 		}
 	}
 
-	info, err := cc.Keybase.NewAccount(keyName, mnemonicStr, "", hd.CreateHDPath(coinType, 0, 0).String(), hd.Secp256k1)
-	if err != nil {
+	switch algo {
+	case hd.Secp256k1Type:
+		info, err = cc.Keybase.NewAccount(keyName, mnemonicStr, "", hd.CreateHDPath(coinType, 0, 0).String(), hd.Secp256k1)
+		if err != nil {
+			return nil, err
+		}
+	case ethhd.EthSecp256k1Type:
+		info, err = cc.Keybase.NewAccount(keyName, mnemonicStr, "", hd.CreateHDPath(coinType, 0, 0).String(), ethhd.EthSecp256k1)
+		if err != nil {
+			return nil, err
+		}
+	default:
 		return nil, err
 	}
 
