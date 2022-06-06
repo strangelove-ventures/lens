@@ -17,6 +17,7 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	libclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	ethhd "github.com/tharsis/ethermint/crypto/hd"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
@@ -49,7 +50,7 @@ func NewChainClient(log *zap.Logger, ccc *ChainClientConfig, homepath string, in
 	cc := &ChainClient{
 		log: log,
 
-		KeyringOptions: kro,
+		KeyringOptions: append([]keyring.Option{ethhd.EthSecp256k1Option()}, kro...),
 		Config:         ccc,
 		Input:          input,
 		Output:         output,
