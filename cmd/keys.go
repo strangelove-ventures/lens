@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -16,9 +15,8 @@ import (
 )
 
 const (
-	flagCoinType            = "coin-type"
-	flagKeyAlgorithm        = "algo"
-	defaultCoinType  uint32 = sdk.CoinType
+	flagCoinType           = "coin-type"
+	defaultCoinType uint32 = sdk.CoinType
 )
 
 // keysCmd represents the keys command
@@ -75,12 +73,7 @@ $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 				return err
 			}
 
-			algo, err := cmd.Flags().GetString(flagKeyAlgorithm)
-			if err != nil {
-				return err
-			}
-
-			ko, err := cl.AddKey(keyName, coinType, hd.PubKeyType(algo))
+			ko, err := cl.AddKey(keyName, coinType)
 			if err != nil {
 				return err
 			}
@@ -97,8 +90,6 @@ $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 		},
 	}
 	cmd.Flags().Uint32(flagCoinType, defaultCoinType, "coin type number for HD derivation")
-	cmd.Flags().String(flagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-
 	return cmd
 }
 
@@ -130,12 +121,7 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 				return err
 			}
 
-			algo, err := cmd.Flags().GetString(flagKeyAlgorithm)
-			if err != nil {
-				return err
-			}
-
-			address, err := cl.RestoreKey(keyName, string(mnemonic), coinType, hd.PubKeyType(algo))
+			address, err := cl.RestoreKey(keyName, string(mnemonic), coinType)
 			if err != nil {
 				return err
 			}
@@ -145,7 +131,6 @@ $ %s k r --chain ibc-1 faucet-key`, appName, appName)),
 		},
 	}
 	cmd.Flags().Uint32(flagCoinType, defaultCoinType, "coin type number for HD derivation")
-	cmd.Flags().String(flagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	return cmd
 }
 

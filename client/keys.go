@@ -49,16 +49,16 @@ func (cc *ChainClient) KeystoreCreated(path string) bool {
 	return true
 }
 
-func (cc *ChainClient) AddKey(name string, coinType uint32, algo hd.PubKeyType) (output *KeyOutput, err error) {
-	ko, err := cc.KeyAddOrRestore(name, coinType, algo)
+func (cc *ChainClient) AddKey(name string, coinType uint32) (output *KeyOutput, err error) {
+	ko, err := cc.KeyAddOrRestore(name, coinType)
 	if err != nil {
 		return nil, err
 	}
 	return ko, nil
 }
 
-func (cc *ChainClient) RestoreKey(name, mnemonic string, coinType uint32, algo hd.PubKeyType) (address string, err error) {
-	ko, err := cc.KeyAddOrRestore(name, coinType, algo, mnemonic)
+func (cc *ChainClient) RestoreKey(name, mnemonic string, coinType uint32) (address string, err error) {
+	ko, err := cc.KeyAddOrRestore(name, coinType, mnemonic)
 	if err != nil {
 		return "", err
 	}
@@ -114,10 +114,11 @@ func (cc *ChainClient) ExportPrivKeyArmor(keyName string) (armor string, err err
 	return cc.Keybase.ExportPrivKeyArmor(keyName, ckeys.DefaultKeyPass)
 }
 
-func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, algo hd.PubKeyType, mnemonic ...string) (*KeyOutput, error) {
+func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, mnemonic ...string) (*KeyOutput, error) {
 	var mnemonicStr string
 	var err error
 	var info keyring.Info
+	algo := keyring.SignatureAlgo(hd.Secp256k1)
 
 	if len(mnemonic) > 0 {
 		mnemonicStr = mnemonic[0]
@@ -128,18 +129,12 @@ func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, algo hd.
 		}
 	}
 
-	switch algo {
-	case hd.Secp256k1Type:
-		info, err = cc.Keybase.NewAccount(keyName, mnemonicStr, "", hd.CreateHDPath(coinType, 0, 0).String(), hd.Secp256k1)
-		if err != nil {
-			return nil, err
-		}
-	case ethhd.EthSecp256k1Type:
-		info, err = cc.Keybase.NewAccount(keyName, mnemonicStr, "", hd.CreateHDPath(coinType, 0, 0).String(), ethhd.EthSecp256k1)
-		if err != nil {
-			return nil, err
-		}
-	default:
+	if coinType == 60 {
+		algo = keyring.SignatureAlgo(ethhd.EthSecp256k1)
+	}
+
+	info, err = cc.Keybase.NewAccount(keyName, mnemonicStr, "", hd.CreateHDPath(coinType, 0, 0).String(), algo)
+	if err != nil {
 		return nil, err
 	}
 

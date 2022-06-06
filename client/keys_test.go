@@ -3,7 +3,6 @@ package client_test
 import (
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/strangelove-ventures/lens/client"
 	"go.uber.org/zap/zaptest"
 )
@@ -15,7 +14,6 @@ func TestKeyRestore(t *testing.T) {
 	expectedAddress := "cosmos15cw268ckjj2hgq8q3jf68slwjjcjlvxy57je2u"
 	var coinType uint32
 	coinType = 118 // Cosmos coin type used in address derivation
-	algo := hd.Secp256k1Type
 
 	homepath := t.TempDir()
 	cl, err := client.NewChainClient(
@@ -27,7 +25,7 @@ func TestKeyRestore(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = cl.DeleteKey(keyName) // Delete if test is being run again
-	address, err := cl.RestoreKey(keyName, mnemonic, coinType, algo)
+	address, err := cl.RestoreKey(keyName, mnemonic, coinType)
 	if err != nil {
 		t.Fatalf("Error while restoring mnemonic: %v", err)
 	}
