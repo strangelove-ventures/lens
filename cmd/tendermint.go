@@ -310,16 +310,16 @@ func netInfoCmd(a *appState) *cobra.Command {
 			}
 			peersList := make([]string, 0, len(block.Peers))
 			for _, peer := range block.Peers {
-				url, err := url.Parse(peer.NodeInfo.ListenAddr)
+				url, err := url.Parse(peer.URL)
 				if err != nil {
 					a.Log.Info(
 						"Failed to parse URL",
-						zap.String("url", peer.NodeInfo.ListenAddr),
+						zap.String("url", peer.URL),
 						zap.Error(err),
 					)
 					continue
 				}
-				peersList = append(peersList, fmt.Sprintf("%s@%s:%s", peer.NodeInfo.ID(), peer.RemoteIP, url.Port()))
+				peersList = append(peersList, fmt.Sprintf("%s@%s:%s", peer.ID, url.Host, url.Port()))
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), strings.Join(peersList, ","))
 			return nil

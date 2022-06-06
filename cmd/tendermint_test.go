@@ -11,9 +11,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/bytes"
-	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/rpc/client/mocks"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/tendermint/tendermint/rpc/coretypes"
 	"github.com/tendermint/tendermint/types"
 )
 
@@ -79,7 +78,7 @@ func TestTendermintTx(t *testing.T) {
 		Tx:     []byte("some tx"),
 	}
 	mc := new(mocks.Client)
-	mc.On("Tx", mock.Anything, []byte{0x12, 0x34}, false).Return(&mockTx, nil)
+	mc.On("Tx", mock.Anything, bytes.HexBytes{0x12, 0x34}, false).Return(&mockTx, nil)
 
 	sys.OverrideClients("cosmoshub", cmd.ClientOverrides{
 		RPCClient: mc,
@@ -103,7 +102,7 @@ func TestTendermintStatus(t *testing.T) {
 
 	// Arbitrary status response with a few fields filled in.
 	mockStatus := coretypes.ResultStatus{
-		NodeInfo: p2p.DefaultNodeInfo{
+		NodeInfo: types.NodeInfo{
 			Moniker: "foo bar",
 		},
 		SyncInfo: coretypes.SyncInfo{

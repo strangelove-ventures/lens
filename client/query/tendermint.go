@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/tendermint/tendermint/rpc/coretypes"
 )
 
 // BlockRPC returns information about a block
