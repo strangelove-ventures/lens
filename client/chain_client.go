@@ -101,7 +101,7 @@ func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 		return nil, err
 	}
 	httpClient.Timeout = timeout
-	rpcClient, err := rpchttp.NewWithClient(fmt.Sprintf("%s/websocket", addr), httpClient)
+	rpcClient, err := rpchttp.NewWithClient(addr, httpClient)
 	if err != nil {
 		return nil, err
 	}
