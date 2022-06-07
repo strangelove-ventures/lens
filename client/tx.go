@@ -2,13 +2,13 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
@@ -178,10 +178,15 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 }
 
 func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
+	keyInfo, err := cc.Keybase.Key(cc.Config.Key)
+	if err != nil {
+		return txtypes.SimulateResponse{}, 0, err
+	}
+
 	var txBytes []byte
 	if err := retry.Do(func() error {
 		var err error
-		txBytes, err = BuildSimTx(txf, msgs...)
+		txBytes, err = BuildSimTx(keyInfo, txf, msgs...)
 		if err != nil {
 			return err
 		}
@@ -279,23 +284,15 @@ type protoTxProvider interface {
 
 // BuildSimTx creates an unsigned tx with an empty single signature and returns
 // the encoded transaction or an error if the unsigned transaction cannot be built.
-func BuildSimTx(txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
+func BuildSimTx(info keyring.Info, txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
 	txb, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
 		return nil, err
 	}
 
 	var pk cryptotypes.PubKey = &secp256k1.PubKey{} // use default public key type
-	keybase := txf.Keybase()
-	if keybase != nil {
-		infos, _ := keybase.List()
-		if len(infos) == 0 {
-			return nil, errors.New("cannot build signature for simulation, key infos slice is empty")
-		}
 
-		// take the first info record just for simulation purposes
-		pk = infos[0].GetPubKey()
-	}
+	pk = info.GetPubKey()
 
 	// Create an empty signature literal as the ante handler will populate with a
 	// sentinel pubkey.
