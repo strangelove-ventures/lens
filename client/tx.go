@@ -9,6 +9,7 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
@@ -181,7 +182,7 @@ func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, msgs ..
 	var txBytes []byte
 	if err := retry.Do(func() error {
 		var err error
-		txBytes, err = BuildSimTx(txf, msgs...)
+		txBytes, err = BuildSimTx(cc.Keybase, txf, msgs...)
 		if err != nil {
 			return err
 		}
@@ -279,14 +280,13 @@ type protoTxProvider interface {
 
 // BuildSimTx creates an unsigned tx with an empty single signature and returns
 // the encoded transaction or an error if the unsigned transaction cannot be built.
-func BuildSimTx(txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
+func BuildSimTx(keybase keyring.Keyring, txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
 	txb, err := tx.BuildUnsignedTx(txf, msgs...)
 	if err != nil {
 		return nil, err
 	}
 
 	var pk cryptotypes.PubKey = &secp256k1.PubKey{} // use default public key type
-	keybase := txf.Keybase()
 	if keybase != nil {
 		infos, _ := keybase.List()
 		if len(infos) == 0 {
