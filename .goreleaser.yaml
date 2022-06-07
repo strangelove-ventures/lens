@@ -22,4 +22,6 @@ checksum:
   algorithm: sha256
 
 release:
+  prerelease: auto
+  draft: true
   name_template: "{{ .Version }} - (WARNING: ALPHA SOFTWARE)"
