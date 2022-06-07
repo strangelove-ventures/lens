@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/store/rootmulti"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -283,10 +285,22 @@ func BuildSimTx(txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
 		return nil, err
 	}
 
+	var pk cryptotypes.PubKey = &secp256k1.PubKey{} // use default public key type
+	keybase := txf.Keybase()
+	if keybase != nil {
+		infos, _ := keybase.List()
+		if len(infos) == 0 {
+			return nil, errors.New("cannot build signature for simulation, key infos slice is empty")
+		}
+
+		// take the first info record just for simulation purposes
+		pk = infos[0].GetPubKey()
+	}
+
 	// Create an empty signature literal as the ante handler will populate with a
 	// sentinel pubkey.
 	sig := signing.SignatureV2{
-		PubKey: &secp256k1.PubKey{},
+		PubKey: pk,
 		Data: &signing.SingleSignatureData{
 			SignMode: txf.SignMode(),
 		},
