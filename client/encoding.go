@@ -7,6 +7,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+
+	ethcodec "github.com/tharsis/ethermint/crypto/codec"
+	ethermint "github.com/tharsis/ethermint/types"
 )
 
 type Codec struct {
@@ -23,6 +26,8 @@ func MakeCodec(moduleBasics []module.AppModuleBasic) Codec {
 	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	modBasic.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	modBasic.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ethcodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	ethermint.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	return encodingConfig
 }
 

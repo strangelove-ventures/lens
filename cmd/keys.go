@@ -90,7 +90,6 @@ $ %s k a osmo_key --chain osmosis`, appName, appName, appName)),
 		},
 	}
 	cmd.Flags().Uint32(flagCoinType, defaultCoinType, "coin type number for HD derivation")
-
 	return cmd
 }
 
