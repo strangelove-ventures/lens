@@ -3,6 +3,7 @@ module github.com/strangelove-ventures/lens
 go 1.17
 
 require (
+	github.com/CosmWasm/wasmd v0.27.1-0.20220607082207-0decdac28503
 	github.com/avast/retry-go/v4 v4.0.5
 	github.com/cosmos/cosmos-sdk v0.45.5-0.20220523154235-2921a1c3c918
 	github.com/cosmos/go-bip39 v1.0.0
@@ -110,18 +111,36 @@ require (
 )
 
 require (
+	github.com/CosmWasm/wasmvm v1.0.0 // indirect
+	github.com/Workiva/go-datastructures v1.0.53 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
+	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
+	github.com/coinbase/rosetta-sdk-go v0.7.0 // indirect
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
+	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/ethereum/go-ethereum v1.10.16 // indirect
+	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
+	github.com/gogo/gateway v1.1.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/orderedcode v0.0.1 // indirect
+	github.com/gorilla/handlers v1.5.1 // indirect
+	github.com/improbable-eng/grpc-web v0.15.0 // indirect
+	github.com/klauspost/compress v1.13.6 // indirect
+	github.com/lib/pq v1.10.6 // indirect
+	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
+	github.com/rakyll/statik v0.1.7 // indirect
+	github.com/rs/cors v1.8.2 // indirect
+	github.com/rs/zerolog v1.26.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
+	nhooyr.io/websocket v1.8.6 // indirect
 )
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
