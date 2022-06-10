@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go/v4 v4.0.5
 	github.com/cosmos/cosmos-sdk v0.45.5-0.20220523154235-2921a1c3c918
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/ibc-go/v3 v3.0.0
+	github.com/cosmos/ibc-go/v3 v3.0.0-alpha1.0.20220510120319-d12004466cbe
 	github.com/gogo/protobuf v1.3.3
 	github.com/google/go-cmp v0.5.8
 	github.com/google/go-github/v43 v43.0.0
@@ -125,5 +125,7 @@ require (
 )
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+
+replace github.com/tharsis/ethermint => github.com/jtieri/ethermint v0.6.1-0.20220610191124-05023d98da71
 
 // replace github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
