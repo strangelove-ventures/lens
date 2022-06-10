@@ -18,7 +18,7 @@ require (
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.7.2
 	github.com/tendermint/tendermint v0.34.20-0.20220517115723-e6f071164839
-	github.com/tharsis/ethermint v0.16.0
+	github.com/tharsis/ethermint v0.16.1
 	go.uber.org/zap v1.21.0
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
