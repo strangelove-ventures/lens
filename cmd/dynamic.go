@@ -173,7 +173,7 @@ func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, method
 
 	md := metadata.Pairs(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(height, 10))
 	ctx := metadata.NewOutgoingContext(cmd.Context(), md)
-	output, err := dynClient.InvokeRpc(ctx, methodDesc, inputMsg, )
+	output, err := dynClient.InvokeRpc(ctx, methodDesc, inputMsg)
 	if err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
