@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -21,6 +21,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
+
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
+
 )
 
 func dynamicCmd(a *appState) *cobra.Command {
@@ -40,8 +43,8 @@ func dynamicCmd(a *appState) *cobra.Command {
 
 func dynQueryCmd(a *appState) *cobra.Command {
 	const stdinFlag = "stdin"
-	const metadataFlag = "metadata"
-	var metadataVal *string
+	const heightFlag = "height"
+	var height int64
 
 	cmd := &cobra.Command{
 		Use:     "query CHAIN_NAME_OR_GRPC_ADDR SERVICE_NAME METHOD_NAME [INPUT_OBJECT|@PATH_TO_INPUT_FILE]",
@@ -110,17 +113,17 @@ $ echo '{"validator_address": "..."}' | %[1]s dyn q my-chain cosmos.distribution
 				// Default to empty object for input.
 				in = []byte("{}")
 			}
-			return dynamicQuery(cmd, a, gRPCAddr, serviceName, methodName, in, metadataVal)
+			return dynamicQuery(cmd, a, gRPCAddr, serviceName, methodName, in, height)
 		},
 	}
 
 	cmd = gRPCFlags(cmd, a.Viper)
 	cmd.Flags().Bool(stdinFlag, false, "read input from stdin instead of as command-line argument")
-	metadataVal = cmd.Flags().String(metadataFlag, "{}", "additional metadata to pass to the RPC invocation: --metadata '{\"height\": 2222222}'")
+	cmd.Flags().Int64Var(&height, heightFlag, 0, "specify the height for the query or use latest")
 	return cmd
 }
 
-func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, methodName string, input []byte, metadataVal *string) error {
+func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, methodName string, input []byte, height int64) error {
 	conn, err := dialGRPC(cmd, a, gRPCAddr)
 	if err != nil {
 		return err
@@ -163,22 +166,12 @@ func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, method
 		return fmt.Errorf("failed to marshal input into message of type %s: %w", inMsgDesc.GetFullyQualifiedName(), err)
 	}
 
-	mdMap := make(map[string]string)
-
-	if metadataVal != nil {
-		err = json.Unmarshal([]byte(*metadataVal), &mdMap)
-		if err != nil {
-			return fmt.Errorf("failed to marshal metadata into map[string]string %w", err)
-		}
-	}
-
-	md := metadata.New(mdMap)
-
 	dynClient := grpcdynamic.NewStub(conn)
 	if methodDesc.IsClientStreaming() || methodDesc.IsServerStreaming() {
 		return fmt.Errorf("TODO: handle client/server streaming")
 	}
 
+	md := metadata.Pairs(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(height, 10))
 	ctx := metadata.NewOutgoingContext(cmd.Context(), md)
 	output, err := dynClient.InvokeRpc(ctx, methodDesc, inputMsg, )
 	if err != nil {
