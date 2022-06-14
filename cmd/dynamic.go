@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -18,6 +19,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 )
 
@@ -38,6 +40,8 @@ func dynamicCmd(a *appState) *cobra.Command {
 
 func dynQueryCmd(a *appState) *cobra.Command {
 	const stdinFlag = "stdin"
+	const metadataFlag = "metadata"
+	var metadataVal *string
 
 	cmd := &cobra.Command{
 		Use:     "query CHAIN_NAME_OR_GRPC_ADDR SERVICE_NAME METHOD_NAME [INPUT_OBJECT|@PATH_TO_INPUT_FILE]",
@@ -106,17 +110,17 @@ $ echo '{"validator_address": "..."}' | %[1]s dyn q my-chain cosmos.distribution
 				// Default to empty object for input.
 				in = []byte("{}")
 			}
-
-			return dynamicQuery(cmd, a, gRPCAddr, serviceName, methodName, in)
+			return dynamicQuery(cmd, a, gRPCAddr, serviceName, methodName, in, metadataVal)
 		},
 	}
 
 	cmd = gRPCFlags(cmd, a.Viper)
 	cmd.Flags().Bool(stdinFlag, false, "read input from stdin instead of as command-line argument")
+	metadataVal = cmd.Flags().String(metadataFlag, "{}", "additional metadata to pass to the RPC invocation: --metadata '{\"height\": 2222222}'")
 	return cmd
 }
 
-func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, methodName string, input []byte) error {
+func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, methodName string, input []byte, metadataVal *string) error {
 	conn, err := dialGRPC(cmd, a, gRPCAddr)
 	if err != nil {
 		return err
@@ -159,12 +163,24 @@ func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, method
 		return fmt.Errorf("failed to marshal input into message of type %s: %w", inMsgDesc.GetFullyQualifiedName(), err)
 	}
 
+	mdMap := make(map[string]string)
+
+	if metadataVal != nil {
+		err = json.Unmarshal([]byte(*metadataVal), &mdMap)
+		if err != nil {
+			return fmt.Errorf("failed to marshal metadata into map[string]string %w", err)
+		}
+	}
+
+	md := metadata.New(mdMap)
+
 	dynClient := grpcdynamic.NewStub(conn)
 	if methodDesc.IsClientStreaming() || methodDesc.IsServerStreaming() {
 		return fmt.Errorf("TODO: handle client/server streaming")
 	}
 
-	output, err := dynClient.InvokeRpc(cmd.Context(), methodDesc, inputMsg)
+	ctx := metadata.NewOutgoingContext(cmd.Context(), md)
+	output, err := dynClient.InvokeRpc(ctx, methodDesc, inputMsg, )
 	if err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
