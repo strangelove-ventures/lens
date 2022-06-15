@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -18,7 +19,11 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
+
+	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
+
 )
 
 func dynamicCmd(a *appState) *cobra.Command {
@@ -38,6 +43,8 @@ func dynamicCmd(a *appState) *cobra.Command {
 
 func dynQueryCmd(a *appState) *cobra.Command {
 	const stdinFlag = "stdin"
+	const heightFlag = "height"
+	var height int64
 
 	cmd := &cobra.Command{
 		Use:     "query CHAIN_NAME_OR_GRPC_ADDR SERVICE_NAME METHOD_NAME [INPUT_OBJECT|@PATH_TO_INPUT_FILE]",
@@ -106,17 +113,17 @@ $ echo '{"validator_address": "..."}' | %[1]s dyn q my-chain cosmos.distribution
 				// Default to empty object for input.
 				in = []byte("{}")
 			}
-
-			return dynamicQuery(cmd, a, gRPCAddr, serviceName, methodName, in)
+			return dynamicQuery(cmd, a, gRPCAddr, serviceName, methodName, in, height)
 		},
 	}
 
 	cmd = gRPCFlags(cmd, a.Viper)
 	cmd.Flags().Bool(stdinFlag, false, "read input from stdin instead of as command-line argument")
+	cmd.Flags().Int64Var(&height, heightFlag, 0, "specify the height for the query or use latest")
 	return cmd
 }
 
-func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, methodName string, input []byte) error {
+func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, methodName string, input []byte, height int64) error {
 	conn, err := dialGRPC(cmd, a, gRPCAddr)
 	if err != nil {
 		return err
@@ -164,7 +171,9 @@ func dynamicQuery(cmd *cobra.Command, a *appState, gRPCAddr, serviceName, method
 		return fmt.Errorf("TODO: handle client/server streaming")
 	}
 
-	output, err := dynClient.InvokeRpc(cmd.Context(), methodDesc, inputMsg)
+	md := metadata.Pairs(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(height, 10))
+	ctx := metadata.NewOutgoingContext(cmd.Context(), md)
+	output, err := dynClient.InvokeRpc(ctx, methodDesc, inputMsg)
 	if err != nil {
 		return fmt.Errorf("failed to invoke rpc: %w", err)
 	}
