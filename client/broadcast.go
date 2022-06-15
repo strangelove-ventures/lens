@@ -95,7 +95,11 @@ func broadcastTx(
 		// be better as something configurable
 		case <-time.After(time.Millisecond * 100):
 			resTx, err := broadcaster.Tx(ctx, syncRes.Hash, false)
+			if err != nil {
+				fmt.Printf("Error checking that the tx was included in a block: %s \n", err)
+			}
 			if err == nil {
+				fmt.Printf("No error checking that the tx was included in a block: %s \n", resTx.Tx)
 				return mkTxResult(txDecoder, resTx)
 			}
 		case <-ctx.Done():
