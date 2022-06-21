@@ -22,7 +22,15 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
 	ibc "github.com/cosmos/ibc-go/v2/modules/core"
-	osmosisGamm "github.com/osmosis-labs/osmosis/v7/x/gamm"
+	osmosisEpochs "github.com/osmosis-labs/osmosis/v9/x/epochs"
+	osmosisGamm "github.com/osmosis-labs/osmosis/v9/x/gamm"
+	osmosisIncentives "github.com/osmosis-labs/osmosis/v9/x/incentives"
+	osmosisLockup "github.com/osmosis-labs/osmosis/v9/x/lockup"
+	osmosisMint "github.com/osmosis-labs/osmosis/v9/x/mint"
+	osmosisPoolIncentives "github.com/osmosis-labs/osmosis/v9/x/pool-incentives"
+	osmosisSuperfluid "github.com/osmosis-labs/osmosis/v9/x/superfluid"
+	osmosisTokenFactory "github.com/osmosis-labs/osmosis/v9/x/tokenfactory"
+	osmosisTxFees "github.com/osmosis-labs/osmosis/v9/x/txfees"
 )
 
 var (
@@ -47,6 +55,14 @@ var (
 		transfer.AppModuleBasic{},
 		ibc.AppModuleBasic{},
 		osmosisGamm.AppModuleBasic{},
+		osmosisEpochs.AppModuleBasic{},
+		osmosisIncentives.AppModuleBasic{},
+		osmosisLockup.AppModuleBasic{},
+		osmosisMint.AppModuleBasic{},
+		osmosisPoolIncentives.AppModuleBasic{},
+		osmosisSuperfluid.AppModuleBasic{},
+		osmosisTokenFactory.AppModuleBasic{},
+		osmosisTxFees.AppModuleBasic{},
 	}
 )
 
