@@ -68,14 +68,11 @@ func broadcastTx(
 	if syncRes == nil {
 		return nil, err
 	}
-	if err != nil {
-		// Check the ResultBroadcastTx for errors that may have occurred during BroadcastTx
-		// before the tx is submitted due to precondition checks that failed.
-		if errRes := CheckTxBroadcastError(syncRes.Codespace, syncRes.Code, tx); errRes != nil {
-			return errRes, err
-		}
 
-		return nil, err
+	// Check the ResultBroadcastTx for errors that may have occurred during BroadcastTx
+	// before the tx is submitted due to precondition checks that failed.
+	if errRes := CheckTxBroadcastError(syncRes.Codespace, syncRes.Code, tx); errRes != nil {
+		return errRes, err
 	}
 
 	// TODO: maybe we need to check if the node has tx indexing enabled?
