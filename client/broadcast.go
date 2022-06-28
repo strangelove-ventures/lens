@@ -3,13 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/tendermint/tendermint/mempool"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -67,19 +65,11 @@ func broadcastTx(
 	// in the mempool or we can retry the broadcast at that
 	// point
 	syncRes, err := broadcaster.BroadcastTxSync(ctx, tx)
-	if err != nil {
-		errRes := CheckTendermintError(err, tx)
-		if errRes != nil {
-			return errRes, nil
-		}
-		return nil, err
-	}
 
-	if syncRes.Codespace == sdkerrors.RootCodespace && syncRes.Code == sdkerrors.ErrWrongSequence.ABCICode() {
-		// When the transaction was being built, it was the wrong sequence number.
-		// It is the caller's responsibility to rebuild the transaction
-		// with the correct sequence number.
-		return nil, sdkerrors.ErrWrongSequence
+	// Check the ResultBroadcastTx for errors that may have occurred during BroadcastTx
+	// before the tx is submitted due to precondition checks that failed.
+	if errRes := CheckTxBroadcastError(syncRes.Codespace, syncRes.Code, tx); errRes != nil {
+		return errRes, err
 	}
 
 	// TODO: maybe we need to check if the node has tx indexing enabled?
@@ -127,45 +117,76 @@ type intoAny interface {
 	AsAny() *codectypes.Any
 }
 
-// CheckTendermintError checks if the error returned from BroadcastTx is a
-// Tendermint error that is returned before the tx is submitted due to
-// precondition checks that failed. If an Tendermint error is detected, this
-// function returns the correct code back in TxResponse.
-//
-// TODO: Avoid brittle string matching in favor of error matching. This requires
-// a change to Tendermint's RPCError type to allow retrieval or matching against
-// a concrete error type.
-func CheckTendermintError(err error, tx tmtypes.Tx) *sdk.TxResponse {
-	if err == nil {
+// CheckTxBroadcastError checks if any errors occurred during BroadcastTx before the tx could be submitted
+// due to precondition checks that failed. If an error is detected, a TxResponse is returned with the appropriate
+// error code.
+func CheckTxBroadcastError(codespace string, code uint32, tx tmtypes.Tx) *sdk.TxResponse {
+	if codespace != sdkerrors.RootCodespace {
 		return nil
 	}
 
-	errStr := strings.ToLower(err.Error())
 	txHash := fmt.Sprintf("%X", tx.Hash())
 
-	switch {
-	case strings.Contains(errStr, strings.ToLower(mempool.ErrTxInCache.Error())):
+	switch code {
+	case sdkerrors.ErrWrongSequence.ABCICode():
+		// When the transaction was being built, it was the wrong sequence number.
+		// It is the caller's responsibility to rebuild the transaction
+		// with the correct sequence number.
+		return &sdk.TxResponse{
+			Code:      sdkerrors.ErrWrongSequence.ABCICode(),
+			Codespace: sdkerrors.ErrWrongSequence.Codespace(),
+			TxHash:    txHash,
+		}
+	case sdkerrors.ErrOutOfGas.ABCICode():
+		// tx had inappropriate gas settings
+		return &sdk.TxResponse{
+			Code:      sdkerrors.ErrOutOfGas.ABCICode(),
+			Codespace: sdkerrors.ErrOutOfGas.Codespace(),
+			TxHash:    txHash,
+		}
+	case sdkerrors.ErrTxTimeoutHeight.ABCICode():
+		// tx implicitly set an invalid timeout height
+		return &sdk.TxResponse{
+			Code:      sdkerrors.ErrTxTimeoutHeight.ABCICode(),
+			Codespace: sdkerrors.ErrTxTimeoutHeight.Codespace(),
+			TxHash:    txHash,
+		}
+	case sdkerrors.ErrorInvalidGasAdjustment.ABCICode():
+		// tx had inappropriate gas settings
+		return &sdk.TxResponse{
+			Code:      sdkerrors.ErrorInvalidGasAdjustment.ABCICode(),
+			Codespace: sdkerrors.ErrorInvalidGasAdjustment.Codespace(),
+			TxHash:    txHash,
+		}
+	case sdkerrors.ErrInsufficientFee.ABCICode():
+		// tx had inappropriate fee settings
+		return &sdk.TxResponse{
+			Code:      sdkerrors.ErrInsufficientFee.ABCICode(),
+			Codespace: sdkerrors.ErrInsufficientFee.Codespace(),
+			TxHash:    txHash,
+		}
+	case sdkerrors.ErrTxInMempoolCache.ABCICode():
+		// tx is already in the mempool
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrTxInMempoolCache.ABCICode(),
 			Codespace: sdkerrors.ErrTxInMempoolCache.Codespace(),
 			TxHash:    txHash,
 		}
-
-	case strings.Contains(errStr, "mempool is full"):
+	case sdkerrors.ErrMempoolIsFull.ABCICode():
+		// tx was submitted while mempool was full
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrMempoolIsFull.ABCICode(),
 			Codespace: sdkerrors.ErrMempoolIsFull.Codespace(),
 			TxHash:    txHash,
 		}
-
-	case strings.Contains(errStr, "tx too large"):
+	case sdkerrors.ErrTxTooLarge.ABCICode():
+		// tx payload was too large to be submitted
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrTxTooLarge.ABCICode(),
 			Codespace: sdkerrors.ErrTxTooLarge.Codespace(),
 			TxHash:    txHash,
 		}
 	default:
-		// More error debugging here!!
 		return nil
 	}
 }
