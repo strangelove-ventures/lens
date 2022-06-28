@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -66,12 +65,16 @@ func broadcastTx(
 	// in the mempool or we can retry the broadcast at that
 	// point
 	syncRes, err := broadcaster.BroadcastTxSync(ctx, tx)
+	if syncRes == nil {
+		return nil, err
+	}
 	if err != nil {
 		// Check the ResultBroadcastTx for errors that may have occurred during BroadcastTx
 		// before the tx is submitted due to precondition checks that failed.
-		if errRes := CheckTxBroadcastError(err, tx); errRes != nil {
+		if errRes := CheckTxBroadcastError(syncRes.Codespace, syncRes.Code, tx); errRes != nil {
 			return errRes, err
 		}
+
 		return nil, err
 	}
 
@@ -123,11 +126,15 @@ type intoAny interface {
 // CheckTxBroadcastError checks if any errors occurred during BroadcastTx before the tx could be submitted
 // due to precondition checks that failed. If an error is detected, a TxResponse is returned with the appropriate
 // error code.
-func CheckTxBroadcastError(err error, tx tmtypes.Tx) *sdk.TxResponse {
+func CheckTxBroadcastError(codespace string, code uint32, tx tmtypes.Tx) *sdk.TxResponse {
+	if codespace != sdkerrors.RootCodespace {
+		return nil
+	}
+
 	txHash := fmt.Sprintf("%X", tx.Hash())
 
-	switch {
-	case strings.Contains(err.Error(), sdkerrors.ErrWrongSequence.Error()):
+	switch code {
+	case sdkerrors.ErrWrongSequence.ABCICode():
 		// When the transaction was being built, it was the wrong sequence number.
 		// It is the caller's responsibility to rebuild the transaction
 		// with the correct sequence number.
@@ -136,49 +143,49 @@ func CheckTxBroadcastError(err error, tx tmtypes.Tx) *sdk.TxResponse {
 			Codespace: sdkerrors.ErrWrongSequence.Codespace(),
 			TxHash:    txHash,
 		}
-	case strings.Contains(err.Error(), sdkerrors.ErrOutOfGas.Error()):
+	case sdkerrors.ErrOutOfGas.ABCICode():
 		// tx had inappropriate gas settings
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrOutOfGas.ABCICode(),
 			Codespace: sdkerrors.ErrOutOfGas.Codespace(),
 			TxHash:    txHash,
 		}
-	case strings.Contains(err.Error(), sdkerrors.ErrTxTimeoutHeight.Error()):
+	case sdkerrors.ErrTxTimeoutHeight.ABCICode():
 		// tx implicitly set an invalid timeout height
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrTxTimeoutHeight.ABCICode(),
 			Codespace: sdkerrors.ErrTxTimeoutHeight.Codespace(),
 			TxHash:    txHash,
 		}
-	case strings.Contains(err.Error(), sdkerrors.ErrorInvalidGasAdjustment.Error()):
+	case sdkerrors.ErrorInvalidGasAdjustment.ABCICode():
 		// tx had inappropriate gas settings
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrorInvalidGasAdjustment.ABCICode(),
 			Codespace: sdkerrors.ErrorInvalidGasAdjustment.Codespace(),
 			TxHash:    txHash,
 		}
-	case strings.Contains(err.Error(), sdkerrors.ErrInsufficientFee.Error()):
+	case sdkerrors.ErrInsufficientFee.ABCICode():
 		// tx had inappropriate fee settings
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrInsufficientFee.ABCICode(),
 			Codespace: sdkerrors.ErrInsufficientFee.Codespace(),
 			TxHash:    txHash,
 		}
-	case strings.Contains(err.Error(), sdkerrors.ErrTxInMempoolCache.Error()):
+	case sdkerrors.ErrTxInMempoolCache.ABCICode():
 		// tx is already in the mempool
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrTxInMempoolCache.ABCICode(),
 			Codespace: sdkerrors.ErrTxInMempoolCache.Codespace(),
 			TxHash:    txHash,
 		}
-	case strings.Contains(err.Error(), sdkerrors.ErrMempoolIsFull.Error()):
+	case sdkerrors.ErrMempoolIsFull.ABCICode():
 		// tx was submitted while mempool was full
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrMempoolIsFull.ABCICode(),
 			Codespace: sdkerrors.ErrMempoolIsFull.Codespace(),
 			TxHash:    txHash,
 		}
-	case strings.Contains(err.Error(), sdkerrors.ErrTxTooLarge.Error()):
+	case sdkerrors.ErrTxTooLarge.ABCICode():
 		// tx payload was too large to be submitted
 		return &sdk.TxResponse{
 			Code:      sdkerrors.ErrTxTooLarge.ABCICode(),
