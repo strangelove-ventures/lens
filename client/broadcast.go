@@ -71,6 +71,9 @@ func broadcastTx(
 			TxHash:    syncRes.Hash.String(),
 		}, err
 	}
+
+	// There are some cases where BroadcastTxSync will return an error but the associated
+	// ResultBroadcastTx will be nil.
 	if err != nil && syncRes == nil {
 		return nil, err
 	}
