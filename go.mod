@@ -102,7 +102,8 @@ require (
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/cosmos/ibc-go/v2 v2.0.2
+	github.com/cosmos/ibc-go/v2 v2.3.0
+	github.com/cosmos/ibc-go/v3 v3.0.0
 	github.com/google/go-github v17.0.0+incompatible
 )
 
