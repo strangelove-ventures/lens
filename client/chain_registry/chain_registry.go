@@ -15,3 +15,7 @@ type ChainRegistry interface {
 func DefaultChainRegistry(log *zap.Logger) ChainRegistry {
 	return NewCosmosGithubRegistry(log.With(zap.String("registry", "cosmos_github")))
 }
+
+func EcoStakeRegistryAPI(log *zap.Logger) ChainRegistry {
+	return NewChainRegistryAPI(log.With(zap.String("registry", "eco-stake cosmos chain reg API")))
+}
