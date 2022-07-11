@@ -69,6 +69,7 @@ func broadcastTx(
 			Code:      syncRes.Code,
 			Codespace: syncRes.Codespace,
 			TxHash:    syncRes.Hash.String(),
+			RawLog:    syncRes.Log,
 		}, err
 	}
 
