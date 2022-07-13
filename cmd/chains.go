@@ -43,14 +43,19 @@ func cmdChainsRegistryList(a *appState) *cobra.Command {
 		Aliases: []string{"rl"},
 		Short:   "list chains available for configuration from the registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chains, err := chain_registry.DefaultChainRegistry(a.Log).ListChains(cmd.Context())
+			useAPI, _ := cmd.Flags().GetBool("api")
+			registry := chain_registry.DefaultChainRegistry(a.Log)
+			if useAPI {
+				registry = chain_registry.EcoStakeRegistryAPI(a.Log)
+			}
+			chains, err := registry.ListChains(cmd.Context())
 			if err != nil {
 				return err
 			}
 			return a.Config.GetDefaultClient().PrintObject(chains)
 		},
 	}
-	return cmd
+	return ChainRegAPI(cmd, a.Viper)
 }
 
 func cmdChainsAdd(a *appState) *cobra.Command {
@@ -60,30 +65,15 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 		Aliases: []string{"a"},
 		Short:   "add configuration for a chain or a number of chains from the chain registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			useAPI, _ := cmd.Flags().GetBool("api")
 			registry := chain_registry.DefaultChainRegistry(a.Log)
-			allChains, err := registry.ListChains(cmd.Context())
-			if err != nil {
-				return err
+			if useAPI {
+				registry = chain_registry.EcoStakeRegistryAPI(a.Log)
 			}
 
 			for _, chain := range args {
-				found := false
-				for _, possibleChain := range allChains {
-					if chain == possibleChain {
-						found = true
-					}
-				}
 
-				if !found {
-					a.Log.Info(
-						"Unable to find chain",
-						zap.String("name", chain),
-						zap.String("url", registry.SourceLink()),
-					)
-					continue
-				}
-
-				chainInfo, err := registry.GetChain(cmd.Context(), chain)
+				chainInfo, err := registry.AddChainInfo(cmd.Context(), chain)
 				if err != nil {
 					a.Log.Info(
 						"Failed to get chain",
@@ -93,23 +83,13 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 					continue
 				}
 
-				chainConfig, err := chainInfo.GetChainConfig(cmd.Context())
-				if err != nil {
-					a.Log.Info(
-						"Failed to generate chain config",
-						zap.String("name", chain),
-						zap.Error(err),
-					)
-					continue
-				}
-
-				a.Config.Chains[chain] = chainConfig
+				a.Config.Chains[chain] = chainInfo
 			}
 
 			return a.OverwriteConfig(a.Config)
 		},
 	}
-	return cmd
+	return ChainRegAPI(cmd, a.Viper)
 }
 
 func cmdChainsDelete(a *appState) *cobra.Command {

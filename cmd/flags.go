@@ -117,6 +117,12 @@ func ReadHeight(flagSet *pflag.FlagSet) (int64, error) {
 	}
 }
 
+func ChainRegAPI(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
+	cmd.Flags().Bool("api", false, "use chain registry api instead of github api (avoids api rate limits)")
+	v.BindPFlag("api", cmd.Flags().Lookup("api"))
+	return cmd
+}
+
 func queryOptionsFromFlags(flags *pflag.FlagSet) (*query.QueryOptions, error) {
 	// Query options
 	pr, err := ReadPageRequest(flags)

@@ -9,7 +9,7 @@ import (
 
 func TestGetAllRPCEndpoints(t *testing.T) {
 	testCases := map[string]struct {
-		chainInfo         ChainInfo
+		chainInfo         ChainJson
 		expectedEndpoints []string
 		expectedError     error
 	}{
@@ -58,15 +58,15 @@ func TestGetAllRPCEndpoints(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			endpoints, err := tc.chainInfo.GetAllRPCEndpoints()
+			endpoints, err := GetAllRPCEndpoints(tc.chainInfo.Apis.RPC)
 			require.Equal(t, tc.expectedError, err)
 			require.Equal(t, tc.expectedEndpoints, endpoints)
 		})
 	}
 }
 
-func ChainInfoWithRPCEndpoint(endpoint string) ChainInfo {
-	return ChainInfo{
+func ChainInfoWithRPCEndpoint(endpoint string) ChainJson {
+	return ChainJson{
 		Apis: struct {
 			RPC []struct {
 				Address  string `json:"address"`
