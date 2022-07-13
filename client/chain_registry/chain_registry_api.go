@@ -286,5 +286,5 @@ func getChainInfo(ctx context.Context, name string) (chainInfo res_chain, err er
 }
 
 func (c ChainRegistryAPI) SourceLink() string {
-	return "https://github.com/cosmos/chain-registry"
+	return ("https://chains.cosmos.directory/")
 }
