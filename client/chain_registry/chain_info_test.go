@@ -58,7 +58,7 @@ func TestGetAllRPCEndpoints(t *testing.T) {
 	for name, tc := range testCases {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
-			endpoints, err := tc.chainInfo.GetAllRPCEndpoints()
+			endpoints, err := GetAllRPCEndpoints(tc.chainInfo.Apis.RPC)
 			require.Equal(t, tc.expectedError, err)
 			require.Equal(t, tc.expectedEndpoints, endpoints)
 		})

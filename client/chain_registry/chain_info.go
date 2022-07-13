@@ -12,64 +12,21 @@ import (
 	"time"
 
 	"github.com/google/go-github/v43/github"
-	"github.com/spf13/viper"
 	"github.com/strangelove-ventures/lens/client"
-	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
-type ChainInfo struct {
-	log *zap.Logger
-
-	Schema       string `json:"$schema"`
-	ChainName    string `json:"chain_name"`
-	Status       string `json:"status"`
-	NetworkType  string `json:"network_type"`
-	PrettyName   string `json:"pretty_name"`
-	ChainID      string `json:"chain_id"`
-	Bech32Prefix string `json:"bech32_prefix"`
-	DaemonName   string `json:"daemon_name"`
-	NodeHome     string `json:"node_home"`
-	Genesis      struct {
-		GenesisURL string `json:"genesis_url"`
-	} `json:"genesis"`
-	Slip44   int `json:"slip44"`
-	Codebase struct {
-		GitRepo            string   `json:"git_repo"`
-		RecommendedVersion string   `json:"recommended_version"`
-		CompatibleVersions []string `json:"compatible_versions"`
-	} `json:"codebase"`
-	Peers struct {
-		Seeds []struct {
-			ID       string `json:"id"`
-			Address  string `json:"address"`
-			Provider string `json:"provider,omitempty"`
-		} `json:"seeds"`
-		PersistentPeers []struct {
-			ID      string `json:"id"`
-			Address string `json:"address"`
-		} `json:"persistent_peers"`
-	} `json:"peers"`
-	Apis struct {
-		RPC []struct {
-			Address  string `json:"address"`
-			Provider string `json:"provider"`
-		} `json:"rpc"`
-		Rest []struct {
-			Address  string `json:"address"`
-			Provider string `json:"provider"`
-		} `json:"rest"`
-	} `json:"apis"`
-}
-
 // NewChainInfo returns a ChainInfo that is uninitialized other than the provided zap.Logger.
 // Typically, the caller will unmarshal JSON content into the ChainInfo after initialization.
-func NewChainInfo(log *zap.Logger) ChainInfo {
-	return ChainInfo{log: log}
+func NewChainInfo() ChainInfo {
+	return ChainInfo{}
 }
 
-func (c ChainInfo) GetAllRPCEndpoints() (out []string, err error) {
-	for _, endpoint := range c.Apis.RPC {
+func GetAllRPCEndpoints(rpcs []struct {
+	Address  string "json:\"address\""
+	Provider string "json:\"provider\""
+}) (out []string, err error) {
+	for _, endpoint := range rpcs {
 		u, err := url.Parse(endpoint.Address)
 		if err != nil {
 			return nil, err
@@ -92,7 +49,7 @@ func (c ChainInfo) GetAllRPCEndpoints() (out []string, err error) {
 		out = append(out, fmt.Sprintf("%s://%s:%s%s", u.Scheme, u.Hostname(), port, u.Path))
 	}
 
-	return
+	return out, nil
 }
 
 func IsHealthyRPC(ctx context.Context, endpoint string) error {
@@ -112,12 +69,7 @@ func IsHealthyRPC(ctx context.Context, endpoint string) error {
 	return nil
 }
 
-func (c ChainInfo) GetRPCEndpoints(ctx context.Context) (out []string, err error) {
-	allRPCEndpoints, err := c.GetAllRPCEndpoints()
-	if err != nil {
-		return nil, err
-	}
-
+func CheckRPCEndpoints(ctx context.Context, allRPCEndpoints []string) (out []string, err error) {
 	var eg errgroup.Group
 	var endpoints []string
 	for _, endpoint := range allRPCEndpoints {
@@ -125,15 +77,19 @@ func (c ChainInfo) GetRPCEndpoints(ctx context.Context) (out []string, err error
 		eg.Go(func() error {
 			err := IsHealthyRPC(ctx, endpoint)
 			if err != nil {
-				c.log.Info(
-					"Ignoring endpoint due to error",
-					zap.String("endpoint", endpoint),
-					zap.Error(err),
-				)
+				fmt.Println("Ignoring endpoint due to error")
+				fmt.Println("endpoint", endpoint)
+				fmt.Println(err)
+				// 	"Ignoring endpoint due to error",
+				// 	zap.String("endpoint", endpoint),
+				// 	zap.Error(err),
+				// )
 				return nil
 			}
 
-			c.log.Info("Verified healthy endpoint", zap.String("endpoint", endpoint))
+			fmt.Println("Verified healthy endpoint")
+			fmt.Println("endpoint", endpoint)
+			// c.log.Info("Verified healthy endpoint", zap.String("endpoint", endpoint))
 			endpoints = append(endpoints, endpoint)
 			return nil
 		})
@@ -145,8 +101,15 @@ func (c ChainInfo) GetRPCEndpoints(ctx context.Context) (out []string, err error
 	return endpoints, nil
 }
 
-func (c ChainInfo) GetRandomRPCEndpoint(ctx context.Context) (string, error) {
-	rpcs, err := c.GetRPCEndpoints(ctx)
+func GetRandomRPCEndpoint(ctx context.Context, rpcEndpoints []struct {
+	Address  string "json:\"address\""
+	Provider string "json:\"provider\""
+}) (string, error) {
+	allRPCEndpoints, err := GetAllRPCEndpoints(rpcEndpoints)
+	if err != nil {
+		fmt.Println("error: ", err)
+	}
+	rpcs, err := CheckRPCEndpoints(ctx, allRPCEndpoints)
 	if err != nil {
 		return "", err
 	}
@@ -183,39 +146,4 @@ func (c ChainInfo) GetAssetList(ctx context.Context) (AssetList, error) {
 		return AssetList{}, err
 	}
 	return assetList, nil
-}
-
-func (c ChainInfo) GetChainConfig(ctx context.Context) (*client.ChainClientConfig, error) {
-	debug := viper.GetBool("debug")
-	home := viper.GetString("home")
-
-	assetList, err := c.GetAssetList(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var gasPrices string
-	if len(assetList.Assets) > 0 {
-		gasPrices = fmt.Sprintf("%.2f%s", 0.01, assetList.Assets[0].Base)
-	}
-
-	rpc, err := c.GetRandomRPCEndpoint(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &client.ChainClientConfig{
-		Key:            "default",
-		ChainID:        c.ChainID,
-		RPCAddr:        rpc,
-		AccountPrefix:  c.Bech32Prefix,
-		KeyringBackend: "test",
-		GasAdjustment:  1.2,
-		GasPrices:      gasPrices,
-		KeyDirectory:   home,
-		Debug:          debug,
-		Timeout:        "20s",
-		OutputFormat:   "json",
-		SignModeStr:    "direct",
-	}, nil
 }

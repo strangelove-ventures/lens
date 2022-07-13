@@ -71,29 +71,9 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 				registry = chain_registry.EcoStakeRegistryAPI(a.Log)
 			}
 
-			allChains, err := registry.ListChains(cmd.Context())
-			if err != nil {
-				return err
-			}
-
 			for _, chain := range args {
-				found := false
-				for _, possibleChain := range allChains {
-					if chain == possibleChain {
-						found = true
-					}
-				}
-				// Break out these command depending on registry:
-				if !found {
-					a.Log.Info(
-						"Unable to find chain",
-						zap.String("name", chain),
-						zap.String("url", registry.SourceLink()),
-					)
-					continue
-				}
 
-				chainInfo, err := registry.GetChain(cmd.Context(), chain)
+				chainInfo, err := registry.AddChainInfo(cmd.Context(), chain)
 				if err != nil {
 					a.Log.Info(
 						"Failed to get chain",
@@ -103,17 +83,7 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 					continue
 				}
 
-				chainConfig, err := chainInfo.GetChainConfig(cmd.Context())
-				if err != nil {
-					a.Log.Info(
-						"Failed to generate chain config",
-						zap.String("name", chain),
-						zap.Error(err),
-					)
-					continue
-				}
-
-				a.Config.Chains[chain] = chainConfig
+				a.Config.Chains[chain] = chainInfo
 			}
 
 			return a.OverwriteConfig(a.Config)
