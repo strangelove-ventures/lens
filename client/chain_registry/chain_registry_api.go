@@ -146,24 +146,6 @@ type res_chain struct {
 				Provider string `json:"provider"`
 			} `json:"rpc"`
 		} `json:"best_apis"`
-		Params struct {
-			Authz                 bool    `json:"authz"`
-			ActualBlockTime       float64 `json:"actual_block_time"`
-			ActualBlocksPerYear   float64 `json:"actual_blocks_per_year"`
-			UnbondingTime         int     `json:"unbonding_time"`
-			MaxValidators         int     `json:"max_validators"`
-			BondedRatio           float64 `json:"bonded_ratio"`
-			MintingEpochProvision float64 `json:"minting_epoch_provision"`
-			EpochDuration         int     `json:"epoch_duration"`
-			YearMintingProvision  int64   `json:"year_minting_provision"`
-			BaseInflation         float64 `json:"base_inflation"`
-			CalculatedApr         float64 `json:"calculated_apr"`
-			BondedTokens          string  `json:"bonded_tokens"`
-			TotalSupply           string  `json:"total_supply"`
-			CommunityTax          float64 `json:"community_tax"`
-			AnnualProvision       string  `json:"annual_provision"`
-			EstimatedApr          float64 `json:"estimated_apr"`
-		} `json:"params"`
 	} `json:"chain"`
 }
 
