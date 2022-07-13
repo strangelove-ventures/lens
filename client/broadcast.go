@@ -2,17 +2,20 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 const (
 	defaultBroadcastWaitTimeout = 10 * time.Minute
+	errUnknown                  = "unknown"
 )
 
 func (cc *ChainClient) BroadcastTx(ctx context.Context, tx []byte) (*sdk.TxResponse, error) {
@@ -63,8 +66,14 @@ func broadcastTx(
 	// need to investigate if this will leave the tx
 	// in the mempool or we can retry the broadcast at that
 	// point
+
 	syncRes, err := broadcaster.BroadcastTxSync(ctx, tx)
-	if err != nil && syncRes != nil {
+	if err != nil {
+		if syncRes == nil {
+			// There are some cases where BroadcastTxSync will return an error but the associated
+			// ResultBroadcastTx will be nil.
+			return nil, err
+		}
 		return &sdk.TxResponse{
 			Code:      syncRes.Code,
 			Codespace: syncRes.Codespace,
@@ -72,9 +81,10 @@ func broadcastTx(
 		}, err
 	}
 
-	// There are some cases where BroadcastTxSync will return an error but the associated
-	// ResultBroadcastTx will be nil.
-	if err != nil && syncRes == nil {
+	// ABCIError will return an error other than "unknown" if syncRes.Code is a registered error in syncRes.Codespace
+	// This catches all of the sdk errors https://github.com/cosmos/cosmos-sdk/blob/f10f5e5974d2ecbf9efc05bc0bfe1c99fdeed4b6/types/errors/errors.go
+	err = errors.Unwrap(sdkerrors.ABCIError(syncRes.Codespace, syncRes.Code, "error broadcasting transaction"))
+	if err.Error() != errUnknown {
 		return nil, err
 	}
 
