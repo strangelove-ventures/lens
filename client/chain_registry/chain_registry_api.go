@@ -160,7 +160,7 @@ type res_chain struct {
 			CalculatedApr         float64 `json:"calculated_apr"`
 			BondedTokens          string  `json:"bonded_tokens"`
 			TotalSupply           string  `json:"total_supply"`
-			CommunityTax          int     `json:"community_tax"`
+			CommunityTax          float64 `json:"community_tax"`
 			AnnualProvision       string  `json:"annual_provision"`
 			EstimatedApr          float64 `json:"estimated_apr"`
 		} `json:"params"`
