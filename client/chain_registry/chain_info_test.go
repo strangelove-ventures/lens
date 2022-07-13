@@ -9,7 +9,7 @@ import (
 
 func TestGetAllRPCEndpoints(t *testing.T) {
 	testCases := map[string]struct {
-		chainInfo         ChainInfo
+		chainInfo         ChainJson
 		expectedEndpoints []string
 		expectedError     error
 	}{
@@ -65,8 +65,8 @@ func TestGetAllRPCEndpoints(t *testing.T) {
 	}
 }
 
-func ChainInfoWithRPCEndpoint(endpoint string) ChainInfo {
-	return ChainInfo{
+func ChainInfoWithRPCEndpoint(endpoint string) ChainJson {
+	return ChainJson{
 		Apis: struct {
 			RPC []struct {
 				Address  string `json:"address"`

@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type AssetList struct {
+type assetListJson struct {
 	Schema  string `json:"$schema"`
 	ChainID string `json:"chain_id"`
 	Assets  []struct {
@@ -37,7 +37,7 @@ type AssetList struct {
 	} `json:"assets"`
 }
 
-type ChainInfo struct {
+type ChainJson struct {
 	// log *zap.Logger
 
 	Schema       string `json:"$schema"`
@@ -166,7 +166,7 @@ func (c CosmosGithubRegistry) AddChainInfo(ctx context.Context, name string) (*c
 	}, nil
 }
 
-func getChainJson(ctx context.Context, name string) (chainInfo ChainInfo, err error) {
+func getChainJson(ctx context.Context, name string) (chainJson ChainJson, err error) {
 	client := github.NewClient(http.DefaultClient)
 
 	chainFileName := path.Join(name, "chain.json")
@@ -177,20 +177,20 @@ func getChainJson(ctx context.Context, name string) (chainInfo ChainInfo, err er
 		chainFileName,
 		&github.RepositoryContentGetOptions{})
 	if res.StatusCode == 404 {
-		return chainInfo, errors.Wrapf(err, "chain not found")
+		return chainJson, errors.Wrapf(err, "chain not found")
 	}
 	if err != nil || res.StatusCode != 200 {
-		return chainInfo, errors.Wrap(err, fmt.Sprintf("error fetching %s", chainFileName))
+		return chainJson, errors.Wrap(err, fmt.Sprintf("error fetching %s", chainFileName))
 	}
 
 	content, err := fileContent.GetContent()
 	if err != nil {
-		return chainInfo, err
+		return chainJson, err
 	}
 
-	result := chainInfo
+	result := chainJson
 	if err := json.Unmarshal([]byte(content), &result); err != nil {
-		return chainInfo, err
+		return chainJson, err
 	}
 
 	return result, nil
@@ -216,13 +216,13 @@ func getBaseDenom(ctx context.Context, name string) (string, error) {
 		return baseDenom, err
 	}
 
-	var assetList AssetList
-	if err := json.Unmarshal([]byte(content), &assetList); err != nil {
+	var assetListJson assetListJson
+	if err := json.Unmarshal([]byte(content), &assetListJson); err != nil {
 		return baseDenom, err
 	}
 
-	if len(assetList.Assets) > 0 {
-		baseDenom = assetList.Assets[0].Base
+	if len(assetListJson.Assets) > 0 {
+		baseDenom = assetListJson.Assets[0].Base
 	}
 
 	return baseDenom, nil

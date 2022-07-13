@@ -2,24 +2,20 @@ package chain_registry
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"net/url"
-	"path"
 	"time"
 
-	"github.com/google/go-github/v43/github"
 	"github.com/strangelove-ventures/lens/client"
 	"golang.org/x/sync/errgroup"
 )
 
 // NewChainInfo returns a ChainInfo that is uninitialized other than the provided zap.Logger.
 // Typically, the caller will unmarshal JSON content into the ChainInfo after initialization.
-func NewChainInfo() ChainInfo {
-	return ChainInfo{}
+func NewChainInfo() ChainJson {
+	return ChainJson{}
 }
 
 func GetAllRPCEndpoints(rpcs []struct {
@@ -120,30 +116,4 @@ func GetRandomRPCEndpoint(ctx context.Context, rpcEndpoints []struct {
 
 	randomGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return rpcs[randomGenerator.Intn(len(rpcs))], nil
-}
-
-func (c ChainInfo) GetAssetList(ctx context.Context) (AssetList, error) {
-	cl := github.NewClient(http.DefaultClient)
-
-	chainFileName := path.Join(c.ChainName, "assetlist.json")
-	ch, _, res, err := cl.Repositories.GetContents(
-		ctx,
-		"cosmos",
-		"chain-registry",
-		chainFileName,
-		&github.RepositoryContentGetOptions{})
-	if err != nil || res.StatusCode != 200 {
-		return AssetList{}, err
-	}
-
-	content, err := ch.GetContent()
-	if err != nil {
-		return AssetList{}, err
-	}
-
-	var assetList AssetList
-	if err := json.Unmarshal([]byte(content), &assetList); err != nil {
-		return AssetList{}, err
-	}
-	return assetList, nil
 }

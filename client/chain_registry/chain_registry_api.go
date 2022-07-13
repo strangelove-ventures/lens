@@ -264,7 +264,7 @@ func getChainInfo(ctx context.Context, name string) (chainInfo res_chain, err er
 		// 	zap.String("chain_name", name),
 		// 	zap.String("GET", getUrl),
 		// )
-		fmt.Println("chain %s not found", name)
+		fmt.Printf("chain %s not found", name)
 		return chainInfo, nil
 	}
 	if err != nil {
