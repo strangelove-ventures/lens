@@ -4,9 +4,9 @@ go 1.17
 
 require (
 	github.com/avast/retry-go/v4 v4.1.0
-	github.com/cosmos/cosmos-sdk v0.45.5-0.20220523154235-2921a1c3c918
+	github.com/cosmos/cosmos-sdk v0.45.6
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/ibc-go/v3 v3.0.0
+	github.com/cosmos/ibc-go/v4 v4.0.0-rc0
 	github.com/gogo/protobuf v1.3.3
 	github.com/google/go-cmp v0.5.8
 	github.com/google/go-github/v43 v43.0.0
@@ -25,6 +25,21 @@ require (
 	google.golang.org/grpc v1.47.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
+)
+
+require (
+	github.com/benbjohnson/clock v1.1.0 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
+	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
+	github.com/cosmos/gorocksdb v1.2.0 // indirect
+	github.com/ethereum/go-ethereum v1.10.16 // indirect
+	github.com/go-kit/log v0.2.1 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
+	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 )
 
 require (
@@ -109,21 +124,4 @@ require (
 	gopkg.in/ini.v1 v1.66.4 // indirect
 )
 
-require (
-	github.com/benbjohnson/clock v1.1.0 // indirect
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
-	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
-	github.com/cosmos/gorocksdb v1.2.0 // indirect
-	github.com/ethereum/go-ethereum v1.10.16 // indirect
-	github.com/go-kit/log v0.2.1 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
-	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
-	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
-)
-
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
-// replace github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
