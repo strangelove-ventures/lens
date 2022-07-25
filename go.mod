@@ -1,6 +1,6 @@
 module github.com/strangelove-ventures/lens
 
-go 1.17
+go 1.18
 
 require (
 	github.com/avast/retry-go/v4 v4.1.0
