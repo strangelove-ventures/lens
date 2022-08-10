@@ -11,13 +11,13 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	ethhd "github.com/evmos/ethermint/crypto/hd"
 	"github.com/gogo/protobuf/proto"
 	provtypes "github.com/tendermint/tendermint/light/provider"
 	prov "github.com/tendermint/tendermint/light/provider/http"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	libclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
-	ethhd "github.com/tharsis/ethermint/crypto/hd"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
@@ -64,7 +64,7 @@ func NewChainClient(log *zap.Logger, ccc *ChainClientConfig, homepath string, in
 
 func (cc *ChainClient) Init() error {
 	// TODO: test key directory and return error if not created
-	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.KeyringOptions...)
+	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.Codec.Marshaler, cc.KeyringOptions...)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (cc *ChainClient) GetKeyAddress() (sdk.AccAddress, error) {
 	if err != nil {
 		return nil, err
 	}
-	return info.GetAddress(), nil
+	return info.GetAddress()
 }
 
 func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
