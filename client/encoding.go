@@ -8,8 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 
-	ethcodec "github.com/tharsis/ethermint/crypto/codec"
-	ethermint "github.com/tharsis/ethermint/types"
+	ethcodec "github.com/evmos/ethermint/crypto/codec"
+	ethermint "github.com/evmos/ethermint/types"
 )
 
 type Codec struct {

@@ -14,7 +14,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distTypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	transfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
+	transfertypes "github.com/cosmos/ibc-go/v5/modules/apps/transfer/types"
 )
 
 // queryBalanceWithAddress returns the amount of coins in the relayer account with address as input
