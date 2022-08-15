@@ -113,6 +113,8 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	// NOTE: error is nil, logic should use the returned error to determine if the
 	// transaction was successfully executed.
 	if res.Code != 0 {
+		fmt.Println(res.Codespace)
+		fmt.Println(res.Events)
 		return res, fmt.Errorf("transaction failed with code: %d", res.Code)
 	}
 

@@ -1,0 +1,7 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/sunnya97/dev/strangelove-ventures/lens'
+go test -mod=readonly -race ./...
+echo "Installing Lens"
+go install -mod readonly -ldflags '-X github.com/strangelove-ventures/lens/cmd.Version=v0.5.1 -X github.com/strangelove-ventures/lens/cmd.Commit=6b6dbf09127fcb5a85f3ee3257f254a3bce98f34 ' ./...
+make: Leaving directory `/Users/sunnya97/dev/strangelove-ventures/lens'
+ 

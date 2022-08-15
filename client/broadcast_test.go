@@ -41,8 +41,9 @@ func (m myFakeTx) ValidateBasic() error   { return nil }
 func (m myFakeTx) AsAny() *codectypes.Any { return &codectypes.Any{} }
 
 type fakeBroadcaster struct {
-	tx            func(context.Context, []byte, bool) (*ctypes.ResultTx, error)
-	broadcastSync func(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
+	tx                func(context.Context, []byte, bool) (*ctypes.ResultTx, error)
+	broadcastSync     func(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
+	broadcastTxCommit func(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTxCommit, error)
 }
 
 func (f fakeBroadcaster) Tx(ctx context.Context, hash []byte, prove bool) (*ctypes.ResultTx, error) {
@@ -57,6 +58,13 @@ func (f fakeBroadcaster) BroadcastTxSync(ctx context.Context, tx tmtypes.Tx) (*c
 		return nil, nil
 	}
 	return f.broadcastSync(ctx, tx)
+}
+
+func (f fakeBroadcaster) BroadcastTxCommit(ctx context.Context, tx tmtypes.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
+	if f.broadcastTxCommit == nil {
+		return nil, nil
+	}
+	return f.broadcastTxCommit(ctx, tx)
 }
 
 func TestBroadcast(t *testing.T) {

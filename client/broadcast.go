@@ -47,7 +47,7 @@ type rpcTxBroadcaster interface {
 	BroadcastTxSync(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
 
 	// TODO: implement commit and async as well
-	// BroadcastTxCommit(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTxCommit, error)
+	BroadcastTxCommit(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTxCommit, error)
 	// BroadcastTxAsync(context.Context, tmtypes.Tx) (*ctypes.ResultBroadcastTx, error)
 }
 
@@ -74,7 +74,6 @@ func broadcastTx(
 		}
 		return nil, err
 	}
-
 	if syncRes.Codespace == sdkerrors.RootCodespace && syncRes.Code == sdkerrors.ErrWrongSequence.ABCICode() {
 		// When the transaction was being built, it was the wrong sequence number.
 		// It is the caller's responsibility to rebuild the transaction

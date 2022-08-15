@@ -1,0 +1,437 @@
+make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+# GNU Make 3.81
+# Copyright (C) 2006  Free Software Foundation, Inc.
+# This is free software; see the source for copying conditions.
+# There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+# This program built for i386-apple-darwin11.3.0
+ 
+
+# Make data base, printed on Mon Aug 15 00:34:25 2022
+
+# Variables
+
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# environment
+RUBY_VERSION = ruby-2.3.3
+# automatic
+?F = $(notdir $?)
+# environment
+ELECTRON_NO_ATTACH_CONSOLE = 1
+# makefile (from `Makefile', line 6)
+LD_FLAGS = -X github.com/strangelove-ventures/lens/cmd.Version=$(VERSION) -X github.com/strangelove-ventures/lens/cmd.Commit=$(COMMIT) 
+# environment
+ZSH_TMUX_TERM = screen-256color
+# environment
+NVM_INC = /Users/sunnya97/.nvm/versions/node/v16.14.2/include/node
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# environment
+rvm_path = /Users/sunnya97/.rvm
+# automatic
+@D = $(patsubst %/,%,$(dir $@))
+# automatic
+@F = $(notdir $@)
+# makefile
+CURDIR := /Users/sunnya97/dev/strangelove-ventures/lens
+# makefile
+SHELL = /bin/sh
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
+# environment
+_ = /usr/bin/make
+# environment
+VSCODE_PID = 11889
+# makefile (from `Makefile', line 1)
+MAKEFILE_LIST :=  Makefile
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
+# environment
+rvm_ruby_mode = 
+# environment
+rvm_ruby_make = 
+# makefile (from `Makefile', line 1)
+VERSION := v0.5.1
+# environment
+__CFBundleIdentifier = com.microsoft.VSCode
+# environment
+INFOPATH = /opt/homebrew/share/info:
+# environment
+rvm_proxy = 
+# environment
+P9K_SSH = 0
+# environment
+VSCODE_CWD = /Users/sunnya97/dev/strangelove-ventures/lens
+# environment
+GOPROXY = https://proxy.golang.org,direct
+# environment
+rvm_pretty_print_flag = 
+# environment
+PATH = /Users/sunnya97/.rvm/gems/ruby-2.3.3/bin:/Users/sunnya97/.rvm/gems/ruby-2.3.3@global/bin:/Users/sunnya97/.rvm/rubies/ruby-2.3.3/bin:/Users/sunnya97/.pyenv/shims:/Users/sunnya97/.nvm/versions/node/v16.14.2/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/usr/local/go/bin:/usr/local/MacGPG2/bin:/usr/local/share/dotnet:/opt/X11/bin:~/.dotnet/tools:/Users/sunnya97/.cargo/bin:/Users/sunnya97/.rvm/bin:/Users/sunnya97/go/bin:/opt/homebrew/opt/fzf/bin
+# environment
+LSCOLORS = Gxfxcxdxbxegedabagacad
+# environment
+rvm_niceness = 
+# environment
+GOPATH = /Users/sunnya97/go
+# environment
+NVM_BIN = /Users/sunnya97/.nvm/versions/node/v16.14.2/bin
+# environment
+rvm_only_path_flag = 
+# environment
+LaunchInstanceID = 9581D0E1-3877-40AD-8BD6-95A10D1D3EBA
+# environment
+rvm_gemstone_package_file = 
+# environment
+ELECTRON_RUN_AS_NODE = 1
+# environment
+PYENV_ROOT = /Users/sunnya97/.pyenv
+# makefile (from `Makefile', line 2)
+COMMIT := 6b6dbf09127fcb5a85f3ee3257f254a3bce98f34
+# environment
+rvm_alias_expanded = 
+# default
+.FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
+# environment
+SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.7fyobo0pnp/Listeners
+# automatic
+%F = $(notdir $%)
+# environment
+GOBIN = /Users/sunnya97/go/bin
+# environment
+DISPLAY = /private/tmp/com.apple.launchd.9tvEJkZCKd/org.macosforge.xquartz:0
+# environment
+_ZSH_TMUX_FIXED_CONFIG = /Users/sunnya97/.oh-my-zsh/plugins/tmux/tmux.only.conf
+# environment
+rvm_bin_path = /Users/sunnya97/.rvm/bin
+# environment
+PWD = /Users/sunnya97/dev/strangelove-ventures/lens
+# environment
+HOMEBREW_CELLAR = /opt/homebrew/Cellar
+# environment
+GEM_HOME = /Users/sunnya97/.rvm/gems/ruby-2.3.3
+# environment
+rvm_docs_type = 
+# environment
+rvm_script_name = 
+# environment
+ORIGINAL_XDG_CURRENT_DESKTOP = undefined
+# environment
+MANPATH = /Users/sunnya97/.nvm/versions/node/v16.14.2/share/man:/opt/homebrew/share/man::
+# environment
+GOMODCACHE = /Users/sunnya97/go/pkg/mod
+# environment
+PYENV_SHELL = zsh
+# environment
+HOME = /Users/sunnya97
+# default
+MAKEFILEPATH = $(shell /usr/bin/xcode-select -print-path 2>/dev/null || echo /Developer)/Makefiles
+# environment
+VSCODE_CLI = 1
+# environment
+VSCODE_CODE_CACHE_PATH = /Users/sunnya97/Library/Application Support/Code/CachedData/6d9b74a70ca9c7733b29f0456fd8195364076dda
+# environment
+LOGNAME = sunnya97
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+# environment
+NVM_CD_FLAGS = -q
+# environment
+ZSH = /Users/sunnya97/.oh-my-zsh
+# environment
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# automatic
+^D = $(patsubst %/,%,$(dir $^))
+# environment
+rvm_ruby_bits = 
+# environment
+GEM_PATH = /Users/sunnya97/.rvm/gems/ruby-2.3.3:/Users/sunnya97/.rvm/gems/ruby-2.3.3@global
+# environment
+XPC_FLAGS = 0x0
+# environment
+COLORTERM = truecolor
+# environment
+rvm_ruby_make_install = 
+# default
+MAKE = $(MAKE_COMMAND)
+# environment
+LC_TERMINAL = iTerm2
+# environment
+IRBRC = /Users/sunnya97/.rvm/rubies/ruby-2.3.3/.irbrc
+# environment
+SHLVL = 3
+# environment
+rvm_quiet_flag = 
+# makefile (from `Makefile', line 9)
+BUILD_FLAGS := -ldflags '-X github.com/strangelove-ventures/lens/cmd.Version=v0.5.1 -X github.com/strangelove-ventures/lens/cmd.Commit=6b6dbf09127fcb5a85f3ee3257f254a3bce98f34 '
+# default
+MAKE_VERSION := 3.81
+# environment
+USER = sunnya97
+# makefile
+.DEFAULT_GOAL := all
+# default
+MAKECMDGOALS := all
+# environment
+TERM_SESSION_ID = w0t1p0:F9A52FEB-24E2-4317-B7A5-8D348FFE2305
+# environment
+rvm_version = 1.29.10 (latest)
+# environment
+LESS = -R
+# automatic
+%D = $(patsubst %/,%,$(dir $%))
+# default
+MAKE_COMMAND := /Library/Developer/CommandLineTools/usr/bin/make
+# environment
+TERM_PROGRAM = iTerm.app
+# default
+.VARIABLES := 
+# environment
+TMPDIR = /var/folders/hm/s6pgxtk92x7bdl8kf3_qnn180000gn/T/
+# automatic
+*F = $(notdir $*)
+# environment
+VSCODE_IPC_HOOK = /Users/sunnya97/Library/Application Support/Code/1.70.1-main.sock
+# environment
+MallocNanoZone = 0
+# makefile
+MAKEFLAGS = Rrqp
+# environment
+MFLAGS = -Rrqp
+# automatic
+*D = $(patsubst %/,%,$(dir $*))
+# environment
+TERM_PROGRAM_VERSION = 3.4.16
+# environment
+NVM_DIR = /Users/sunnya97/.nvm
+# environment
+XPC_SERVICE_NAME = application.com.microsoft.VSCode.50365380.50365386.258288A0-40BE-41DC-8AEA-564191EB8981
+# environment
+LC_TERMINAL_VERSION = 3.4.16
+# environment
+HOMEBREW_PREFIX = /opt/homebrew
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# automatic
++F = $(notdir $+)
+# environment
+ITERM_SESSION_ID = w0t1p0:F9A52FEB-24E2-4317-B7A5-8D348FFE2305
+# environment
+rvm_sdk = 
+# environment
+HOMEBREW_REPOSITORY = /opt/homebrew
+# environment
+COLORFGBG = 15;0
+# environment
+__CF_USER_TEXT_ENCODING = 0x1F5:0x0:0x0
+# environment
+COMMAND_MODE = unix2003
+# default
+MAKEFILES := 
+# automatic
+<F = $(notdir $<)
+# environment
+ITERM_PROFILE = Default
+# environment
+rvm_silent_flag = 
+# environment
+rvm_gemstone_url = 
+# environment
+PAGER = less
+# environment
+LC_ALL = C
+# environment
+rvm_bin_flag = 
+# environment
+SECURITYSESSIONID = 186b1
+# environment
+P9K_TTY = old
+# automatic
+^F = $(notdir $^)
+# environment
+rvm_prefix = /Users/sunnya97
+# default
+SUFFIXES := 
+# environment
+rvm_ruby_file = 
+# default
+.INCLUDE_DIRS = /usr/local/include
+# environment
+MAKELEVEL := 0
+# environment
+LANG = C
+# environment
+TERM = xterm-256color
+# environment
+rvm_use_flag = 
+# environment
+_P9K_TTY = /dev/ttys002
+# environment
+rvm_hook = 
+# environment
+MY_RUBY_HOME = /Users/sunnya97/.rvm/rubies/ruby-2.3.3
+# environment
+rvm_nightly_flag = 
+# variable set hash-table stats:
+# Load=131/1024=13%, Rehash=0, Collisions=13/164=8%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+# . (device 16777231, inode 13702666): 17 files, no impossibilities.
+
+# 17 files, no impossibilities in 1 directories.
+
+# Implicit Rules
+
+# No implicit rules.
+
+# Files
+
+build-linux:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 23):
+	@GOOS=linux GOARCH=amd64 go build --mod readonly $(BUILD_FLAGS) -o ./build/lens main.go
+	
+
+all: test install
+#  Phony target (prerequisite of .PHONY).
+#  Command-line target.
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/2=0%
+
+.PHONY: all lint test race msan tools clean build
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+race:
+#  Phony target (prerequisite of .PHONY).
+ 
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+msan:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+# Not a target:
+.SUFFIXES:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+Makefile:
+#  Implicit rule search has been done.
+#  Last modified 2022-07-14 03:00:09
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
+
+test:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  Implicit/static pattern stem: `'
+#  File does not exist.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# automatic
+# @ := test
+# automatic
+# % := 
+# automatic
+# * := 
+# automatic
+# + := 
+# automatic
+# | := 
+# automatic
+# < := 
+# automatic
+# ^ := 
+# automatic
+# ? := 
+# variable set hash-table stats:
+# Load=8/32=25%, Rehash=0, Collisions=1/10=10%
+#  commands to execute (from `Makefile', line 16):
+	@go test -mod=readonly -race ./...
+	
+
+build:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 12):
+	@echo "Building 20/20 vision"
+	@go build -mod readonly $(BUILD_FLAGS) -o build/lens main.go
+	
+
+# Not a target:
+.DEFAULT:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+clean:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 26):
+	rm -rf build
+	
+
+lint:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+tools:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+install:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  commands to execute (from `Makefile', line 19):
+	@echo "Installing Lens"
+	@go install -mod readonly $(BUILD_FLAGS) ./...
+	
+
+# files hash-table stats:
+# Load=14/1024=1%, Rehash=0, Collisions=1/38=3%
+# VPATH Search Paths
+
+# No `vpath' search paths.
+
+# No general (`VPATH' variable) search path.
+
+# # of strings in strcache: 1
+# # of strcache buffers: 1
+# strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
+# strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
+
+# Finished Make data base on Mon Aug 15 00:34:25 2022
+
+ 

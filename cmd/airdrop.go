@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -49,11 +48,11 @@ func airdropCmd(a *appState) *cobra.Command {
 			}
 			defer exclude.Close()
 
-			scanner := bufio.NewScanner(exclude)
+			// scanner := bufio.NewScanner(exclude)
 
-			for scanner.Scan() {
-				delete(airdrop, scanner.Text())
-			}
+			// for scanner.Scan() {
+			// 	delete(airdrop, scanner.Text())
+			// }
 
 			dryRun, err := cmd.Flags().GetBool("dry-run")
 			if err != nil {
@@ -62,13 +61,13 @@ func airdropCmd(a *appState) *cobra.Command {
 			if dryRun {
 				var dropTotal float64
 				var dropAddress int64
-				for k, v := range airdrop {
+				for _, v := range airdrop {
 
-					_, err := cl.DecodeBech32AccAddr(k)
+					_, err := cl.DecodeBech32AccAddr(v.Address)
 					if err != nil {
 						return err
 					}
-					dropTotal += v
+					dropTotal += float64(v.Amount)
 					dropAddress++
 
 				}
@@ -88,16 +87,18 @@ func airdropCmd(a *appState) *cobra.Command {
 			}
 			amount := sdk.Coin{Denom: denom, Amount: sdk.NewInt(0)}
 			var sent int
-			for k, v := range airdrop {
-				to, err := cl.DecodeBech32AccAddr(k)
+			for _, v := range airdrop {
+				to, err := cl.DecodeBech32AccAddr(v.Address)
 				if err != nil {
 					return err
 				}
-				toSendCoin := sdk.NewCoin(denom, sdk.NewInt(int64(v)))
+				toSendCoin := sdk.NewCoin(denom, sdk.NewInt(int64(v.Amount)))
 				toSend := sdk.NewCoins(toSendCoin)
 				amount = amount.Add(toSendCoin)
 				multiMsg.Outputs = append(multiMsg.Outputs, banktypes.Output{cl.MustEncodeAccAddr(to), toSend})
 				sent += 1
+
+				fmt.Println(v.Address)
 
 				if len(multiMsg.Outputs) > maxSends-1 {
 					completion := float64(sent) / float64(len(airdrop))
@@ -109,6 +110,7 @@ func airdropCmd(a *appState) *cobra.Command {
 						if err != nil || res.Code != 0 {
 							if err != nil {
 								fmt.Fprintf(cmd.OutOrStdout(), "failed to send airdrop: %s\n", err)
+								fmt.Println(err.Error())
 								return err
 							}
 							fmt.Fprintf(cmd.OutOrStdout(), "failed to send airdrop: %s\n", res.RawLog)
@@ -118,11 +120,16 @@ func airdropCmd(a *appState) *cobra.Command {
 						}
 						return nil
 					}, retry.Context(cmd.Context()))
+					fmt.Println("send successful")
 					multiMsg.Inputs = []banktypes.Input{}
 					multiMsg.Outputs = []banktypes.Output{}
 					amount = sdk.Coin{Denom: denom, Amount: sdk.NewInt(0)}
 				}
 			}
+
+			fmt.Println("remaining sends")
+
+			fmt.Println(multiMsg)
 			return nil
 		},
 	}
@@ -132,4 +139,10 @@ func airdropCmd(a *appState) *cobra.Command {
 	return cmd
 }
 
-type airdropFile map[string]float64
+// type airdropFile []map[string]float64
+type airdropFile []airdropItem
+
+type airdropItem struct {
+	Address string `json:"address"`
+	Amount  uint64 `json:"amount"`
+}
