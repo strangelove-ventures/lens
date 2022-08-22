@@ -174,6 +174,10 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		}
 	}
 
+	if cc.Config.MinGasAmount != 0 {
+		txf = txf.WithGas(cc.Config.MinGasAmount)
+	}
+
 	return txf, nil
 }
 
