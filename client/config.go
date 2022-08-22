@@ -60,6 +60,7 @@ type ChainClientConfig struct {
 	KeyringBackend string                  `json:"keyring-backend" yaml:"keyring-backend"`
 	GasAdjustment  float64                 `json:"gas-adjustment" yaml:"gas-adjustment"`
 	GasPrices      string                  `json:"gas-prices" yaml:"gas-prices"`
+	MinGasAmount   uint64                  `json:"min-gas-amount" yaml:"min-gas-amount"`
 	KeyDirectory   string                  `json:"key-directory" yaml:"key-directory"`
 	Debug          bool                    `json:"debug" yaml:"debug"`
 	Timeout        string                  `json:"timeout" yaml:"timeout"`
@@ -91,6 +92,7 @@ func GetCosmosHubConfig(keyHome string, debug bool) *ChainClientConfig {
 		KeyringBackend: "test",
 		GasAdjustment:  1.2,
 		GasPrices:      "0.01uatom",
+		MinGasAmount:   0,
 		KeyDirectory:   keyHome,
 		Debug:          debug,
 		Timeout:        "20s",
@@ -109,6 +111,7 @@ func GetOsmosisConfig(keyHome string, debug bool) *ChainClientConfig {
 		KeyringBackend: "test",
 		GasAdjustment:  1.2,
 		GasPrices:      "0.01uosmo",
+		MinGasAmount:   0,
 		KeyDirectory:   keyHome,
 		Debug:          debug,
 		Timeout:        "20s",

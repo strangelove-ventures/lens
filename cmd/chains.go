@@ -168,6 +168,12 @@ func cmdChainsEdit(a *appState) *cobra.Command {
 				a.Config.Chains[args[0]].GasAdjustment = fl
 			case "gas-prices":
 				a.Config.Chains[args[0]].GasPrices = args[2]
+			case "min-gas-amount":
+				ga, err := strconv.ParseUint(args[2], 10, 64)
+				if err != nil {
+					return err
+				}
+				a.Config.Chains[args[0]].MinGasAmount = ga
 			case "debug":
 				b, err := strconv.ParseBool(args[2])
 				if err != nil {
@@ -177,7 +183,7 @@ func cmdChainsEdit(a *appState) *cobra.Command {
 			case "timeout":
 				a.Config.Chains[args[0]].Timeout = args[2]
 			default:
-				return fmt.Errorf("unknown key %s, try 'key', 'chain-id', 'rpc-addr', 'grpc-addr', 'account-prefix', 'gas-adjustment', 'gas-prices', 'debug', or 'timeout'", args[1])
+				return fmt.Errorf("unknown key %s, try 'key', 'chain-id', 'rpc-addr', 'grpc-addr', 'account-prefix', 'gas-adjustment', 'gas-prices', 'min-gas-amount', 'debug', or 'timeout'", args[1])
 			}
 			return a.OverwriteConfig(a.Config)
 		},
