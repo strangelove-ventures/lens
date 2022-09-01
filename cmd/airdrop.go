@@ -133,7 +133,7 @@ func airdropCmd(a *appState) *cobra.Command {
 	}
 	cmd.Flags().Int("max-sends", 200, "max number of msgs per tx to send")
 	cmd.Flags().Bool("dry-run", false, "read the aidrop file and print metrics")
-	MemoFlag(a.Viper, cmd)
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 

@@ -127,7 +127,7 @@ func authzRevokeAuthorizationCmd(a *appState) *cobra.Command {
 			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg, memo))
 		},
 	}
-	MemoFlag(a.Viper, cmd)
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 

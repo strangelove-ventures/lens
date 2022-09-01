@@ -48,7 +48,7 @@ func gRPCFlags(cmd *cobra.Command, v *viper.Viper) *cobra.Command {
 	return cmd
 }
 
-func MemoFlag(v *viper.Viper, cmd *cobra.Command) *cobra.Command {
+func memoFlag(v *viper.Viper, cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().String(flagMemo, "", "a memo to include in transaction")
 	if err := v.BindPFlag(flagMemo, cmd.Flags().Lookup(flagMemo)); err != nil {
 		panic(err)

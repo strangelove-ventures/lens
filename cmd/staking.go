@@ -73,7 +73,7 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 		},
 	}
 	flags.AddTxFlagsToCmd(cmd)
-	MemoFlag(a.Viper, cmd)
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 
@@ -126,7 +126,7 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
-	MemoFlag(a.Viper, cmd)
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 

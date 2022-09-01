@@ -98,7 +98,7 @@ $ lens tx withdraw-rewards --from mykey --all
 	cmd.Flags().BoolP(FlagCommission, "c", false, "withdraw commission from a validator")
 	cmd.Flags().BoolP(FlagAll, "a", false, "withdraw all rewards of a delegator")
 	AddTxFlagsToCmd(cmd)
-	MemoFlag(a.Viper, cmd)
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 
