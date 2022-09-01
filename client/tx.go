@@ -44,8 +44,8 @@ func (ccc *ChainClientConfig) SignMode() signing.SignMode {
 	return signMode
 }
 
-func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxResponse, error) {
-	return cc.SendMsgs(ctx, []sdk.Msg{msg})
+func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	return cc.SendMsgs(ctx, []sdk.Msg{msg}, memo)
 }
 
 // SendMsgs wraps the msgs in a StdTx, signs and sends it. An error is returned if there
@@ -53,7 +53,7 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg) (*sdk.TxRespons
 // not return an error. If a transaction is successfully sent, the result of the execution
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
-func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxResponse, error) {
+func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, err
@@ -65,6 +65,10 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg) (*sdk.TxRes
 	_, adjusted, err := cc.CalculateGas(ctx, txf, msgs...)
 	if err != nil {
 		return nil, err
+	}
+
+	if memo != "" {
+		txf = txf.WithMemo(memo)
 	}
 
 	// Set the gas amount on the transaction factory

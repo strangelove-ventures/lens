@@ -65,7 +65,7 @@ func bankTxCmd(a *appState) *cobra.Command {
 	}
 
 	cmd.AddCommand(bankSendCmd(a))
-
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 

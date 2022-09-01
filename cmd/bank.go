@@ -38,7 +38,12 @@ func bankSendCmd(a *appState) *cobra.Command {
 				Amount:      coins,
 			}
 
-			res, err := cl.SendMsg(cmd.Context(), req)
+			memo, err := cmd.Flags().GetString(flagMemo)
+			if err != nil {
+				return err
+			}
+
+			res, err := cl.SendMsg(cmd.Context(), req, memo)
 			if err != nil {
 				if res != nil {
 					return fmt.Errorf("failed to send coins: code(%d) msg(%s)", res.Code, res.Logs)
@@ -49,6 +54,7 @@ func bankSendCmd(a *appState) *cobra.Command {
 
 		},
 	}
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 
