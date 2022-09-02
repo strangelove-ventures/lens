@@ -292,7 +292,7 @@ type protoTxProvider interface {
 
 // BuildSimTx creates an unsigned tx with an empty single signature and returns
 // the encoded transaction or an error if the unsigned transaction cannot be built.
-func BuildSimTx(info *keyring.Record, txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
+func BuildSimTx(info keyring.Info, txf tx.Factory, msgs ...sdk.Msg) ([]byte, error) {
 	txb, err := txf.BuildUnsignedTx(msgs...)
 	if err != nil {
 		return nil, err
@@ -300,10 +300,7 @@ func BuildSimTx(info *keyring.Record, txf tx.Factory, msgs ...sdk.Msg) ([]byte, 
 
 	var pk cryptotypes.PubKey = &secp256k1.PubKey{} // use default public key type
 
-	pk, err = info.GetPubKey()
-	if err != nil {
-		return nil, err
-	}
+	pk = info.GetPubKey()
 
 	// Create an empty signature literal as the ante handler will populate with a
 	// sentinel pubkey.

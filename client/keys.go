@@ -41,7 +41,7 @@ func LensKeyringAlgoOptions() keyring.Option {
 }
 
 func (cc *ChainClient) CreateKeystore(path string) error {
-	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, cc.Codec.Marshaler, LensKeyringAlgoOptions())
+	keybase, err := keyring.New(cc.Config.ChainID, cc.Config.KeyringBackend, cc.Config.KeyDirectory, cc.Input, LensKeyringAlgoOptions())
 	if err != nil {
 		return err
 	}
@@ -79,11 +79,7 @@ func (cc *ChainClient) ShowAddress(name string) (address string, err error) {
 	if err != nil {
 		return "", err
 	}
-	acc, err := info.GetAddress()
-	if err != nil {
-		return "", nil
-	}
-	out, err := cc.EncodeBech32AccAddr(acc)
+	out, err := cc.EncodeBech32AccAddr(info.GetAddress())
 	if err != nil {
 		return "", err
 	}
@@ -97,15 +93,11 @@ func (cc *ChainClient) ListAddresses() (map[string]string, error) {
 		return nil, err
 	}
 	for _, k := range info {
-		acc, err := k.GetAddress()
+		addr, err := cc.EncodeBech32AccAddr(k.GetAddress())
 		if err != nil {
 			return nil, err
 		}
-		addr, err := cc.EncodeBech32AccAddr(acc)
-		if err != nil {
-			return nil, err
-		}
-		out[k.Name] = addr
+		out[k.GetName()] = addr
 	}
 	return out, nil
 }
@@ -123,7 +115,7 @@ func (cc *ChainClient) KeyExists(name string) bool {
 		return false
 	}
 
-	return k.Name == name
+	return k.GetName() == name
 
 }
 
@@ -154,12 +146,7 @@ func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, mnemonic
 		return nil, err
 	}
 
-	acc, err := info.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	out, err := cc.EncodeBech32AccAddr(acc)
+	out, err := cc.EncodeBech32AccAddr(info.GetAddress())
 	if err != nil {
 		return nil, err
 	}
