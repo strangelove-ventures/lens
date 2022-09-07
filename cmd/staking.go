@@ -58,20 +58,22 @@ $ lens tx staking delegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj0 
 			if err != nil {
 				return err
 			}
-
+			memo, err := cmd.Flags().GetString(flagMemo)
+			if err != nil {
+				return err
+			}
 			// msg := types.NewMsgDelegate(delAddr, valAddr, amount)
 			msg := &types.MsgDelegate{
 				DelegatorAddress: cl.MustEncodeAccAddr(delAddr),
 				ValidatorAddress: cl.MustEncodeValAddr(valAddr),
 				Amount:           amount,
 			}
-			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg))
+			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg, memo))
 
 		},
 	}
-
 	flags.AddTxFlagsToCmd(cmd)
-
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 
@@ -108,7 +110,10 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 			if err != nil {
 				return err
 			}
-
+			memo, err := cmd.Flags().GetString(flagMemo)
+			if err != nil {
+				return err
+			}
 			msg := &types.MsgBeginRedelegate{
 				DelegatorAddress:    cl.MustEncodeAccAddr(delAddr),
 				ValidatorSrcAddress: cl.MustEncodeValAddr(sdk.ValAddress(valSrcAddr)),
@@ -116,12 +121,12 @@ $ lens tx staking redelegate cosmosvaloper1sjllsnramtg3ewxqwwrwjxfgc4n4ef9u2lcnj
 				Amount:              amount,
 			}
 
-			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg))
+			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg, memo))
 		},
 	}
 
 	flags.AddTxFlagsToCmd(cmd)
-
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 

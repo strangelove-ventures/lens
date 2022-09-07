@@ -54,6 +54,10 @@ $ lens tx withdraw-rewards --from mykey --all
 			if err != nil {
 				return err
 			}
+			memo, err := cmd.Flags().GetString(flagMemo)
+			if err != nil {
+				return err
+			}
 			query := query.Query{Client: cl, Options: opts}
 			if all, _ := cmd.Flags().GetBool(FlagAll); all {
 
@@ -88,12 +92,13 @@ $ lens tx withdraw-rewards --from mykey --all
 				msgs = append(msgs, types.NewMsgWithdrawValidatorCommission(sdk.ValAddress(valAddr)))
 			}
 
-			return cl.HandleAndPrintMsgSend(cl.SendMsgs(cmd.Context(), msgs))
+			return cl.HandleAndPrintMsgSend(cl.SendMsgs(cmd.Context(), msgs, memo))
 		},
 	}
 	cmd.Flags().BoolP(FlagCommission, "c", false, "withdraw commission from a validator")
 	cmd.Flags().BoolP(FlagAll, "a", false, "withdraw all rewards of a delegator")
 	AddTxFlagsToCmd(cmd)
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 

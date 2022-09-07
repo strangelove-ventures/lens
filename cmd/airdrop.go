@@ -55,6 +55,11 @@ func airdropCmd(a *appState) *cobra.Command {
 				delete(airdrop, scanner.Text())
 			}
 
+			memo, err := cmd.Flags().GetString(flagMemo)
+			if err != nil {
+				return err
+			}
+
 			dryRun, err := cmd.Flags().GetBool("dry-run")
 			if err != nil {
 				return err
@@ -105,7 +110,7 @@ func airdropCmd(a *appState) *cobra.Command {
 					multiMsg.Inputs = append(multiMsg.Inputs, banktypes.Input{cl.MustEncodeAccAddr(address), sdk.NewCoins(amount)})
 					retry.Do(func() error {
 						fmt.Fprintf(cmd.OutOrStdout(), "sending tx\n")
-						res, err := cl.SendMsgs(cmd.Context(), []sdk.Msg{multiMsg})
+						res, err := cl.SendMsgs(cmd.Context(), []sdk.Msg{multiMsg}, memo)
 						if err != nil || res.Code != 0 {
 							if err != nil {
 								fmt.Fprintf(cmd.OutOrStdout(), "failed to send airdrop: %s\n", err)
@@ -128,7 +133,7 @@ func airdropCmd(a *appState) *cobra.Command {
 	}
 	cmd.Flags().Int("max-sends", 200, "max number of msgs per tx to send")
 	cmd.Flags().Bool("dry-run", false, "read the aidrop file and print metrics")
-
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 

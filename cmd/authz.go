@@ -112,6 +112,10 @@ func authzRevokeAuthorizationCmd(a *appState) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			memo, err := cmd.Flags().GetString(flagMemo)
+			if err != nil {
+				return err
+			}
 			// TODO: query the grants to see if there is one
 			// to revoke and if so, ensure that revoke msg will
 			// pass (i.e. is right msg_type) before sending it.
@@ -120,9 +124,10 @@ func authzRevokeAuthorizationCmd(a *appState) *cobra.Command {
 				Grantee:    cl.MustEncodeAccAddr(eeAddr),
 				MsgTypeUrl: args[1],
 			}
-			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg))
+			return cl.HandleAndPrintMsgSend(cl.SendMsg(cmd.Context(), msg, memo))
 		},
 	}
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 
