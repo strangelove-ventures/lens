@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 
+	injectivetypes "github.com/InjectiveLabs/sdk-go/chain/types"
 	ethcodec "github.com/evmos/ethermint/crypto/codec"
 	ethermint "github.com/evmos/ethermint/types"
 )
@@ -28,6 +29,7 @@ func MakeCodec(moduleBasics []module.AppModuleBasic) Codec {
 	modBasic.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	ethcodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	ethermint.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	injectivetypes.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	return encodingConfig
 }
 
