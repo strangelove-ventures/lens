@@ -4,19 +4,26 @@ import (
 	"errors"
 	"os"
 
+	injectiveeth "github.com/InjectiveLabs/sdk-go/chain/crypto/ethsecp256k1"
 	ckeys "github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/codec/legacy"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/go-bip39"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	ethhd "github.com/evmos/ethermint/crypto/hd"
 )
 
-//func init() {
-//	legacy.Cdc.RegisterConcrete(&ethsecp256k1.PubKey{},
-//		ethsecp256k1.PubKeyName, nil)
-//	legacy.Cdc.RegisterConcrete(&ethsecp256k1.PrivKey{},
-//		ethsecp256k1.PrivKeyName, nil)
-//}
+func init() {
+	legacy.Cdc.RegisterConcrete(&ethsecp256k1.PubKey{},
+		ethsecp256k1.PubKeyName, nil)
+	legacy.Cdc.RegisterConcrete(&ethsecp256k1.PrivKey{},
+		ethsecp256k1.PrivKeyName, nil)
+	legacy.Cdc.RegisterConcrete(&injectiveeth.PubKey{},
+		injectiveeth.PubKeyName, nil)
+	legacy.Cdc.RegisterConcrete(&injectiveeth.PrivKey{},
+		injectiveeth.PrivKeyName, nil)
+}
 
 var (
 	// SupportedAlgorithms defines the list of signing algorithms used on Evmos:
