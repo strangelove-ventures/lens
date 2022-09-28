@@ -171,8 +171,6 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		txf = txf.WithAccountNumber(num)
 	} else if initNum != 0 {
 		txf = txf.WithAccountNumber(initNum)
-	} else {
-		return txf, fmt.Errorf("all attempts to retrieve account number returned 0")
 	}
 
 	initSeq := txf.Sequence()
@@ -180,8 +178,6 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		txf = txf.WithSequence(seq)
 	} else if initSeq != 0 {
 		txf = txf.WithSequence(initSeq)
-	} else {
-		return txf, fmt.Errorf("all attempts to retrieve sequence number returned 0")
 	}
 
 	if cc.Config.MinGasAmount != 0 {
