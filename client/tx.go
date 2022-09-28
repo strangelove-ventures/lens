@@ -54,15 +54,7 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
 func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	// Guard against account sequence number mismatch errors by locking for the specific wallet for
-	// the account sequence query all the way through the transaction broadcast success/fail.
-	cc.txMu.Lock()
-	defer cc.txMu.Unlock()
-
-	txf, err := cc.PrepareFactory(cc.TxFactory())
-	if err != nil {
-		return nil, err
-	}
+	txf := cc.TxFactory()
 
 	// TODO: Make this work with new CalculateGas method
 	// TODO: This is related to GRPC client stuff?
@@ -79,6 +71,10 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string
 	// Set the gas amount on the transaction factory
 	txf = txf.WithGas(adjusted)
 
+	if cc.Config.MinGasAmount != 0 {
+		txf = txf.WithGas(cc.Config.MinGasAmount)
+	}
+
 	// Build the transaction builder
 	txb, err := txf.BuildUnsignedTx(msgs...)
 	if err != nil {
@@ -90,6 +86,49 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string
 	// Force encoding in the chain specific address
 	for _, msg := range msgs {
 		cc.Codec.Marshaler.MustMarshalJSON(msg)
+	}
+
+	var (
+		from     sdk.AccAddress
+		num, seq uint64
+	)
+
+	// Get key address and retry if fail
+	if err = retry.Do(func() error {
+		from, err = cc.GetKeyAddress()
+		if err != nil {
+			return err
+		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
+		return nil, err
+	}
+
+	cliCtx := client.Context{}.WithClient(cc.RPCClient).
+		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
+		WithChainID(cc.Config.ChainID).
+		WithCodec(cc.Codec.Marshaler)
+
+	// Guard against account sequence number mismatch errors by locking for the specific wallet for
+	// the account sequence query all the way through the transaction broadcast success/fail.
+	cc.txMu.Lock()
+	defer cc.txMu.Unlock()
+
+	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
+
+	if initNum == 0 || initSeq == 0 {
+		// Set the account number and sequence on the transaction factory and retry if fail
+		if err = retry.Do(func() error {
+			num, seq, err = txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
+			if err != nil {
+				return err
+			}
+			return err
+		}, RtyAtt, RtyDel, RtyErr); err != nil {
+			return nil, err
+		}
+		txf = txf.WithAccountNumber(num)
+		txf = txf.WithSequence(seq)
 	}
 
 	err = func() error {
@@ -126,70 +165,6 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string
 	}
 
 	return res, nil
-}
-
-func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
-	var (
-		err      error
-		from     sdk.AccAddress
-		num, seq uint64
-	)
-
-	// Get key address and retry if fail
-	if err = retry.Do(func() error {
-		from, err = cc.GetKeyAddress()
-		if err != nil {
-			return err
-		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
-		return tx.Factory{}, err
-	}
-
-	cliCtx := client.Context{}.WithClient(cc.RPCClient).
-		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
-		WithChainID(cc.Config.ChainID).
-		WithCodec(cc.Codec.Marshaler)
-
-	// Set the account number and sequence on the transaction factory and retry if fail
-	if err = retry.Do(func() error {
-		if err = txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
-			return err
-		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
-		return txf, err
-	}
-
-	if err = retry.Do(func() error {
-		num, seq, err = txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
-		if err != nil {
-			return err
-		}
-		return err
-	}, RtyAtt, RtyDel, RtyErr); err != nil {
-		return txf, err
-	}
-
-	initNum := txf.AccountNumber()
-	if num != 0 {
-		txf = txf.WithAccountNumber(num)
-	} else if initNum != 0 {
-		txf = txf.WithAccountNumber(initNum)
-	}
-
-	initSeq := txf.Sequence()
-	if seq != 0 {
-		txf = txf.WithSequence(seq)
-	} else if initSeq != 0 {
-		txf = txf.WithSequence(initSeq)
-	}
-
-	if cc.Config.MinGasAmount != 0 {
-		txf = txf.WithGas(cc.Config.MinGasAmount)
-	}
-
-	return txf, nil
 }
 
 func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
