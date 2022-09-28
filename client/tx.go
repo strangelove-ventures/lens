@@ -156,26 +156,32 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {
 		return txf, err
 	}
 
-	// TODO: why this code? this may potentially require another query when we don't want one
-	initNum, initSeq := txf.AccountNumber(), txf.Sequence()
-	if initNum == 0 || initSeq == 0 {
-		if err = retry.Do(func() error {
-			num, seq, err = txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
-			if err != nil {
-				return err
-			}
+	if err = retry.Do(func() error {
+		num, seq, err = txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
+		if err != nil {
 			return err
-		}, RtyAtt, RtyDel, RtyErr); err != nil {
-			return txf, err
 		}
+		return err
+	}, RtyAtt, RtyDel, RtyErr); err != nil {
+		return txf, err
+	}
 
-		if initNum == 0 {
-			txf = txf.WithAccountNumber(num)
-		}
+	initNum := txf.AccountNumber()
+	if num != 0 {
+		txf = txf.WithAccountNumber(num)
+	} else if initNum != 0 {
+		txf = txf.WithAccountNumber(initNum)
+	} else {
+		return txf, fmt.Errorf("all attempts to retrieve account number returned 0")
+	}
 
-		if initSeq == 0 {
-			txf = txf.WithSequence(seq)
-		}
+	initSeq := txf.Sequence()
+	if seq != 0 {
+		txf = txf.WithSequence(seq)
+	} else if initSeq != 0 {
+		txf = txf.WithSequence(initSeq)
+	} else {
+		return txf, fmt.Errorf("all attempts to retrieve sequence number returned 0")
 	}
 
 	if cc.Config.MinGasAmount != 0 {
