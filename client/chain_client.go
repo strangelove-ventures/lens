@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -43,6 +44,7 @@ type ChainClient struct {
 	// TODO: GRPC Client type?
 
 	Codec Codec
+	txMu  sync.Mutex // safety for account sequence number
 }
 
 func NewChainClient(log *zap.Logger, ccc *ChainClientConfig, homepath string, input io.Reader, output io.Writer, kro ...keyring.Option) (*ChainClient, error) {

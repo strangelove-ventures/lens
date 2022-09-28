@@ -54,6 +54,11 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
 func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	// Guard against account sequence number mismatch errors by locking for the specific wallet for
+	// the account sequence query all the way through the transaction broadcast success/fail.
+	cc.txMu.Lock()
+	defer cc.txMu.Unlock()
+
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, err
