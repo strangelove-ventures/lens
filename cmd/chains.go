@@ -61,28 +61,9 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 		Short:   "add configuration for a chain or a number of chains from the chain registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registry := chain_registry.DefaultChainRegistry(a.Log)
-			allChains, err := registry.ListChains(cmd.Context())
-			if err != nil {
-				return err
-			}
+			overwriteConfig := false
 
 			for _, chain := range args {
-				found := false
-				for _, possibleChain := range allChains {
-					if chain == possibleChain {
-						found = true
-					}
-				}
-
-				if !found {
-					a.Log.Info(
-						"Unable to find chain",
-						zap.String("name", chain),
-						zap.String("url", registry.SourceLink()),
-					)
-					continue
-				}
-
 				chainInfo, err := registry.GetChain(cmd.Context(), chain)
 				if err != nil {
 					a.Log.Info(
@@ -102,11 +83,14 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 					)
 					continue
 				}
-
+				overwriteConfig = true
 				a.Config.Chains[chain] = chainConfig
 			}
-
-			return a.OverwriteConfig(a.Config)
+			if overwriteConfig {
+				return a.OverwriteConfig(a.Config)
+			} else {
+				return nil
+			}
 		},
 	}
 	return cmd

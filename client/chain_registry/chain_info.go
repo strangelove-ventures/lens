@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
-	"path"
 	"time"
 
-	"github.com/google/go-github/v43/github"
 	"github.com/spf13/viper"
 	"github.com/strangelove-ventures/lens/client"
 	"go.uber.org/zap"
@@ -120,20 +119,23 @@ func (c ChainInfo) GetRPCEndpoints(ctx context.Context) (out []string, err error
 
 	var eg errgroup.Group
 	var endpoints []string
+	healthy := 0
+	unhealthy := 0
 	for _, endpoint := range allRPCEndpoints {
 		endpoint := endpoint
 		eg.Go(func() error {
 			err := IsHealthyRPC(ctx, endpoint)
 			if err != nil {
-				c.log.Info(
+				unhealthy += 1
+				c.log.Debug(
 					"Ignoring endpoint due to error",
 					zap.String("endpoint", endpoint),
 					zap.Error(err),
 				)
 				return nil
 			}
-
-			c.log.Info("Verified healthy endpoint", zap.String("endpoint", endpoint))
+			healthy += 1
+			c.log.Debug("Verified healthy endpoint", zap.String("endpoint", endpoint))
 			endpoints = append(endpoints, endpoint)
 			return nil
 		})
@@ -141,7 +143,11 @@ func (c ChainInfo) GetRPCEndpoints(ctx context.Context) (out []string, err error
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-
+	c.log.Info("Endpoints queried",
+		zap.String("chain_name", c.ChainName),
+		zap.Int("healthy", healthy),
+		zap.Int("unhealthy", unhealthy),
+	)
 	return endpoints, nil
 }
 
@@ -156,33 +162,36 @@ func (c ChainInfo) GetRandomRPCEndpoint(ctx context.Context) (string, error) {
 	}
 
 	randomGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return rpcs[randomGenerator.Intn(len(rpcs))], nil
+	endpoint := rpcs[randomGenerator.Intn(len(rpcs))]
+	c.log.Info("Endpoint selected",
+		zap.String("chain_name", c.ChainName),
+		zap.String("endpoint", endpoint),
+	)
+	return endpoint, nil
 }
 
 func (c ChainInfo) GetAssetList(ctx context.Context) (AssetList, error) {
-	cl := github.NewClient(http.DefaultClient)
+	chainRegURL := fmt.Sprintf("https://raw.githubusercontent.com/cosmos/chain-registry/master/%s/assetlist.json", c.ChainName)
 
-	chainFileName := path.Join(c.ChainName, "assetlist.json")
-	ch, _, res, err := cl.Repositories.GetContents(
-		ctx,
-		"cosmos",
-		"chain-registry",
-		chainFileName,
-		&github.RepositoryContentGetOptions{})
-	if err != nil || res.StatusCode != 200 {
+	res, err := http.Get(chainRegURL)
+	if res.StatusCode != 200 {
+		return AssetList{}, fmt.Errorf("response code: %d: GET failed: %s", res.StatusCode, chainRegURL)
+	}
+	if err != nil {
 		return AssetList{}, err
 	}
 
-	content, err := ch.GetContent()
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return AssetList{}, err
 	}
 
 	var assetList AssetList
-	if err := json.Unmarshal([]byte(content), &assetList); err != nil {
+	if err := json.Unmarshal([]byte(body), &assetList); err != nil {
 		return AssetList{}, err
 	}
 	return assetList, nil
+
 }
 
 func (c ChainInfo) GetChainConfig(ctx context.Context) (*client.ChainClientConfig, error) {
