@@ -50,11 +50,15 @@ func (c CosmosGithubRegistry) GetChain(ctx context.Context, name string) (ChainI
 	chainRegURL := fmt.Sprintf("https://raw.githubusercontent.com/cosmos/chain-registry/master/%s/chain.json", name)
 
 	res, err := http.Get(chainRegURL)
-	if res.StatusCode != 200 {
-		return ChainInfo{}, fmt.Errorf("response code: %d: GET failed: %s", res.StatusCode, chainRegURL)
-	}
 	if err != nil {
 		return ChainInfo{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode == http.StatusNotFound {
+		return ChainInfo{}, fmt.Errorf("chain not found on registry: response code: %d: GET failed: %s", res.StatusCode, chainRegURL)
+	}
+	if res.StatusCode != http.StatusOK {
+		return ChainInfo{}, fmt.Errorf("response code: %d: GET failed: %s", res.StatusCode, chainRegURL)
 	}
 
 	result := NewChainInfo(c.log.With(zap.String("chain_name", name)))
