@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"path"
 	"strings"
 	"time"
 
 	"github.com/google/go-github/v43/github"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -48,29 +47,28 @@ func (c CosmosGithubRegistry) ListChains(ctx context.Context) ([]string, error) 
 }
 
 func (c CosmosGithubRegistry) GetChain(ctx context.Context, name string) (ChainInfo, error) {
-	client := github.NewClient(http.DefaultClient)
+	chainRegURL := fmt.Sprintf("https://raw.githubusercontent.com/cosmos/chain-registry/master/%s/chain.json", name)
 
-	chainFileName := path.Join(name, "chain.json")
-	fileContent, _, res, err := client.Repositories.GetContents(
-		ctx,
-		"cosmos",
-		"chain-registry",
-		chainFileName,
-		&github.RepositoryContentGetOptions{})
-	if err != nil || res.StatusCode != 200 {
-		return ChainInfo{}, errors.Wrap(err, fmt.Sprintf("error fetching %s", chainFileName))
-	}
-
-	content, err := fileContent.GetContent()
+	res, err := http.Get(chainRegURL)
 	if err != nil {
 		return ChainInfo{}, err
 	}
-
-	result := NewChainInfo(c.log.With(zap.String("chain_name", name)))
-	if err := json.Unmarshal([]byte(content), &result); err != nil {
-		return ChainInfo{}, err
+	defer res.Body.Close()
+	if res.StatusCode == http.StatusNotFound {
+		return ChainInfo{}, fmt.Errorf("chain not found on registry: response code: %d: GET failed: %s", res.StatusCode, chainRegURL)
+	}
+	if res.StatusCode != http.StatusOK {
+		return ChainInfo{}, fmt.Errorf("response code: %d: GET failed: %s", res.StatusCode, chainRegURL)
 	}
 
+	result := NewChainInfo(c.log.With(zap.String("chain_name", name)))
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return ChainInfo{}, err
+	}
+	if err := json.Unmarshal([]byte(body), &result); err != nil {
+		return ChainInfo{}, err
+	}
 	return result, nil
 }
 
