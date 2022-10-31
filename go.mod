@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/ibc-go/v5 v5.0.1
 	github.com/evmos/ethermint v0.6.1-0.20220810122651-42abb259cbed
 	github.com/gogo/protobuf v1.3.3
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github/v43 v43.0.0
 	github.com/jhump/protoreflect v1.12.1-0.20220721211354-060cc04fc18b
 	github.com/jsternberg/zap-logfmt v1.3.0
