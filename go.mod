@@ -21,7 +21,7 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035
-	google.golang.org/grpc v1.50.0
+	google.golang.org/grpc v1.50.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
