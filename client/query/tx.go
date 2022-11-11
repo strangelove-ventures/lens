@@ -14,10 +14,13 @@ import (
 // RPC endpoint is defined in cosmos-sdk: proto/cosmos/tx/v1beta1/service.proto,
 // See GetTxsEvent(GetTxsEventRequest) returns (GetTxsEventResponse)
 func TxsAtHeightRPC(q *Query, height int64, codec client.Codec) (*txTypes.GetTxsEventResponse, error) {
-	pagination := &query.PageRequest{Limit: 100}
+	if q.Options.Pagination == nil {
+		pagination := &query.PageRequest{Limit: 100}
+		q.Options.Pagination = pagination
+	}
 	orderBy := txTypes.OrderBy_ORDER_BY_UNSPECIFIED
 
-	req := &txTypes.GetTxsEventRequest{Events: []string{"tx.height=" + fmt.Sprintf("%d", height)}, Pagination: pagination, OrderBy: orderBy}
+	req := &txTypes.GetTxsEventRequest{Events: []string{"tx.height=" + fmt.Sprintf("%d", height)}, Pagination: q.Options.Pagination, OrderBy: orderBy}
 	return TxsRPC(q, req, codec)
 }
 
