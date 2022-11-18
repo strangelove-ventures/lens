@@ -8,7 +8,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 
+	injectivecodec "github.com/InjectiveLabs/sdk-go/chain/crypto/codec"
+	injectiveeth "github.com/InjectiveLabs/sdk-go/chain/crypto/ethsecp256k1"
+	injectivetypes "github.com/InjectiveLabs/sdk-go/chain/types"
 	ethcodec "github.com/evmos/ethermint/crypto/codec"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/evmos/ethermint/types"
 )
 
@@ -19,15 +23,27 @@ type Codec struct {
 	Amino             *codec.LegacyAmino
 }
 
-func MakeCodec(moduleBasics []module.AppModuleBasic) Codec {
+func MakeCodec(moduleBasics []module.AppModuleBasic, extraCodecs []string) Codec {
 	modBasic := module.NewBasicManager(moduleBasics...)
 	encodingConfig := MakeCodecConfig()
 	std.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	modBasic.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	modBasic.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	ethcodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-	ethermint.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+	for _, c := range extraCodecs {
+		if c == "ethermint" {
+			ethcodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+			ethermint.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+			encodingConfig.Amino.RegisterConcrete(&ethsecp256k1.PubKey{}, ethsecp256k1.PubKeyName, nil)
+			encodingConfig.Amino.RegisterConcrete(&ethsecp256k1.PrivKey{}, ethsecp256k1.PrivKeyName, nil)
+		} else if c == "injective" {
+			injectivetypes.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+			injectivecodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+			encodingConfig.Amino.RegisterConcrete(&injectiveeth.PubKey{}, injectiveeth.PubKeyName, nil)
+			encodingConfig.Amino.RegisterConcrete(&injectiveeth.PrivKey{}, injectiveeth.PrivKeyName, nil)
+		}
+	}
+
 	return encodingConfig
 }
 

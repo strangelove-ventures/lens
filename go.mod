@@ -34,6 +34,7 @@ require (
 	github.com/googleapis/go-type-adapters v1.0.0 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/prometheus/tsdb v0.10.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 )
 

@@ -67,6 +67,7 @@ type ChainClientConfig struct {
 	BlockTimeout   string                  `json:"block-timeout" yaml:"block-timeout"`
 	OutputFormat   string                  `json:"output-format" yaml:"output-format"`
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
+	ExtraCodecs    []string                `json:"extra-codecs" yaml:"extra-codecs"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
 }
 
