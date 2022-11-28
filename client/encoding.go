@@ -31,12 +31,13 @@ func MakeCodec(moduleBasics []module.AppModuleBasic, extraCodecs []string) Codec
 	modBasic.RegisterLegacyAminoCodec(encodingConfig.Amino)
 	modBasic.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	for _, c := range extraCodecs {
-		if c == "ethermint" {
+		switch c {
+		case "ethermint":
 			ethcodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 			ethermint.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 			encodingConfig.Amino.RegisterConcrete(&ethsecp256k1.PubKey{}, ethsecp256k1.PubKeyName, nil)
 			encodingConfig.Amino.RegisterConcrete(&ethsecp256k1.PrivKey{}, ethsecp256k1.PrivKeyName, nil)
-		} else if c == "injective" {
+		case "injective":
 			injectivetypes.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 			injectivecodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 			encodingConfig.Amino.RegisterConcrete(&injectiveeth.PubKey{}, injectiveeth.PubKeyName, nil)
