@@ -54,7 +54,7 @@ func NewChainClient(log *zap.Logger, ccc *ChainClientConfig, homepath string, in
 		Config:         ccc,
 		Input:          input,
 		Output:         output,
-		Codec:          MakeCodec(ccc.Modules),
+		Codec:          MakeCodec(ccc.Modules, ccc.ExtraCodecs),
 	}
 	if err := cc.Init(); err != nil {
 		return nil, err
