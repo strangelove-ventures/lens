@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -53,18 +54,22 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*
 // not return an error. If a transaction is successfully sent, the result of the execution
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
-func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
+func (cc *ChainClient) SendMsgsWithGas(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64) (*sdk.TxResponse, error) {
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Make this work with new CalculateGas method
-	// TODO: This is related to GRPC client stuff?
-	// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
-	_, adjusted, err := cc.CalculateGas(ctx, txf, msgs...)
-	if err != nil {
-		return nil, err
+	adjusted := gas
+
+	if gas == 0 {
+		// TODO: Make this work with new CalculateGas method
+		// TODO: This is related to GRPC client stuff?
+		// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
+		_, adjusted, err = cc.CalculateGas(ctx, txf, msgs...)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if memo != "" {
@@ -78,6 +83,13 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string
 	txb, err := txf.BuildUnsignedTx(msgs...)
 	if err != nil {
 		return nil, err
+	}
+
+	if cc.FeeGrants != nil {
+		feeGranterAddr, err := cc.GetFeeGranterAddress(cc.Config.Key)
+		if err == nil {
+			txb.SetFeeGranter(feeGranterAddr)
+		}
 	}
 
 	// Attach the signature to the transaction
@@ -109,6 +121,9 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string
 
 	// Broadcast those bytes
 	res, err := cc.BroadcastTx(ctx, txBytes)
+	if res != nil {
+		fmt.Printf("TX hash: %s\n", res.TxHash)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +136,55 @@ func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string
 	}
 
 	return res, nil
+}
+
+// SendMsgs wraps the msgs in a StdTx, signs and sends it. An error is returned if there
+// was an issue sending the transaction. A successfully sent, but failed transaction will
+// not return an error. If a transaction is successfully sent, the result of the execution
+// of that transaction will be logged. A boolean indicating if a transaction was successfully
+// sent and executed successfully is returned.
+func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
+	return cc.SendMsgsWithGas(ctx, msgs, memo, 0)
+}
+
+func (cc *ChainClient) SubmitTxAwaitResponse(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64) (*txtypes.GetTxResponse, error) {
+	resp, err := cc.SendMsgsWithGas(ctx, msgs, memo, gas)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("TX result code: %d. Waiting for TX with hash %s\n", resp.Code, resp.TxHash)
+	tx1resp, err := cc.AwaitTx(resp.TxHash, 15*time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx1resp, err
+}
+
+// Get the TX by hash, waiting for it to be included in a block
+func (cc *ChainClient) AwaitTx(txHash string, timeout time.Duration) (*txtypes.GetTxResponse, error) {
+	var txByHash *txtypes.GetTxResponse
+	var txLookupErr error
+	startTime := time.Now()
+	timeBetweenQueries := 100
+
+	txClient := txtypes.NewServiceClient(cc)
+
+	for txByHash == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		if time.Since(startTime) > timeout {
+			cancel()
+			return nil, txLookupErr
+		}
+
+		txByHash, txLookupErr = txClient.GetTx(ctx, &txtypes.GetTxRequest{Hash: txHash})
+		if txLookupErr != nil {
+			time.Sleep(time.Duration(timeBetweenQueries) * time.Millisecond)
+		}
+		cancel()
+	}
+
+	return txByHash, nil
 }
 
 func (cc *ChainClient) PrepareFactory(txf tx.Factory) (tx.Factory, error) {

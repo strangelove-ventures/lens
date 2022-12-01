@@ -82,6 +82,26 @@ func (ccc *ChainClientConfig) Validate() error {
 	return nil
 }
 
+func GetJunoLocalConfig(keyHome string, debug bool) *ChainClientConfig {
+	return &ChainClientConfig{
+		Key:            "default",
+		ChainID:        "testing",
+		RPCAddr:        "http://localhost:26657",
+		GRPCAddr:       "",
+		AccountPrefix:  "juno",
+		KeyringBackend: "test",
+		GasAdjustment:  1.2,
+		GasPrices:      "0.01ustake",
+		MinGasAmount:   80000,
+		KeyDirectory:   keyHome,
+		Debug:          debug,
+		Timeout:        "20s",
+		OutputFormat:   "json",
+		SignModeStr:    "direct",
+		Modules:        ModuleBasics,
+	}
+}
+
 func GetCosmosHubConfig(keyHome string, debug bool) *ChainClientConfig {
 	return &ChainClientConfig{
 		Key:            "default",

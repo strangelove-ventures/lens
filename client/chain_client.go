@@ -40,6 +40,7 @@ type ChainClient struct {
 	LightProvider  provtypes.Provider
 	Input          io.Reader
 	Output         io.Writer
+	FeeGrants      *FeeGrantConfiguration
 	// TODO: GRPC Client type?
 
 	Codec Codec
@@ -96,6 +97,14 @@ func (cc *ChainClient) GetKeyAddress() (sdk.AccAddress, error) {
 	return info.GetAddress()
 }
 
+func (cc *ChainClient) GetKeyAddressForKey(key string) (sdk.AccAddress, error) {
+	info, err := cc.Keybase.Key(key)
+	if err != nil {
+		return nil, err
+	}
+	return info.GetAddress()
+}
+
 func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 	httpClient, err := libclient.DefaultHTTPClient(addr)
 	if err != nil {
@@ -109,6 +118,9 @@ func NewRPCClient(addr string, timeout time.Duration) (*rpchttp.HTTP, error) {
 	return rpcClient, nil
 }
 
+// TODO: This looks buggy to me, why does a GETTER function have side effects? (cc.Config.Key = keyOrAddress)
+// That means any time you call this func, whatever key you call it with will be set as the default used for TXs.
+//
 // AccountFromKeyOrAddress returns an account from either a key or an address
 // if empty string is passed in this returns the default key's address
 func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.AccAddress, err error) {
