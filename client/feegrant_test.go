@@ -51,7 +51,7 @@ func TestFeeGrantBasic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	//Need to make sure the grantee's account exists on chain before attempting a FeeGrant.
+	//Ensure grantee's account exists on chain before attempting a FeeGrant.
 	//Therefore we just send some funds to that address.
 	fundHash := fundAccount(t, ctx, chainClient, granteeKey, granterKey)
 	fmt.Printf("Funded grantee account: tx hash %s\n", fundHash)
@@ -79,7 +79,7 @@ func fundAccount(t *testing.T, ctx context.Context, cc *client.ChainClient, keyN
 		t.Fatal(err)
 	}
 
-	coins, err := sdk.ParseCoinsNormalized("1000ustake")
+	coins, err := sdk.ParseCoinsNormalized("1000ujunox")
 	if err != nil {
 		t.Fatal(err)
 	}

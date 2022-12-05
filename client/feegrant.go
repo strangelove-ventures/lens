@@ -100,6 +100,24 @@ func (cc *ChainClient) GrantBasicAllowance(ctx context.Context, granter sdk.AccA
 	}
 	msgGrantAllowance, err := feegrant.NewMsgGrantAllowance(feeGrantBasic, granter, grantee)
 
+	//Due to the way Lens configures the SDK, addresses will have the 'cosmos' prefix which
+	//doesn't necessarily match the chain prefix of the ChainClient config. So calling the internal
+	//'NewMsgGrantAllowance' function will return the *incorrect* 'cosmos' prefixed bech32 address.
+	//TODO: discuss the below hotfix with one of the other Lens devs... this seems hacky.
+
+	granterAddr, granterAddrErr := cc.EncodeBech32AccAddr(granter)
+	if granterAddrErr != nil {
+		return nil, granterAddrErr
+	}
+	granteeAddr, granteeAddrErr := cc.EncodeBech32AccAddr(grantee)
+	if granteeAddrErr != nil {
+		return nil, granterAddrErr
+	}
+
+	//override the 'cosmos' prefixed bech32 addresses with the correct chain prefix
+	msgGrantAllowance.Grantee = granteeAddr
+	msgGrantAllowance.Granter = granterAddr
+
 	if err != nil {
 		cc.log.Error("GrantBasicAllowance.NewMsgGrantAllowance", zap.Error(err))
 		return nil, err

@@ -91,7 +91,7 @@ func GetJunoLocalConfig(keyHome string, debug bool) *ChainClientConfig {
 		AccountPrefix:  "juno",
 		KeyringBackend: "test",
 		GasAdjustment:  1.2,
-		GasPrices:      "0.01ustake",
+		GasPrices:      "0.01ujunox",
 		MinGasAmount:   80000,
 		KeyDirectory:   keyHome,
 		Debug:          debug,
