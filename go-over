@@ -1,0 +1,8 @@
+// TODO: the SubmitTxAwaitResponse should use the granter key, not the default key used for submitting TXs. These could potentially be different.
+
+//Due to the way Lens configures the SDK, addresses will have the 'cosmos' prefix which
+//doesn't necessarily match the chain prefix of the ChainClient config. So calling the internal
+//'NewMsgGrantAllowance' function will return the *incorrect* 'cosmos' prefixed bech32 address.
+//TODO: discuss the below hotfix with one of the other Lens devs... this seems hacky.
+
+//wrapped SendMsgs in SendMsgsWithGas .. in case clients want to specify the exact gas they want to use (no extra query...)

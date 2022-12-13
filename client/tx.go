@@ -54,7 +54,7 @@ func (cc *ChainClient) SendMsg(ctx context.Context, msg sdk.Msg, memo string) (*
 // not return an error. If a transaction is successfully sent, the result of the execution
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
-func (cc *ChainClient) SendMsgsWithGas(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64) (*sdk.TxResponse, error) {
+func (cc *ChainClient) SendMsgsWith(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64, signingKeyName string) (*sdk.TxResponse, error) {
 	txf, err := cc.PrepareFactory(cc.TxFactory())
 	if err != nil {
 		return nil, err
@@ -85,8 +85,8 @@ func (cc *ChainClient) SendMsgsWithGas(ctx context.Context, msgs []sdk.Msg, memo
 		return nil, err
 	}
 
-	if cc.FeeGrants != nil {
-		feeGranterAddr, err := cc.GetFeeGranterAddress(cc.Config.Key)
+	if cc.Config.FeeGrants != nil {
+		feeGranterAddr, err := cc.GetFeeGranterAddress(signingKeyName)
 		if err == nil {
 			txb.SetFeeGranter(feeGranterAddr)
 		}
@@ -103,7 +103,7 @@ func (cc *ChainClient) SendMsgsWithGas(ctx context.Context, msgs []sdk.Msg, memo
 		done := cc.SetSDKContext()
 		// ensure that we allways call done, even in case of an error or panic
 		defer done()
-		if err = tx.Sign(txf, cc.Config.Key, txb, false); err != nil {
+		if err = tx.Sign(txf, signingKeyName, txb, false); err != nil {
 			return err
 		}
 		return nil
@@ -144,11 +144,11 @@ func (cc *ChainClient) SendMsgsWithGas(ctx context.Context, msgs []sdk.Msg, memo
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
 func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	return cc.SendMsgsWithGas(ctx, msgs, memo, 0)
+	return cc.SendMsgsWith(ctx, msgs, memo, 0, cc.Config.Key)
 }
 
-func (cc *ChainClient) SubmitTxAwaitResponse(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64) (*txtypes.GetTxResponse, error) {
-	resp, err := cc.SendMsgsWithGas(ctx, msgs, memo, gas)
+func (cc *ChainClient) SubmitTxAwaitResponse(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64, signingKeyName string) (*txtypes.GetTxResponse, error) {
+	resp, err := cc.SendMsgsWith(ctx, msgs, memo, gas, signingKeyName)
 	if err != nil {
 		return nil, err
 	}

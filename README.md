@@ -77,6 +77,8 @@ lens chains add <chain_name>
 #Example:
 lens chains add juno
 ```
+> NOTE: By default, chains will be added with a fee grant configuration. This means that TXs will be signed by different keys in a round robin fashion.
+> To turn off fee granting, specify --feegrant=false when adding new chains. Without fee granting enabled, the default key will be used to sign TXs.
 
 To view all possible chain names, run:
 ```

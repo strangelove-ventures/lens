@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/strangelove-ventures/lens/client"
+	tx "github.com/strangelove-ventures/lens/client/tx"
 	"go.uber.org/zap/zaptest"
 )
 
@@ -56,13 +57,13 @@ func TestFeeGrantBasic(t *testing.T) {
 	fundHash := fundAccount(t, ctx, chainClient, granteeKey, granterKey)
 	fmt.Printf("Funded grantee account: tx hash %s\n", fundHash)
 
-	chainClient.FeeGrants = &client.FeeGrantConfiguration{
+	chainClient.Config.FeeGrants = &client.FeeGrantConfiguration{
 		GranteesWanted:  1,
 		GranterKey:      granterKey,
 		ManagedGrantees: []string{granteeKey},
 	}
 
-	err = chainClient.GrantAllGranteesBasicAllowance(ctx)
+	err = tx.GrantAllGranteesBasicAllowance(chainClient, ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,8 +91,7 @@ func fundAccount(t *testing.T, ctx context.Context, cc *client.ChainClient, keyN
 		Amount:      coins,
 	}
 
-	//TODO: keyNameSendFunds needs to be used for actually submitting the TX, in case its different than the default key
-	res, err := cc.SubmitTxAwaitResponse(ctx, []sdk.Msg{req}, "", 0)
+	res, err := cc.SubmitTxAwaitResponse(ctx, []sdk.Msg{req}, "", 0, keyNameSendFunds)
 	if err != nil {
 		t.Fatal(err)
 	}

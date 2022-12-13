@@ -40,7 +40,7 @@ type ChainClient struct {
 	LightProvider  provtypes.Provider
 	Input          io.Reader
 	Output         io.Writer
-	FeeGrants      *FeeGrantConfiguration
+
 	// TODO: GRPC Client type?
 
 	Codec Codec

@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//createConfig idempotently creates the config.
+// createConfig idempotently creates the config.
 func createConfig(home string, debug bool) error {
 	cfgPath := path.Join(home, "config.yaml")
 
@@ -53,6 +53,15 @@ func (c *Config) GetDefaultClient() *client.ChainClient {
 func (c *Config) GetClient(chainID string) *client.ChainClient {
 	if v, ok := c.cl[chainID]; ok {
 		return v
+	}
+	return nil
+}
+
+func (c *Config) GetChainClientForConfig(ccc *client.ChainClientConfig) *client.ChainClient {
+	for name, currentChainClientConfig := range c.Chains {
+		if currentChainClientConfig == ccc {
+			return c.cl[name]
+		}
 	}
 	return nil
 }

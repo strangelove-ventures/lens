@@ -14,6 +14,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	flagFeeGrant = "feegrant"
+)
+
 func chainsCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "chains",
@@ -83,6 +87,25 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 					)
 					continue
 				}
+
+				useFeegrant, err := cmd.Flags().GetBool(flagFeeGrant)
+				if err != nil {
+					return err
+				}
+
+				if useFeegrant {
+					cc := a.Config.GetChainClientForConfig(chainConfig)
+					if cc == nil {
+						a.Log.Error(
+							"Failed to find chain config",
+							zap.String("name", chain),
+							zap.Error(err),
+						)
+					} else {
+						cc.ConfigureFeegrants()
+					}
+				}
+
 				overwriteConfig = true
 				a.Config.Chains[chain] = chainConfig
 			}
@@ -93,6 +116,8 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 			}
 		},
 	}
+
+	cmd.Flags().Bool(flagFeeGrant, true, "use fee grants and rotating signing keys")
 	return cmd
 }
 

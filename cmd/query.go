@@ -17,13 +17,13 @@ func queryCmd(a *appState) *cobra.Command {
 		authzQueryCmd(a),
 		bankQueryCmd(a),
 		distributionQueryCmd(a),
+		feegrantQueryCmd(a),
 		stakingQueryCmd(a),
 	)
 
 	if false {
 		// TODO: enable these when commands are available
 		cmd.AddCommand(
-			feegrantQueryCmd(),
 			govQueryCmd(),
 			slashingQueryCmd(),
 		)
@@ -103,15 +103,15 @@ func distributionQueryCmd(a *appState) *cobra.Command {
 }
 
 // feegrantQueryCmd returns the fee grant query commands for this module
-func feegrantQueryCmd() *cobra.Command {
+func feegrantQueryCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "feegrant",
 		Aliases: []string{"feegrant"},
-		Short:   "Querying commands for the feegrant module",
+		Short:   "Querying commands for the feegrant module [currently BasicAllowance only]",
 	}
 
 	cmd.AddCommand(
-	// feegrantGrantsCmd(),
+		feegrantGrantsCmd(a),
 	// feegrantFeeGrantsCmd(),
 	)
 
