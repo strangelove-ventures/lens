@@ -35,6 +35,20 @@ func chainsCmd(a *appState) *cobra.Command {
 		cmdChainsRegistryList(a),
 		cmdChainsShowDefault(a),
 		cmdChainsEditorDefault(),
+		cmdChainsConfigure(a),
+	)
+
+	return cmd
+}
+
+func cmdChainsConfigure(a *appState) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "configure",
+		Short: "manage local chain configurations",
+	}
+
+	cmd.AddCommand(
+		feegrantConfigureBaseCmd(a),
 	)
 
 	return cmd
@@ -88,6 +102,8 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 					continue
 				}
 
+				a.Config.Chains[chain] = chainConfig
+
 				useFeegrant, err := cmd.Flags().GetBool(flagFeeGrant)
 				if err != nil {
 					return err
@@ -95,20 +111,29 @@ func cmdChainsAdd(a *appState) *cobra.Command {
 
 				if useFeegrant {
 					cc := a.Config.GetChainClientForConfig(chainConfig)
+
 					if cc == nil {
-						a.Log.Error(
-							"Failed to find chain config",
-							zap.String("name", chain),
-							zap.Error(err),
-						)
-					} else {
-						cc.ConfigureFeegrants()
+						//Failed to find chain config... initialize it
+						chainLogger := a.Log.With(zap.String("chain", chain))
+						cc, err = initializeChainClient(cmd, chainLogger, chain, a.HomePath, chainConfig)
+
+						if err != nil {
+							a.Log.Error(
+								"Failed to find chain config",
+								zap.String("name", chain),
+								zap.Error(err),
+							)
+							return err
+						}
 					}
+
+					cc.ConfigureFeegrants(10, cc.Config.Key)
+					chainConfig.FeeGrants = cc.Config.FeeGrants
 				}
 
 				overwriteConfig = true
-				a.Config.Chains[chain] = chainConfig
 			}
+
 			if overwriteConfig {
 				return a.OverwriteConfig(a.Config)
 			} else {

@@ -136,6 +136,25 @@ func (cc *ChainClient) AccountFromKeyOrAddress(keyOrAddress string) (out sdk.Acc
 	return
 }
 
+func (cc *ChainClient) KeyFromKeyOrAddress(keyOrAddress string) (string, error) {
+	switch {
+	case keyOrAddress == "":
+		return cc.Config.Key, nil
+	case cc.KeyExists(keyOrAddress):
+		return keyOrAddress, nil
+	default:
+		acc, err := cc.DecodeBech32AccAddr(keyOrAddress)
+		if err != nil {
+			return "", err
+		}
+		kr, err := cc.Keybase.KeyByAddress(acc)
+		if err != nil {
+			return "", err
+		}
+		return kr.Name, nil
+	}
+}
+
 func keysDir(home, chainID string) string {
 	return path.Join(home, "keys", chainID)
 }

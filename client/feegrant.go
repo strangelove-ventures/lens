@@ -11,19 +11,19 @@ import (
 // By default, TXs will be signed by the feegrantees 'ManagedGrantees' keys in a round robin fashion.
 // ChainClients can use other signing keys by invoking 'tx.SendMsgsWith' and specifying the signing key.
 type FeeGrantConfiguration struct {
-	GranteesWanted int
+	GranteesWanted int `json:"num_grantees" yaml:"num_grantees"`
 	//Normally this is the default ChainClient key
-	GranterKey string
+	GranterKey string `json:"granter" yaml:"granter"`
 	//List of keys (by name) that this FeeGranter manages
-	ManagedGrantees []string
+	ManagedGrantees []string `json:"grantees" yaml:"grantees"`
 	//Last checked on chain (0 means grants never checked and may not exist)
-	BlockHeightVerified int64
+	BlockHeightVerified int64 `json:"block_last_verified" yaml:"block_last_verified"`
 }
 
-func (cc *ChainClient) ConfigureFeegrants() error {
+func (cc *ChainClient) ConfigureFeegrants(numGrantees int, granterKey string) error {
 	cc.Config.FeeGrants = &FeeGrantConfiguration{
-		GranteesWanted:  10,
-		GranterKey:      cc.Config.Key,
+		GranteesWanted:  numGrantees,
+		GranterKey:      granterKey,
 		ManagedGrantees: []string{},
 	}
 
@@ -71,8 +71,4 @@ func (cc *ChainClient) GetFeeGranterAddress(txKey string) (sdk.AccAddress, error
 	}
 
 	return granterAddr, err
-}
-
-func (cc *ChainClient) EnsureBasicFeeGrants() {
-
 }

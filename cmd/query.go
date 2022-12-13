@@ -105,14 +105,12 @@ func distributionQueryCmd(a *appState) *cobra.Command {
 // feegrantQueryCmd returns the fee grant query commands for this module
 func feegrantQueryCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "feegrant",
-		Aliases: []string{"feegrant"},
-		Short:   "Querying commands for the feegrant module [currently BasicAllowance only]",
+		Use:   "feegrant",
+		Short: "Querying commands for the feegrant module [currently BasicAllowance only]",
 	}
 
 	cmd.AddCommand(
-		feegrantGrantsCmd(a),
-	// feegrantFeeGrantsCmd(),
+		feegrantBasicGrantsCmd(a),
 	)
 
 	return cmd

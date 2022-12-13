@@ -70,7 +70,7 @@ type ChainClientConfig struct {
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
 
 	//If FeeGrantConfiguration is set, TXs submitted by the ChainClient will be signed by the FeeGrantees in a round-robin fashion by default.
-	FeeGrants *FeeGrantConfiguration
+	FeeGrants *FeeGrantConfiguration `json:"feegrants" yaml:"feegrants"`
 }
 
 func (ccc *ChainClientConfig) Validate() error {

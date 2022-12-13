@@ -98,6 +98,23 @@ func defaultConfig(keyHome string, debug bool) []byte {
 	}.MustYAML()
 }
 
+func initializeChainClient(cmd *cobra.Command, log *zap.Logger, chainName string, homeDir string, chain *client.ChainClientConfig) (*client.ChainClient, error) {
+	// instantiate chain client
+	chain.Modules = append([]module.AppModuleBasic{}, ModuleBasics...)
+	cl, err := client.NewChainClient(
+		log,
+		chain,
+		homeDir,
+		cmd.InOrStdin(),
+		cmd.OutOrStdout(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating chain client: %w", err)
+	}
+
+	return cl, nil
+}
+
 // initConfig reads in config file and ENV variables if set.
 // This is called as a persistent pre-run command of the root command.
 func initConfig(cmd *cobra.Command, a *appState, o map[string]ClientOverrides) error {
