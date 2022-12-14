@@ -22,6 +22,7 @@ import (
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
 	"github.com/cosmos/ibc-go/v6/modules/apps/transfer"
 	ibc "github.com/cosmos/ibc-go/v6/modules/core"
+	ibctm "github.com/cosmos/ibc-go/v6/modules/light-clients/07-tendermint"
 )
 
 var (
@@ -47,6 +48,7 @@ var (
 		upgrade.AppModuleBasic{},
 		transfer.AppModuleBasic{},
 		ibc.AppModuleBasic{},
+		ibctm.AppModuleBasic{},
 	}
 )
 
