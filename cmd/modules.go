@@ -8,7 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/capability"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
-	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
 	feegrant "github.com/cosmos/cosmos-sdk/x/feegrant/module"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/gov/client"
@@ -35,7 +34,7 @@ var ModuleBasics = []module.AppModuleBasic{
 	// TODO: add other proposal types here
 	gov.NewAppModuleBasic(
 		[]client.ProposalHandler{
-			paramsclient.ProposalHandler, distrclient.ProposalHandler, upgradeclient.LegacyProposalHandler, upgradeclient.LegacyCancelProposalHandler,
+			paramsclient.ProposalHandler, upgradeclient.LegacyProposalHandler, upgradeclient.LegacyCancelProposalHandler,
 		},
 	),
 	crisis.AppModuleBasic{},
