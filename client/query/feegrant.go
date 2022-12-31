@@ -81,8 +81,14 @@ func GetValidBasicGrants(cc *client.ChainClient) ([]*feegrant.Grant, error) {
 	for _, grant := range grants {
 		switch grant.Allowance.TypeUrl {
 		case "/cosmos.feegrant.v1beta1.BasicAllowance":
-			feegrantAllowance := grant.Allowance.GetCachedValue().(*feegrant.BasicAllowance)
-			if isValidGrant(feegrantAllowance) {
+			//var feegrantAllowance feegrant.BasicAllowance
+			var feegrantAllowance feegrant.FeeAllowanceI
+			e := cc.Codec.InterfaceRegistry.UnpackAny(grant.Allowance, &feegrantAllowance)
+			if e != nil {
+				return nil, e
+			}
+			//feegrantAllowance := grant.Allowance.GetCachedValue().(*feegrant.BasicAllowance)
+			if isValidGrant(feegrantAllowance.(*feegrant.BasicAllowance)) {
 				validGrants = append(validGrants, grant)
 			}
 		default:

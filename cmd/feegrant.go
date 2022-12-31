@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	query "github.com/strangelove-ventures/lens/client/query"
+	tx "github.com/strangelove-ventures/lens/client/tx"
 )
 
 // feegrantConfigureCmd returns the fee grant configuration commands for this module
@@ -24,22 +25,21 @@ func feegrantConfigureBaseCmd(a *appState) *cobra.Command {
 
 func feegrantConfigureBasicCmd(a *appState) *cobra.Command {
 	var numGrantees int
+	var update bool
 	cmd := &cobra.Command{
-		Use:   "basicallowance [chain-name] [granter] --grantees [int]",
-		Short: "feegrants for the given chain (if none specified, uses the default account)",
-		Long:  "feegrants for the given chain. 10 grantees by default, all with an unrestricted BasicAllowance. Fails if already configured.",
+		Use:   "basicallowance [chain-name] [granter] --grantees [int] --update-granter",
+		Short: "feegrants for the given chain and granter (if granter is unspecified, use the default key)",
+		Long:  "feegrants for the given chain. 10 grantees by default, all with an unrestricted BasicAllowance.",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chain := args[0]
 			cl := a.Config.GetClient(chain)
-
-			if cl.Config.FeeGrants != nil {
-				return fmt.Errorf("feegrants are already configured for chain '%s'", chain)
-			}
-
 			granterKeyOrAddr := ""
+
 			if len(args) > 1 {
 				granterKeyOrAddr = args[1]
+			} else if cl.Config.FeeGrants != nil {
+				granterKeyOrAddr = cl.Config.FeeGrants.GranterKey
 			} else {
 				granterKeyOrAddr = cl.Config.Key
 			}
@@ -48,16 +48,38 @@ func feegrantConfigureBasicCmd(a *appState) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("could not get granter key from '%s'", granterKeyOrAddr)
 			}
-			feegrantErr := cl.ConfigureFeegrants(numGrantees, granterKey)
-			if feegrantErr != nil {
-				return feegrantErr
+
+			if cl.Config.FeeGrants != nil && granterKey != cl.Config.FeeGrants.GranterKey && !update {
+				return fmt.Errorf("you specified granter '%s' which is different than configured feegranter '%s', but you did not specify the --update flag", granterKeyOrAddr, cl.Config.FeeGrants.GranterKey)
+			} else if cl.Config.FeeGrants != nil && granterKey != cl.Config.FeeGrants.GranterKey && update {
+				cl.Config.FeeGrants.GranterKey = granterKey
+				cfgErr := a.OverwriteConfig(a.Config)
+				cobra.CheckErr(cfgErr)
 			}
 
+			if cl.Config.FeeGrants == nil {
+				feegrantErr := cl.ConfigureFeegrants(numGrantees, granterKey)
+				if feegrantErr != nil {
+					return feegrantErr
+				}
+
+				cfgErr := a.OverwriteConfig(a.Config)
+				cobra.CheckErr(cfgErr)
+			}
+
+			memo, err := cmd.Flags().GetString(flagMemo)
+			if err != nil {
+				return err
+			}
+
+			_, err = tx.EnsureBasicGrants(cmd.Context(), memo, cl)
+			cobra.CheckErr(err)
 			return nil
-			//return cl.PrintObject(res)
 		},
 	}
+	cmd.Flags().BoolVar(&update, "update-granter", false, "if a granter is configured and you want to change the granter key")
 	cmd.Flags().IntVar(&numGrantees, "grantees", 10, "number of grantees that will be feegranted with basic allowances")
+	memoFlag(a.Viper, cmd)
 	return cmd
 }
 
@@ -99,7 +121,13 @@ func feegrantBasicGrantsCmd(a *appState) *cobra.Command {
 				return err
 			}
 
-			return cl.PrintObject(res)
+			for _, grant := range res {
+				allowance, e := cl.MarshalProto(grant.Allowance)
+				cobra.CheckErr(e)
+				fmt.Printf("Granter: %s, Grantee: %s, Allowance: %s\n", grant.Granter, grant.Grantee, allowance)
+			}
+
+			return nil
 		},
 	}
 	return paginationFlags(cmd, a.Viper)

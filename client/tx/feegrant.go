@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
@@ -14,11 +15,11 @@ import (
 
 // Ensure all Basic Allowance grants are in place for the given ChainClient.
 // This will query (RPC) for existing grants and create new grants if they don't exist.
-func EnsureBasicGrants(cc *client.ChainClient) error {
+func EnsureBasicGrants(ctx context.Context, memo string, cc *client.ChainClient) (*sdk.TxResponse, error) {
 	if cc.Config.FeeGrants == nil {
-		return errors.New("ChainClient must be a FeeGranter to establish grants")
+		return nil, errors.New("ChainClient must be a FeeGranter to establish grants")
 	} else if len(cc.Config.FeeGrants.ManagedGrantees) == 0 {
-		return errors.New("ChainClient is a FeeGranter, but is not managing any Grantees")
+		return nil, errors.New("ChainClient is a FeeGranter, but is not managing any Grantees")
 	}
 
 	granterKey := cc.Config.FeeGrants.GranterKey
@@ -28,57 +29,111 @@ func EnsureBasicGrants(cc *client.ChainClient) error {
 
 	granterAcc, err := cc.GetKeyAddressForKey(granterKey)
 	if err != nil {
-		fmt.Printf("ChainClient FeeGranter misconfiguration: %s", err.Error())
-		return err
+		fmt.Printf("Retrieving key '%s': ChainClient FeeGranter misconfiguration: %s", granterKey, err.Error())
+		return nil, err
+	}
+
+	granterAddr, granterAddrErr := cc.EncodeBech32AccAddr(granterAcc)
+	if granterAddrErr != nil {
+		return nil, granterAddrErr
 	}
 
 	validGrants, err := query.GetValidBasicGrants(cc)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	msgs := []sdk.Msg{}
+	numGrantees := len(cc.Config.FeeGrants.ManagedGrantees)
+	grantsNeeded := 0
 
 	for _, grantee := range cc.Config.FeeGrants.ManagedGrantees {
 		granteeAcc, err := cc.GetKeyAddressForKey(grantee)
 		if err != nil {
 			fmt.Printf("Misconfiguration for grantee key %s. Error: %s\n", grantee, err.Error())
-			return err
+			return nil, err
 		}
 
 		granteeAddr, granteeAddrErr := cc.EncodeBech32AccAddr(granteeAcc)
 		if granteeAddrErr != nil {
-			return granteeAddrErr
+			return nil, granteeAddrErr
 		}
 
 		hasGrant := false
 		for _, basicGrant := range validGrants {
 			if basicGrant.Grantee == granteeAddr {
+				fmt.Printf("Valid grant found for granter %s, grantee %s\n", basicGrant.Granter, basicGrant.Grantee)
 				hasGrant = true
 			}
 		}
 
 		if !hasGrant {
+			grantsNeeded += 1
+			fmt.Printf("Grant will be created on chain for granter %s and grantee %s\n", granterAddr, granteeAddr)
 			grantMsg, err := getMsgGrantBasicAllowance(cc, granterAcc, granteeAcc)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			msgs = append(msgs, grantMsg)
 		}
 	}
 
 	if len(msgs) > 0 {
-		txResp, err := cc.SubmitTxAwaitResponse(context.Background(), msgs, "", 0, granterKey)
+		//Make sure the granter has funds on chain, if not, we can't even pay TX fees.
+		//Also, depending how the config was initialized, the key might only exist locally, not on chain.
+		options := query.QueryOptions{}
+		query := query.Query{Client: cc, Options: &options}
+		balance, err := query.Bank_Balances(granterAddr)
 		if err != nil {
-			fmt.Printf("Error: SubmitTxAwaitResponse: %s", err.Error())
-			return err
-		} else if txResp != nil && txResp.TxResponse != nil && txResp.TxResponse.Code != 0 {
-			fmt.Printf("Submitting grants for granter %s failed. Code: %d, TX hash: %s\n", granterKey, txResp.TxResponse.Code, txResp.TxResponse.TxHash)
-			return fmt.Errorf("could not configure feegrant for granter %s", granterKey)
+			return nil, err
 		}
+
+		//Check to ensure the feegranter has funds on chain that can pay TX fees
+		weBroke := true
+		gasDenom, err := getGasTokenDenom(cc.Config.GasPrices)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, coin := range balance.Balances {
+			if coin.Denom == gasDenom {
+				if coin.Amount.GT(sdk.ZeroInt()) {
+					weBroke = false
+				}
+			}
+		}
+
+		//Feegranter can pay TX fees
+		if !weBroke {
+			txResp, err := cc.SubmitTxAwaitResponse(ctx, msgs, memo, 0, granterKey)
+			if err != nil {
+				fmt.Printf("Error: SubmitTxAwaitResponse: %s", err.Error())
+				return nil, err
+			} else if txResp != nil && txResp.TxResponse != nil && txResp.TxResponse.Code != 0 {
+				fmt.Printf("Submitting grants for granter %s failed. Code: %d, TX hash: %s\n", granterKey, txResp.TxResponse.Code, txResp.TxResponse.TxHash)
+				return nil, fmt.Errorf("could not configure feegrant for granter %s", granterKey)
+			}
+
+			fmt.Printf("TX succeeded, %d new grants configured, %d grants already in place. TX hash: %s\n", grantsNeeded, numGrantees-grantsNeeded, txResp.TxResponse.TxHash)
+			return txResp.TxResponse, err
+		} else {
+			return nil, fmt.Errorf("granter %s does not have funds on chain in fee denom '%s' (no TXs submitted)", granterKey, gasDenom)
+		}
+	} else {
+		fmt.Printf("All grantees (%d total) already had valid feegrants. Feegrant configuration verified.\n", numGrantees)
 	}
 
-	return nil
+	return nil, nil
+}
+
+func getGasTokenDenom(gasPrices string) (string, error) {
+	r := regexp.MustCompile(`(?P<digits>[0-9.]*)(?P<denom>.*)`)
+	submatches := r.FindStringSubmatch(gasPrices)
+	if len(submatches) != 3 {
+		return "", errors.New("could not find fee denom")
+	}
+
+	return submatches[2], nil
 }
 
 // GrantBasicAllowance Send a feegrant with the basic allowance type.

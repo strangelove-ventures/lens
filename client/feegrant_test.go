@@ -2,7 +2,9 @@ package client_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -33,6 +35,25 @@ func newChainClientLocalJuno(t *testing.T, keyName string, mnemonic string) *cli
 	//Set new key to the default
 	cl.Config.Key = keyName
 	return cl
+}
+
+func TestGasPricesRegex(t *testing.T) {
+	gasPrices := "0.01ujunox"
+	denom, err := getGasTokenDenom(gasPrices)
+	if err != nil || denom != "ujunox" {
+		t.Fail()
+	}
+}
+
+func getGasTokenDenom(gasPrices string) (string, error) {
+	r := regexp.MustCompile(`(?P<digits>[0-9.]*)(?P<denom>.*)`)
+	submatches := r.FindStringSubmatch(gasPrices)
+	if len(submatches) != 3 {
+		return "", errors.New("could not find fee denom")
+	}
+	//fmt.Printf("%#v\n", r.SubexpNames())
+
+	return submatches[2], nil
 }
 
 // To run this test you must first launch a local Juno chain. To do so, git clone the juno repo and run docker-compose up
