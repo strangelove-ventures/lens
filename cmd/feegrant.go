@@ -72,8 +72,20 @@ func feegrantConfigureBasicCmd(a *appState) *cobra.Command {
 				return err
 			}
 
-			_, err = tx.EnsureBasicGrants(cmd.Context(), memo, cl)
+			ctx := cmd.Context()
+			_, err = tx.EnsureBasicGrants(ctx, memo, cl)
 			cobra.CheckErr(err)
+
+			//Get latest height from the chain, mark feegrant configuration as verified up to that height.
+			//This means we've verified feegranting is enabled on-chain and TXs can be sent with a feegranter.
+			if cl.Config.FeeGrants != nil {
+				h, err := cl.QueryLatestHeight(ctx)
+				cobra.CheckErr(err)
+				cl.Config.FeeGrants.BlockHeightVerified = h
+				cfgErr := a.OverwriteConfig(a.Config)
+				cobra.CheckErr(cfgErr)
+			}
+
 			return nil
 		},
 	}

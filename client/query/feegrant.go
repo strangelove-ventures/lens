@@ -35,6 +35,8 @@ func Feegrant_GrantsRPC(q *Query, address string) ([]*feegrant.Grant, error) {
 			return nil, err
 		}
 
+		fmt.Printf("feegrant query ctx: %+v\n", ctx)
+
 		if res.Allowances != nil {
 			grants = append(grants, res.Allowances...)
 		}
@@ -70,10 +72,10 @@ func GetValidBasicGrants(cc *client.ChainClient) ([]*feegrant.Grant, error) {
 		return nil, err
 	}
 
-	encodedAddr := cc.MustEncodeAccAddr(address)
 	options := QueryOptions{}
-	qc := &Query{Client: cc, Options: &options}
-	grants, err := Feegrant_GrantsRPC(qc, encodedAddr)
+	q := &Query{Client: cc, Options: &options}
+	encodedAddr := cc.MustEncodeAccAddr(address)
+	grants, err := Feegrant_GrantsRPC(q, encodedAddr)
 	if err != nil {
 		return nil, err
 	}

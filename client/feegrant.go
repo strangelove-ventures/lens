@@ -1,11 +1,9 @@
 package client
 
 import (
-	"errors"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"go.uber.org/zap"
 )
 
 // By default, TXs will be signed by the feegrantees 'ManagedGrantees' keys in a round robin fashion.
@@ -18,6 +16,8 @@ type FeeGrantConfiguration struct {
 	ManagedGrantees []string `json:"grantees" yaml:"grantees"`
 	//Last checked on chain (0 means grants never checked and may not exist)
 	BlockHeightVerified int64 `json:"block_last_verified" yaml:"block_last_verified"`
+	//Index of the last ManagedGrantee used as a TX signer
+	GranteeLastSignerIndex int
 }
 
 func (cc *ChainClient) ConfigureFeegrants(numGrantees int, granterKey string) error {
@@ -47,28 +47,37 @@ func (fg *FeeGrantConfiguration) AddGranteeKeys(cc *ChainClient) error {
 	return nil
 }
 
-func (cc *ChainClient) GetFeeGranterAddress(txKey string) (sdk.AccAddress, error) {
+// Get the feegrant params to use for the next TX. If feegrants are not configured for the chain client, the default key will be used for TX signing.
+// Otherwise, a configured feegrantee will be chosen for TX signing in round-robin fashion.
+func (cc *ChainClient) GetTxFeeGrant() (txSignerKey string, feeGranterKey string, err error) {
+	//By default, we should sign TXs with the ChainClient's default key
+	txSignerKey = cc.Config.Key
+
 	if cc.Config.FeeGrants == nil {
-		return sdk.AccAddress{}, errors.New("no feegranter configured")
+		return
 	}
 
-	granterKey := cc.Config.FeeGrants.GranterKey
-	if granterKey == "" {
-		granterKey = cc.Config.Key
+	// Use the ChainClient's configured Feegranter key for the next TX.
+	feeGranterKey = cc.Config.FeeGrants.GranterKey
+
+	// The ChainClient Feegrant configuration has never been verified on chain.
+	// Don't use Feegrants as it could cause the TX to fail on chain.
+	if feeGranterKey == "" || cc.Config.FeeGrants.BlockHeightVerified <= 0 {
+		feeGranterKey = ""
+		return
 	}
 
-	if granterKey == txKey {
-		return sdk.AccAddress{}, errors.New("cannot feegrant your own TX")
+	//Pick the next managed grantee in the list as the TX signer
+	lastGranteeIdx := cc.Config.FeeGrants.GranteeLastSignerIndex
+	if lastGranteeIdx >= 0 && lastGranteeIdx <= len(cc.Config.FeeGrants.ManagedGrantees)-1 {
+		txSignerKey = cc.Config.FeeGrants.ManagedGrantees[lastGranteeIdx]
+		cc.Config.FeeGrants.GranteeLastSignerIndex = cc.Config.FeeGrants.GranteeLastSignerIndex + 1
+
+		//Restart the round robin at 0 if we reached the end of the list of grantees
+		if cc.Config.FeeGrants.GranteeLastSignerIndex == len(cc.Config.FeeGrants.ManagedGrantees) {
+			cc.Config.FeeGrants.GranteeLastSignerIndex = 0
+		}
 	}
 
-	granterAddr, err := cc.GetKeyAddressForKey(granterKey)
-	if err != nil {
-		cc.log.Error("ChainClient FeeGrantee.GranterAddress misconfiguration",
-			zap.String("Granter key", granterKey),
-			zap.Error(err),
-		)
-		return granterAddr, err
-	}
-
-	return granterAddr, err
+	return
 }

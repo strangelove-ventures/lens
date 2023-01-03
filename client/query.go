@@ -31,7 +31,7 @@ func (cc *ChainClient) queryBalanceWithAddress(ctx context.Context, address stri
 	return res.Balances, nil
 }
 
-func (cc *ChainClient) queryLatestHeight(ctx context.Context) (int64, error) {
+func (cc *ChainClient) QueryLatestHeight(ctx context.Context) (int64, error) {
 	stat, err := cc.RPCClient.Status(ctx)
 	if err != nil {
 		return -1, err
@@ -79,7 +79,7 @@ func (cc *ChainClient) QueryBalanceWithDenomTraces(ctx context.Context, address 
 		return nil, err
 	}
 
-	h, err := cc.queryLatestHeight(ctx)
+	h, err := cc.QueryLatestHeight(ctx)
 	if err != nil {
 		return nil, err
 	}
