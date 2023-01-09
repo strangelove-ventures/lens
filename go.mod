@@ -7,7 +7,7 @@ require (
 	github.com/avast/retry-go/v4 v4.3.2
 	github.com/cosmos/cosmos-sdk v0.46.7
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/ibc-go/v6 v6.0.0
+	github.com/cosmos/ibc-go/v6 v6.1.0
 	github.com/evmos/ethermint v0.6.1-0.20220810122651-42abb259cbed
 	github.com/gogo/protobuf v1.3.3
 	github.com/google/go-cmp v0.5.9
