@@ -69,6 +69,7 @@ type ChainClientConfig struct {
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
 	ExtraCodecs    []string                `json:"extra-codecs" yaml:"extra-codecs"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
+	Slip44         int                     `json:"slip44" yaml:"slip44"`
 }
 
 func (ccc *ChainClientConfig) Validate() error {
