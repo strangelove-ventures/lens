@@ -230,5 +230,6 @@ func (c ChainInfo) GetChainConfig(ctx context.Context) (*client.ChainClientConfi
 		Timeout:        "20s",
 		OutputFormat:   "json",
 		SignModeStr:    "direct",
+		Slip44:			c.Slip44,
 	}, nil
 }
