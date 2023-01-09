@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/InjectiveLabs/sdk-go v1.42.4-lens
-	github.com/cosmos/cosmos-sdk v0.46.6
 	github.com/avast/retry-go/v4 v4.3.2
+	github.com/cosmos/cosmos-sdk v0.46.6
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/ibc-go/v6 v6.0.0
 	github.com/evmos/ethermint v0.6.1-0.20220810122651-42abb259cbed
@@ -21,6 +21,7 @@ require (
 	github.com/tendermint/tendermint v0.34.23
 	go.uber.org/zap v1.24.0
 	golang.org/x/sync v0.1.0
+	golang.org/x/term v0.2.0
 	google.golang.org/grpc v1.51.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
