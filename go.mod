@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/InjectiveLabs/sdk-go v1.42.4-lens
-	github.com/avast/retry-go/v4 v4.3.1
+	github.com/avast/retry-go/v4 v4.3.2
 	github.com/cosmos/cosmos-sdk v0.46.4
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/ibc-go/v5 v5.1.0
