@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/strangelove-ventures/lens/client"
 	"github.com/strangelove-ventures/lens/client/query"
@@ -58,6 +60,163 @@ func getGasTokenDenom(gasPrices string) (string, error) {
 	return submatches[2], nil
 }
 
+func setSdkContext(prefix string) {
+	sdkConf := sdk.GetConfig()
+	sdkConf.SetBech32PrefixForAccount(prefix, prefix+"pub")
+	sdkConf.SetBech32PrefixForValidator(prefix+"valoper", prefix+"valoperpub")
+	sdkConf.SetBech32PrefixForConsensusNode(prefix+"valcons", prefix+"valconspub")
+}
+
+// To run this test you must first launch a local Juno chain. To do so, git clone the juno repo and run docker-compose up
+// ensure feegranting fails if granter has no funds
+func TestFeegranterEmptyBalance(t *testing.T) {
+	setSdkContext("juno")
+
+	//coinType := uint32(118) //Cosmos coin type
+	defaultKey := "default"
+	granterKey := "underfundedGranter"
+	ctx := context.Background()
+
+	//Mnemonic is from the Juno local testnet scripts (clone juno repo, cat docker/test-user.env)
+	junoLocalKeyMnemonic := "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose"
+	cc := newChainClientLocalJuno(t, defaultKey, junoLocalKeyMnemonic)
+
+	//Add another key to the chain client for the grantee
+	_, err := cc.AddKey(granterKey, sdk.CoinType)
+	if err != nil {
+		t.Fail()
+	}
+
+	granterAcc, err := cc.GetKeyAddressForKey(granterKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	granterAddr := cc.MustEncodeAccAddr(granterAcc)
+
+	//granter will have 5000ujunox total after this
+	fundAccount(t, ctx, cc, granterKey, defaultKey, "5000ujunox", 0)
+	q := query.Query{Client: cc, Options: &query.QueryOptions{}}
+
+	//Set the configuration locally for the ChainClient
+	cc.ConfigureFeegrants(1, granterKey)
+
+	//gas prices are .01 so this equates to 1000ujunox in gas fees, leaving granter with 4000ujunox
+	err = tx.GrantAllGranteesBasicAllowance(cc, ctx, 100000)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	//Get latest height from the chain, mark feegrant configuration as verified up to that height.
+	h, err := cc.QueryLatestHeight(ctx)
+	if err != nil {
+		t.Fail()
+	}
+	cc.Config.FeeGrants.BlockHeightVerified = h
+
+	//Grantee will have 2000ujunox, granter will have 1000ujunox
+	fundHash := fundAccount(t, ctx, cc, cc.Config.FeeGrants.ManagedGrantees[0], granterKey, "2000ujunox", 100000)
+	fmt.Printf("Funded grantee account with 2000ujunox: tx hash %s\n", fundHash)
+
+	//At this point grantee has EXACTLY	2000ujunox.
+	//Now send it back to the granter, forcing the granter to pay the TX fee.
+	//Since granter is out of funds, feegrant should fail
+	granteeKey := cc.Config.FeeGrants.ManagedGrantees[0]
+	granteeAcc, err := cc.GetKeyAddressForKey(granteeKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	granteeAddr := cc.MustEncodeAccAddr(granteeAcc)
+	balanceBeforeFundReturn, err := q.Bank_Balance(granteeAddr, "ujunox")
+	if err != nil {
+		t.Fatal(err)
+	}
+	//Granter sent grantee 2000ujunox earlier.
+	assert.Equal(t, balanceBeforeFundReturn.Balance.Amount, sdk.NewInt(2000))
+
+	granterAccBalance, err := q.Bank_Balance(granterAddr, "ujunox")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Printf("Granter balance: %+v\n", granterAccBalance.Balance)
+
+	//Send some funds to the default address. Granter now has 1000ujunox to pay this feegranted TX, but we use just over that in fees, so this should fail.
+	_, err = feegrantSendFunds(t, ctx, cc, defaultKey, granteeKey, 100001)
+	assert.NotNil(t, err)
+	fmt.Printf("Error feegranting send funds TX: %s\n", err)
+}
+
+// To run this test you must first launch a local Juno chain. To do so, git clone the juno repo and run docker-compose up
+// test what happens if a feegrantee's grant expired
+func TestFeegranterExpiredGrants(t *testing.T) {
+	setSdkContext("juno")
+
+	//coinType := uint32(118) //Cosmos coin type
+	defaultKey := "default"
+	granterKey := "granter1"
+	ctx := context.Background()
+
+	//Mnemonic is from the Juno local testnet scripts (clone juno repo, cat docker/test-user.env)
+	junoLocalKeyMnemonic := "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose"
+	cc := newChainClientLocalJuno(t, defaultKey, junoLocalKeyMnemonic)
+
+	//Add another key to the chain client for the grantee
+	_, err := cc.AddKey(granterKey, sdk.CoinType)
+	if err != nil {
+		t.Fail()
+	}
+
+	//fund granter
+	fundAccount(t, ctx, cc, granterKey, defaultKey, "10000ujunox", 0)
+	q := query.Query{Client: cc, Options: &query.QueryOptions{}}
+
+	//Set the configuration locally for the ChainClient
+	cc.ConfigureFeegrants(1, granterKey)
+
+	expiresAt := time.Now().Add(30 * time.Second)
+	//gas prices are .01 so this equates to 1000ujunox in gas fees, leaving granter with 4000ujunox
+	err = tx.GrantAllGranteesBasicAllowanceWithExpiration(cc, ctx, 100000, expiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	//Get latest height from the chain, mark feegrant configuration as verified up to that height.
+	h, err := cc.QueryLatestHeight(ctx)
+	if err != nil {
+		t.Fail()
+	}
+	cc.Config.FeeGrants.BlockHeightVerified = h
+
+	//Grantee will have 2000ujunox, granter will have 1000ujunox
+	fundHash := fundAccount(t, ctx, cc, cc.Config.FeeGrants.ManagedGrantees[0], granterKey, "2000ujunox", 100000)
+	fmt.Printf("Funded grantee account with 2000ujunox: tx hash %s\n", fundHash)
+
+	//At this point grantee has EXACTLY	2000ujunox.
+	//Now send it back to the granter, forcing the granter to pay the TX fee.
+	granteeKey := cc.Config.FeeGrants.ManagedGrantees[0]
+	granteeAcc, err := cc.GetKeyAddressForKey(granteeKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	granteeAddr := cc.MustEncodeAccAddr(granteeAcc)
+	balanceBeforeFundReturn, err := q.Bank_Balance(granteeAddr, "ujunox")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, balanceBeforeFundReturn.Balance.Amount, sdk.NewInt(2000))
+
+	//Send some funds to the default address. Should succeed
+	_, err = feegrantSendFunds(t, ctx, cc, defaultKey, granteeKey, 100000)
+	assert.Nil(t, err)
+
+	//Wait for the feegrant to expire
+	time.Sleep(30 * time.Second)
+
+	//Send some funds to the default address again. Should FAIL
+	_, err = feegrantSendFunds(t, ctx, cc, defaultKey, granteeKey, 100000)
+	assert.NotNil(t, err)
+}
+
 // To run this test you must first launch a local Juno chain. To do so, git clone the juno repo and run docker-compose up
 func TestFeeGrantBasic(t *testing.T) {
 	coinType := uint32(118) //Cosmos coin type
@@ -77,7 +236,7 @@ func TestFeeGrantBasic(t *testing.T) {
 
 	//Ensure grantee's account exists on chain before attempting a FeeGrant.
 	//Therefore we just send some funds to that address.
-	fundHash := fundAccount(t, ctx, chainClient, granteeKey, granterKey)
+	fundHash := fundAccount(t, ctx, chainClient, granteeKey, granterKey, "1000ujunox", 0)
 	fmt.Printf("Funded grantee account: tx hash %s\n", fundHash)
 
 	chainClient.Config.FeeGrants = &client.FeeGrantConfiguration{
@@ -86,7 +245,7 @@ func TestFeeGrantBasic(t *testing.T) {
 		ManagedGrantees: []string{granteeKey},
 	}
 
-	err = tx.GrantAllGranteesBasicAllowance(chainClient, ctx)
+	err = tx.GrantAllGranteesBasicAllowance(chainClient, ctx, 80000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,17 +253,7 @@ func TestFeeGrantBasic(t *testing.T) {
 
 // To run this test you must first launch a local Juno chain. To do so, git clone the juno repo and run docker-compose up
 func TestFeeGrantRoundRobin(t *testing.T) {
-	// This is, unfortunately, very necessary due to the SDK's internal caching of bech32 address translation.
-	// In other words, lets say you DON'T set the bech32 prefix. The default is 'cosmos'. Then you call any function
-	// in the cosmos SDK that returns the account address string. From that point on, it will ALWAYS cache 'cosmos'
-	// as the prefix and you'll never be able to produce 'juno' as the prefix for that bech32 pub key, no matter what.
-	// This is a huge problem for feegrants. Actually, it MIGHT be necessary to use the reflect package to set some fields,
-	// depending on how the relayer works.
-	prefix := "juno"
-	sdkConf := sdk.GetConfig()
-	sdkConf.SetBech32PrefixForAccount(prefix, prefix+"pub")
-	sdkConf.SetBech32PrefixForValidator(prefix+"valoper", prefix+"valoperpub")
-	sdkConf.SetBech32PrefixForConsensusNode(prefix+"valcons", prefix+"valconspub")
+	setSdkContext("juno")
 
 	//coinType := uint32(118) //Cosmos coin type
 	granterKey := "ccGranterKey"
@@ -131,7 +280,7 @@ func TestFeeGrantRoundRobin(t *testing.T) {
 
 	//Send every grantee 1000ujunox
 	for _, granteeKey := range cc.Config.FeeGrants.ManagedGrantees {
-		fundHash := fundAccount(t, ctx, cc, granteeKey, granterKey)
+		fundHash := fundAccount(t, ctx, cc, granteeKey, granterKey, "1000ujunox", 0)
 		fmt.Printf("Funded grantee account with 1000ujunox: tx hash %s\n", fundHash)
 	}
 
@@ -154,7 +303,10 @@ func TestFeeGrantRoundRobin(t *testing.T) {
 		assert.Equal(t, balanceBeforeFundReturn.Balance.Amount, sdk.NewInt(1000))
 
 		//Send it back
-		fundHash := feegrantSendFunds(t, ctx, cc, granterKey, granteeKey)
+		fundHash, err := feegrantSendFunds(t, ctx, cc, granterKey, granteeKey, 0) //autocalculate gas
+		if err != nil {
+			t.Fatal()
+		}
 		fmt.Printf("Returned granter's funds: tx hash %s\n", fundHash)
 
 		balanceAfterFundReturn, err := q.Bank_Balance(granteeAddr, "ujunox")
@@ -174,7 +326,7 @@ func TestFeeGrantRoundRobin(t *testing.T) {
 	}
 }
 
-func feegrantSendFunds(t *testing.T, ctx context.Context, cc *client.ChainClient, keyNameReceiveFunds string, keyNameSendFunds string) string {
+func feegrantSendFunds(t *testing.T, ctx context.Context, cc *client.ChainClient, keyNameReceiveFunds string, keyNameSendFunds string, gas uint64) (*txtypes.GetTxResponse, error) {
 	fromAddr, err := cc.GetKeyAddressForKey(keyNameSendFunds)
 	if err != nil {
 		t.Fatal(err)
@@ -196,14 +348,24 @@ func feegrantSendFunds(t *testing.T, ctx context.Context, cc *client.ChainClient
 		Amount:      coins,
 	}
 
-	res, err := cc.AwaitFeegrantedTx(ctx, []sdk.Msg{req}, "")
+	signer, feegranter, err := cc.GetTxFeeGrant()
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
-	return res.TxResponse.TxHash
+	res, err := cc.SendMsgsWith(ctx, []sdk.Msg{req}, "", gas, signer, feegranter)
+	if err != nil {
+		return nil, err
+	}
+
+	tx1resp, err := cc.AwaitTx(res.TxHash, 15*time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx1resp, err
 }
 
-func fundAccount(t *testing.T, ctx context.Context, cc *client.ChainClient, keyNameReceiveFunds string, keyNameSendFunds string) string {
+func fundAccount(t *testing.T, ctx context.Context, cc *client.ChainClient, keyNameReceiveFunds string, keyNameSendFunds string, amountCoin string, gas uint64) string {
 	fromAddr, err := cc.GetKeyAddressForKey(keyNameSendFunds)
 	if err != nil {
 		t.Fatal(err)
@@ -214,7 +376,7 @@ func fundAccount(t *testing.T, ctx context.Context, cc *client.ChainClient, keyN
 		t.Fatal(err)
 	}
 
-	coins, err := sdk.ParseCoinsNormalized("1000ujunox")
+	coins, err := sdk.ParseCoinsNormalized(amountCoin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +387,7 @@ func fundAccount(t *testing.T, ctx context.Context, cc *client.ChainClient, keyN
 		Amount:      coins,
 	}
 
-	res, err := cc.SubmitTxAwaitResponse(ctx, []sdk.Msg{req}, "", 0, keyNameSendFunds)
+	res, err := cc.SubmitTxAwaitResponse(ctx, []sdk.Msg{req}, "", gas, keyNameSendFunds)
 	if err != nil {
 		t.Fatal(err)
 	}

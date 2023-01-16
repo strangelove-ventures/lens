@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
@@ -139,7 +140,7 @@ func getGasTokenDenom(gasPrices string) (string, error) {
 // GrantBasicAllowance Send a feegrant with the basic allowance type.
 // This function does not check for existing feegrant authorizations.
 // TODO: check for existing authorizations prior to attempting new one.
-func GrantAllGranteesBasicAllowance(cc *client.ChainClient, ctx context.Context) error {
+func GrantAllGranteesBasicAllowance(cc *client.ChainClient, ctx context.Context, gas uint64) error {
 	if cc.Config.FeeGrants == nil {
 		return errors.New("ChainClient must be a FeeGranter to establish grants")
 	} else if len(cc.Config.FeeGrants.ManagedGrantees) == 0 {
@@ -164,7 +165,7 @@ func GrantAllGranteesBasicAllowance(cc *client.ChainClient, ctx context.Context)
 			return err
 		}
 
-		grantResp, err := GrantBasicAllowance(cc, ctx, granterAddr, granterKey, granteeAddr)
+		grantResp, err := GrantBasicAllowance(cc, ctx, granterAddr, granterKey, granteeAddr, gas)
 		if err != nil {
 			return err
 		} else if grantResp != nil && grantResp.TxResponse != nil && grantResp.TxResponse.Code != 0 {
@@ -173,6 +174,81 @@ func GrantAllGranteesBasicAllowance(cc *client.ChainClient, ctx context.Context)
 		}
 	}
 	return nil
+}
+
+// GrantBasicAllowance Send a feegrant with the basic allowance type.
+// This function does not check for existing feegrant authorizations.
+// TODO: check for existing authorizations prior to attempting new one.
+func GrantAllGranteesBasicAllowanceWithExpiration(cc *client.ChainClient, ctx context.Context, gas uint64, expiration time.Time) error {
+	if cc.Config.FeeGrants == nil {
+		return errors.New("ChainClient must be a FeeGranter to establish grants")
+	} else if len(cc.Config.FeeGrants.ManagedGrantees) == 0 {
+		return errors.New("ChainClient is a FeeGranter, but is not managing any Grantees")
+	}
+
+	granterKey := cc.Config.FeeGrants.GranterKey
+	if granterKey == "" {
+		granterKey = cc.Config.Key
+	}
+	granterAddr, err := cc.GetKeyAddressForKey(granterKey)
+	if err != nil {
+		fmt.Printf("ChainClient FeeGranter misconfiguration: %s", err.Error())
+		return err
+	}
+
+	for _, grantee := range cc.Config.FeeGrants.ManagedGrantees {
+		granteeAddr, err := cc.GetKeyAddressForKey(grantee)
+
+		if err != nil {
+			fmt.Printf("Misconfiguration for grantee %s. Error: %s\n", grantee, err.Error())
+			return err
+		}
+
+		grantResp, err := GrantBasicAllowanceWithExpiration(cc, ctx, granterAddr, granterKey, granteeAddr, gas, expiration)
+		if err != nil {
+			return err
+		} else if grantResp != nil && grantResp.TxResponse != nil && grantResp.TxResponse.Code != 0 {
+			fmt.Printf("grantee %s and granter %s. Code: %d\n", granterAddr.String(), granteeAddr.String(), grantResp.TxResponse.Code)
+			return fmt.Errorf("could not configure feegrant for granter %s and grantee %s", granterAddr.String(), granteeAddr.String())
+		}
+	}
+	return nil
+}
+
+func getMsgGrantBasicAllowanceWithExpiration(cc *client.ChainClient, granter sdk.AccAddress, grantee sdk.AccAddress, expiration time.Time) (sdk.Msg, error) {
+	//thirtyMin := time.Now().Add(30 * time.Minute)
+	feeGrantBasic := &feegrant.BasicAllowance{
+		Expiration: &expiration,
+	}
+	msgGrantAllowance, err := feegrant.NewMsgGrantAllowance(feeGrantBasic, granter, grantee)
+	if err != nil {
+		fmt.Printf("Error: GrantBasicAllowance.NewMsgGrantAllowance: %s", err.Error())
+		return nil, err
+	}
+
+	//Due to the way Lens configures the SDK, addresses will have the 'cosmos' prefix which
+	//doesn't necessarily match the chain prefix of the ChainClient config. So calling the internal
+	//'NewMsgGrantAllowance' function will return the *incorrect* 'cosmos' prefixed bech32 address.
+
+	//Update the Grant to ensure the correct chain-specific granter is set
+	granterAddr, granterAddrErr := cc.EncodeBech32AccAddr(granter)
+	if granterAddrErr != nil {
+		fmt.Printf("EncodeBech32AccAddr: %s", granterAddrErr.Error())
+		return nil, granterAddrErr
+	}
+
+	//Update the Grant to ensure the correct chain-specific grantee is set
+	granteeAddr, granteeAddrErr := cc.EncodeBech32AccAddr(grantee)
+	if granteeAddrErr != nil {
+		fmt.Printf("EncodeBech32AccAddr: %s", granteeAddrErr.Error())
+		return nil, granteeAddrErr
+	}
+
+	//override the 'cosmos' prefixed bech32 addresses with the correct chain prefix
+	msgGrantAllowance.Grantee = granteeAddr
+	msgGrantAllowance.Granter = granterAddr
+
+	return msgGrantAllowance, nil
 }
 
 func getMsgGrantBasicAllowance(cc *client.ChainClient, granter sdk.AccAddress, grantee sdk.AccAddress) (sdk.Msg, error) {
@@ -211,14 +287,30 @@ func getMsgGrantBasicAllowance(cc *client.ChainClient, granter sdk.AccAddress, g
 	return msgGrantAllowance, nil
 }
 
-func GrantBasicAllowance(cc *client.ChainClient, ctx context.Context, granter sdk.AccAddress, granterKeyName string, grantee sdk.AccAddress) (*txtypes.GetTxResponse, error) {
+func GrantBasicAllowance(cc *client.ChainClient, ctx context.Context, granter sdk.AccAddress, granterKeyName string, grantee sdk.AccAddress, gas uint64) (*txtypes.GetTxResponse, error) {
 	msgGrantAllowance, err := getMsgGrantBasicAllowance(cc, granter, grantee)
 	if err != nil {
 		return nil, err
 	}
 
 	msgs := []sdk.Msg{msgGrantAllowance}
-	txResp, err := cc.SubmitTxAwaitResponse(ctx, msgs, "", 80000, granterKeyName)
+	txResp, err := cc.SubmitTxAwaitResponse(ctx, msgs, "", gas, granterKeyName)
+	if err != nil {
+		fmt.Printf("Error: GrantBasicAllowance.SubmitTxAwaitResponse: %s", err.Error())
+		return nil, err
+	}
+
+	return txResp, nil
+}
+
+func GrantBasicAllowanceWithExpiration(cc *client.ChainClient, ctx context.Context, granter sdk.AccAddress, granterKeyName string, grantee sdk.AccAddress, gas uint64, expiration time.Time) (*txtypes.GetTxResponse, error) {
+	msgGrantAllowance, err := getMsgGrantBasicAllowanceWithExpiration(cc, granter, grantee, expiration)
+	if err != nil {
+		return nil, err
+	}
+
+	msgs := []sdk.Msg{msgGrantAllowance}
+	txResp, err := cc.SubmitTxAwaitResponse(ctx, msgs, "", gas, granterKeyName)
 	if err != nil {
 		fmt.Printf("Error: GrantBasicAllowance.SubmitTxAwaitResponse: %s", err.Error())
 		return nil, err

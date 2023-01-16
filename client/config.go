@@ -68,7 +68,7 @@ type ChainClientConfig struct {
 	OutputFormat   string                  `json:"output-format" yaml:"output-format"`
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
-
+	ExtraCodecs    []string                `json:"extra-codecs" yaml:"extra-codecs"`
 	//If FeeGrantConfiguration is set, TXs submitted by the ChainClient will be signed by the FeeGrantees in a round-robin fashion by default.
 	FeeGrants *FeeGrantConfiguration `json:"feegrants" yaml:"feegrants"`
 }
