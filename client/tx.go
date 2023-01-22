@@ -109,10 +109,6 @@ func (cc *ChainClient) SendMsgsWith(ctx context.Context, msgs []sdk.Msg, memo st
 		return nil, err
 	}
 
-	// if feegranterAddr != "" {
-
-	// }
-
 	// Attach the signature to the transaction
 	// c.LogFailedTx(nil, err, msgs)
 	// Force encoding in the chain specific address
@@ -158,19 +154,6 @@ func (cc *ChainClient) SendMsgsWith(ctx context.Context, msgs []sdk.Msg, memo st
 	}
 
 	return res, nil
-}
-
-// SendMsgs wraps the msgs in a StdTx, signs and sends it. An error is returned if there
-// was an issue sending the transaction. A successfully sent, but failed transaction will
-// not return an error. If a transaction is successfully sent, the result of the execution
-// of that transaction will be logged. A boolean indicating if a transaction was successfully
-// sent and executed successfully is returned.
-func (cc *ChainClient) SendMsgsWithSigner(ctx context.Context, signer string, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	return cc.SendMsgsWith(ctx, msgs, memo, 0, signer, "")
-}
-
-func (cc *ChainClient) SendMsgWithSigner(ctx context.Context, signer string, msg sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	return cc.SendMsgsWithSigner(ctx, signer, []sdk.Msg{msg}, memo)
 }
 
 // SendMsgs wraps the msgs in a StdTx, signs and sends it. An error is returned if there
@@ -434,26 +417,26 @@ func BuildSimTx(info *keyring.Record, txf tx.Factory, feegranterAddr string, msg
 	return simReq.Marshal()
 }
 
-type LensTx struct {
-	Simulated     bool //Whether the TX has been simulated (for gas calculation, for example)
-	TxBytes       []byte
-	TxFactory     tx.Factory
-	Fees          sdk.Coins
-	TxBuildError  error
-	TxSimError    error
-	TxSubmitError error
-
-	Submitted  bool            //whether the TX has been submitted on chain
-	TxResponse *sdk.TxResponse //Only available after TX is submitted
-}
-
-func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64) (*sdk.TxResponse, error) {
-
+func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64) (
+	txBytes []byte,
+	sequence uint64,
+	fees sdk.Coins,
+	err error,
+) {
 	signingKey, feegranterKey, err := cc.GetTxFeeGrant()
 	if err != nil {
-		return nil, err
+		return nil, 0, sdk.Coins{}, err
 	}
 
+	return cc.buildTxWith(ctx, msgs, memo, gas, signingKey, feegranterKey)
+}
+
+func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64, signingKey string, feegranterKey string) (
+	txBytes []byte,
+	sequence uint64,
+	fees sdk.Coins,
+	err error,
+) {
 	sdkConfigMutex.Lock()
 	sdkConf := sdk.GetConfig()
 	sdkConf.SetBech32PrefixForAccount(cc.Config.AccountPrefix, cc.Config.AccountPrefix+"pub")
@@ -463,7 +446,7 @@ func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string,
 
 	txf, err := cc.PrepareFactory(cc.TxFactory(), signingKey)
 	if err != nil {
-		return nil, err
+		return nil, 0, sdk.Coins{}, err
 	}
 
 	feegranterAddr := ""
@@ -472,7 +455,7 @@ func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string,
 	if signingKey != feegranterKey && feegranterKey != "" {
 		granterAddr, err := cc.GetKeyAddressForKey(feegranterKey)
 		if err != nil {
-			return nil, err
+			return nil, 0, sdk.Coins{}, err
 		}
 
 		//Must be set in Factory to affect gas calculation (sim tx) as well as real tx
@@ -482,19 +465,16 @@ func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string,
 
 	adjusted := gas
 
+	if memo != "" {
+		txf = txf.WithMemo(memo)
+	}
+
 	if gas == 0 {
-		// TODO: Make this work with new CalculateGas method
-		// TODO: This is related to GRPC client stuff?
-		// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
 		_, adjusted, err = cc.CalculateGas(ctx, txf, signingKey, feegranterAddr, msgs...)
 
 		if err != nil {
-			return nil, err
+			return nil, 0, sdk.Coins{}, err
 		}
-	}
-
-	if memo != "" {
-		txf = txf.WithMemo(memo)
 	}
 
 	// Set the gas amount on the transaction factory
@@ -503,25 +483,10 @@ func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string,
 	// Build the transaction builder
 	txb, err := txf.BuildUnsignedTx(msgs...)
 	if err != nil {
-		return nil, err
-	}
-
-	// if feegranterAddr != "" {
-
-	// }
-
-	// Attach the signature to the transaction
-	// c.LogFailedTx(nil, err, msgs)
-	// Force encoding in the chain specific address
-	for _, msg := range msgs {
-		cc.Codec.Marshaler.MustMarshalJSON(msg)
+		return nil, 0, sdk.Coins{}, err
 	}
 
 	err = func() error {
-		//done := cc.SetSDKContext()
-		// ensure that we allways call done, even in case of an error or panic
-		//defer done()
-
 		if err = tx.Sign(txf, signingKey, txb, false); err != nil {
 			return err
 		}
@@ -529,30 +494,14 @@ func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string,
 	}()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, sdk.Coins{}, err
 	}
 
 	// Generate the transaction bytes
-	txBytes, err := cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
+	txBytes, err = cc.Codec.TxConfig.TxEncoder()(txb.GetTx())
 	if err != nil {
-		return nil, err
+		return nil, 0, sdk.Coins{}, err
 	}
 
-	// Broadcast those bytes
-	res, err := cc.BroadcastTx(ctx, txBytes)
-	if res != nil {
-		fmt.Printf("TX hash: %s\n", res.TxHash)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	// transaction was executed, log the success or failure using the tx response code
-	// NOTE: error is nil, logic should use the returned error to determine if the
-	// transaction was successfully executed.
-	if res.Code != 0 {
-		return res, fmt.Errorf("transaction failed with code: %d", res.Code)
-	}
-
-	return res, nil
+	return txBytes, txf.Sequence(), fees, nil
 }
