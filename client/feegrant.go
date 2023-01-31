@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -28,6 +29,30 @@ func (cc *ChainClient) ConfigureFeegrants(numGrantees int, granterKey string) er
 	}
 
 	return cc.Config.FeeGrants.AddGranteeKeys(cc)
+}
+
+func (cc *ChainClient) ConfigureWithGrantees(grantees []string, granterKey string) error {
+	if len(grantees) == 0 {
+		return errors.New("list of grantee names cannot be empty")
+	}
+
+	cc.Config.FeeGrants = &FeeGrantConfiguration{
+		GranteesWanted:  len(grantees),
+		GranterKey:      granterKey,
+		ManagedGrantees: grantees,
+	}
+
+	for _, newGrantee := range grantees {
+		if !cc.KeyExists(newGrantee) {
+			//Add another key to the chain client for the grantee
+			_, err := cc.AddKey(newGrantee, sdk.CoinType)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (fg *FeeGrantConfiguration) AddGranteeKeys(cc *ChainClient) error {
