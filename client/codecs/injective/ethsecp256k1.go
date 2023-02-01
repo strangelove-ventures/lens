@@ -80,11 +80,13 @@ func (privKey *PrivKey) Type() string {
 
 // MarshalAmino overrides Amino binary marshalling.
 func (privKey PrivKey) MarshalAmino() ([]byte, error) {
+	fmt.Printf("PrivKey MarshalAmino\n")
 	return privKey.Key, nil
 }
 
 // UnmarshalAmino overrides Amino binary marshalling.
 func (privKey *PrivKey) UnmarshalAmino(bz []byte) error {
+	fmt.Printf("PrivKey UnmarshalAmino\n")
 	if len(bz) != PrivKeySize {
 		return fmt.Errorf("invalid privkey size, expected %d got %d", PrivKeySize, len(bz))
 	}
@@ -95,6 +97,7 @@ func (privKey *PrivKey) UnmarshalAmino(bz []byte) error {
 
 // MarshalAminoJSON overrides Amino JSON marshalling.
 func (privKey PrivKey) MarshalAminoJSON() ([]byte, error) {
+	fmt.Printf("PrivKey MarshalAminoJSON\n")
 	// When we marshal to Amino JSON, we don't marshal the "key" field itself,
 	// just its contents (i.e. the key bytes).
 	return privKey.MarshalAmino()
@@ -102,6 +105,8 @@ func (privKey PrivKey) MarshalAminoJSON() ([]byte, error) {
 
 // UnmarshalAminoJSON overrides Amino JSON marshalling.
 func (privKey *PrivKey) UnmarshalAminoJSON(bz []byte) error {
+	fmt.Printf("PrivKey UnmarshalAminoJSON\n")
+
 	return privKey.UnmarshalAmino(bz)
 }
 
@@ -163,11 +168,14 @@ func (pubKey *PubKey) Equals(other cryptotypes.PubKey) bool {
 
 // MarshalAmino overrides Amino binary marshalling.
 func (pubKey PubKey) MarshalAmino() ([]byte, error) {
+	fmt.Printf("PubKey UnmarshalAmino\n")
+
 	return pubKey.Key, nil
 }
 
 // UnmarshalAmino overrides Amino binary marshalling.
 func (pubKey *PubKey) UnmarshalAmino(bz []byte) error {
+	fmt.Printf("PubKey UnmarshalAmino\n")
 	if len(bz) != PubKeySize {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidPubKey, "invalid pubkey size, expected %d, got %d", PubKeySize, len(bz))
 	}
@@ -178,6 +186,8 @@ func (pubKey *PubKey) UnmarshalAmino(bz []byte) error {
 
 // MarshalAminoJSON overrides Amino JSON marshalling.
 func (pubKey PubKey) MarshalAminoJSON() ([]byte, error) {
+	fmt.Printf("PubKey MarshalAminoJSON\n")
+
 	// When we marshal to Amino JSON, we don't marshal the "key" field itself,
 	// just its contents (i.e. the key bytes).
 	return pubKey.MarshalAmino()
