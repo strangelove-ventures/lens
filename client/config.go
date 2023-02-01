@@ -21,8 +21,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
-	"github.com/cosmos/ibc-go/v5/modules/apps/transfer"
-	ibc "github.com/cosmos/ibc-go/v5/modules/core"
+	"github.com/cosmos/ibc-go/v6/modules/apps/transfer"
+	ibc "github.com/cosmos/ibc-go/v6/modules/core"
 )
 
 var (
@@ -69,6 +69,7 @@ type ChainClientConfig struct {
 	SignModeStr    string                  `json:"sign-mode" yaml:"sign-mode"`
 	ExtraCodecs    []string                `json:"extra-codecs" yaml:"extra-codecs"`
 	Modules        []module.AppModuleBasic `json:"-" yaml:"-"`
+	Slip44         int                     `json:"slip44" yaml:"slip44"`
 }
 
 func (ccc *ChainClientConfig) Validate() error {
