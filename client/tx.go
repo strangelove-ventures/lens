@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -64,24 +66,20 @@ func (cc *ChainClient) SendMsgsWith(ctx context.Context, msgs []sdk.Msg, memo st
 	sdkConf.SetBech32PrefixForConsensusNode(cc.Config.AccountPrefix+"valcons", cc.Config.AccountPrefix+"valconspub")
 	defer sdkConfigMutex.Unlock()
 
-	txf, err := cc.PrepareFactory(cc.TxFactory(), signingKey)
+	rand.Seed(time.Now().UnixNano())
+	logId := rand.Int()
+	signingKeyAcc, _ := cc.GetKeyAddressForKey(signingKey)
+	signingAddr, _ := cc.EncodeBech32AccAddr(signingKeyAcc)
+	feegrantKeyAcc, _ := cc.GetKeyAddressForKey(feegranterKey)
+	feegrantAddr, _ := cc.EncodeBech32AccAddr(feegrantKeyAcc)
+	fmt.Printf("[Lens:%d] SIGNER: %s, signer addr: %s, FEEGRANTER: %s, feegrant addr: %s, chain: %s, \n", logId, signingKey, signingAddr, feegranterKey, feegrantAddr, cc.Config.ChainID)
+
+	txf, err := cc.PrepareFactory(cc.TxFactory(), signingKey, logId)
 	if err != nil {
 		return nil, err
 	}
 
-	feegranterAddr := ""
-
-	//Cannot feegrant your own TX
-	if signingKey != feegranterKey && feegranterKey != "" {
-		granterAddr, err := cc.GetKeyAddressForKey(feegranterKey)
-		if err != nil {
-			return nil, err
-		}
-
-		//Must be set in Factory to affect gas calculation (sim tx) as well as real tx
-		txf = txf.WithFeeGranter(granterAddr)
-		feegranterAddr = cc.MustEncodeAccAddr(granterAddr)
-	}
+	feegranterAddr := cc.MustEncodeAccAddr(feegrantKeyAcc)
 
 	adjusted := gas
 
@@ -89,11 +87,18 @@ func (cc *ChainClient) SendMsgsWith(ctx context.Context, msgs []sdk.Msg, memo st
 		// TODO: Make this work with new CalculateGas method
 		// TODO: This is related to GRPC client stuff?
 		// https://github.com/cosmos/cosmos-sdk/blob/5725659684fc93790a63981c653feee33ecf3225/client/tx/tx.go#L297
-		_, adjusted, err = cc.CalculateGas(ctx, txf, signingKey, feegranterAddr, msgs...)
+		_, adjusted, err = cc.CalculateGas(ctx, txf, signingKey, feegranterAddr, logId, msgs...)
 
 		if err != nil {
+			fmt.Printf("[Lens:%d] err CalculateGas: %s\n", logId, err.Error())
 			return nil, err
 		}
+	}
+
+	//Cannot feegrant your own TX
+	if signingKey != feegranterKey && feegranterKey != "" {
+		//Must be set in Factory to affect gas calculation (sim tx) as well as real tx
+		txf = txf.WithFeeGranter(feegrantKeyAcc)
 	}
 
 	if memo != "" {
@@ -209,7 +214,7 @@ func (cc *ChainClient) AwaitTx(txHash string, timeout time.Duration) (*txtypes.G
 	return txByHash, nil
 }
 
-func (cc *ChainClient) PrepareFactory(txf tx.Factory, signingKey string) (tx.Factory, error) {
+func (cc *ChainClient) PrepareFactory(txf tx.Factory, signingKey string, id int) (tx.Factory, error) {
 	var (
 		err      error
 		from     sdk.AccAddress
@@ -227,19 +232,52 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory, signingKey string) (tx.Fac
 		return tx.Factory{}, err
 	}
 
+	fmt.Printf("[Lens:%d] PrepareFactory: SigningKey: %s, SDK address: %s\n", id, signingKey, from.String())
+
 	cliCtx := client.Context{}.WithClient(cc.RPCClient).
 		WithInterfaceRegistry(cc.Codec.InterfaceRegistry).
 		WithChainID(cc.Config.ChainID).
-		WithCodec(cc.Codec.Marshaler)
+		WithCodec(cc.Codec.Marshaler).
+		WithFromAddress(from)
+
+		//.WithFeePayerAddress(from)
+
+	// Account defines a read-only version of the auth module's AccountI.
+	// type Account interface {
+	// 	GetAddress() sdk.AccAddress
+	// 	GetPubKey() cryptotypes.PubKey // can return nil.
+	// 	GetAccountNumber() uint64
+	// 	GetSequence() uint64
+	// }
 
 	// Set the account number and sequence on the transaction factory and retry if fail
 	if err = retry.Do(func() error {
 		if err = txf.AccountRetriever().EnsureExists(cliCtx, from); err != nil {
+			fmt.Printf("[Lens:%d] PrepareFactory: Error EnsureExists: %s\n", id, err.Error())
 			return err
 		}
 		return err
 	}, RtyAtt, RtyDel, RtyErr); err != nil {
 		return txf, err
+	}
+
+	acct, err := txf.AccountRetriever().GetAccount(cliCtx, from)
+	if err == nil {
+		acctAddr := acct.GetAddress()
+		//acctPub := acct.GetPubKey()
+		acctSeq := acct.GetSequence()
+		acctNum := acct.GetAccountNumber()
+
+		keyInfo, _ := cc.Keybase.Key(signingKey)
+		pk, _ := keyInfo.GetPubKey()
+
+		sEnc := "Unknown"
+		if pk != nil {
+			sEnc = b64.StdEncoding.EncodeToString(pk.Bytes())
+		}
+		fmt.Printf("Lens[%d]:PrepareFactory: pubkey b64: %s, acctAddr: %s, seq: %d, num: %d\n", id, sEnc, acctAddr.String(), acctSeq, acctNum)
+	} else {
+		fmt.Printf("Lens[%d]:PrepareFactory: GetAccount err %s\n", id, err.Error())
 	}
 
 	// TODO: why this code? this may potentially require another query when we don't want one
@@ -248,6 +286,7 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory, signingKey string) (tx.Fac
 		if err = retry.Do(func() error {
 			num, seq, err = txf.AccountRetriever().GetAccountNumberSequence(cliCtx, from)
 			if err != nil {
+				fmt.Printf("[Lens:%d] PrepareFactory: Error getting sequence: %s\n", id, err.Error())
 				return err
 			}
 			return err
@@ -257,10 +296,12 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory, signingKey string) (tx.Fac
 
 		if initNum == 0 {
 			txf = txf.WithAccountNumber(num)
+			fmt.Printf("[Lens:%d] PrepareFactory: AccountNumber: %d\n", id, num)
 		}
 
 		if initSeq == 0 {
 			txf = txf.WithSequence(seq)
+			fmt.Printf("[Lens:%d] PrepareFactory: Sequence: %d\n", id, seq)
 		}
 	}
 
@@ -272,16 +313,19 @@ func (cc *ChainClient) PrepareFactory(txf tx.Factory, signingKey string) (tx.Fac
 }
 
 // Calculates how much gas is needed by simulating the TX without submitting it on chain (submits to a node, but does not cost gas, etc).
-func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, signingKey string, feegranterAddr string, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
+func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, signingKey string, feegranterAddr string, id int, msgs ...sdk.Msg) (txtypes.SimulateResponse, uint64, error) {
 	keyInfo, err := cc.Keybase.Key(signingKey)
 	if err != nil {
 		return txtypes.SimulateResponse{}, 0, err
 	}
 
+	addr, _ := keyInfo.GetAddress()
+	fmt.Printf("Lens[%d]: Signing address in CalcGas: %s", id, addr.String())
+
 	var txBytes []byte
 	if err := retry.Do(func() error {
 		var err error
-		txBytes, err = BuildSimTx(keyInfo, txf, feegranterAddr, msgs...)
+		txBytes, err = BuildSimTx(keyInfo, txf, feegranterAddr, id, msgs...)
 		if err != nil {
 			return err
 		}
@@ -294,6 +338,8 @@ func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, signing
 		Path: "/cosmos.tx.v1beta1.Service/Simulate",
 		Data: txBytes,
 	}
+
+	fmt.Printf("[Lens:%d] before CalculateGas:QueryABCI\n", id)
 
 	var res abci.ResponseQuery
 	if err := retry.Do(func() error {
@@ -379,7 +425,7 @@ type protoTxProvider interface {
 
 // BuildSimTx creates an unsigned tx with an empty single signature and returns
 // the encoded transaction or an error if the unsigned transaction cannot be built.
-func BuildSimTx(info *keyring.Record, txf tx.Factory, feegranterAddr string, msgs ...sdk.Msg) ([]byte, error) {
+func BuildSimTx(info *keyring.Record, txf tx.Factory, feegranterAddr string, logId int, msgs ...sdk.Msg) ([]byte, error) {
 	txb, err := txf.BuildUnsignedTx(msgs...)
 	if err != nil {
 		return nil, err
@@ -405,15 +451,20 @@ func BuildSimTx(info *keyring.Record, txf tx.Factory, feegranterAddr string, msg
 		return nil, err
 	}
 
+	sEnc := b64.StdEncoding.EncodeToString(pk.Bytes())
+	fmt.Printf("Lens[%d]: pubkey b64 in simtx: %s\n", logId, sEnc)
+
 	protoProvider, ok := txb.(protoTxProvider)
 	if !ok {
 		return nil, fmt.Errorf("cannot simulate amino tx")
 	}
 
 	simReq := txtypes.SimulateRequest{Tx: protoProvider.GetProtoTx()}
-	if feegranterAddr != "" {
-		simReq.Tx.AuthInfo.Fee.Granter = feegranterAddr
-	}
+	//if feegranterAddr != "" {
+	fmt.Printf("Lens[%d]: feegranter in simtx: %s\n", logId, simReq.Tx.AuthInfo.Fee.Granter)
+	//simReq.Tx.AuthInfo.Fee.Granter = ""
+	//simReq.Tx.AuthInfo.Fee.Granter = feegranterAddr
+	//	}
 	return simReq.Marshal()
 }
 
@@ -428,10 +479,12 @@ func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string,
 		return nil, 0, sdk.Coins{}, err
 	}
 
-	return cc.buildTxWith(ctx, msgs, memo, gas, signingKey, feegranterKey)
+	rand.Seed(time.Now().UnixNano())
+	logId := rand.Int()
+	return cc.buildTxWith(ctx, msgs, memo, gas, signingKey, feegranterKey, logId)
 }
 
-func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64, signingKey string, feegranterKey string) (
+func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64, signingKey string, feegranterKey string, id int) (
 	txBytes []byte,
 	sequence uint64,
 	fees sdk.Coins,
@@ -444,12 +497,35 @@ func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo str
 	sdkConf.SetBech32PrefixForConsensusNode(cc.Config.AccountPrefix+"valcons", cc.Config.AccountPrefix+"valconspub")
 	defer sdkConfigMutex.Unlock()
 
-	txf, err := cc.PrepareFactory(cc.TxFactory(), signingKey)
+	signingKeyAcc, _ := cc.GetKeyAddressForKey(signingKey)
+	signingAddr, _ := cc.EncodeBech32AccAddr(signingKeyAcc)
+	feegrantKeyAcc, _ := cc.GetKeyAddressForKey(feegranterKey)
+	feegrantAddr, _ := cc.EncodeBech32AccAddr(feegrantKeyAcc)
+	fmt.Printf("[Lens:%d][app=relayer] SIGNER: %s, signer addr: %s, FEEGRANTER: %s, feegrant addr: %s, chain: %s, account prefix: %s \n", id, signingKey, signingAddr, feegranterKey, feegrantAddr, cc.Config.ChainID, cc.Config.AccountPrefix)
+
+	txf, err := cc.PrepareFactory(cc.TxFactory(), signingKey, id)
 	if err != nil {
 		return nil, 0, sdk.Coins{}, err
 	}
 
 	feegranterAddr := ""
+	adjusted := gas
+
+	if memo != "" {
+		txf = txf.WithMemo(memo)
+	}
+
+	fmt.Printf("[Lens:%d] before CalculateGas\n", id)
+
+	if gas == 0 {
+		_, adjusted, err = cc.CalculateGas(ctx, txf, signingKey, feegranterAddr, id, msgs...)
+
+		if err != nil {
+			fmt.Printf("[Lens:%d] err CalculateGas: %s\n", id, err.Error())
+			return nil, 0, sdk.Coins{}, err
+		}
+	}
+	fmt.Printf("[Lens:%d] after CalculateGas\n", id)
 
 	//Cannot feegrant your own TX
 	if signingKey != feegranterKey && feegranterKey != "" {
@@ -460,21 +536,9 @@ func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo str
 
 		//Must be set in Factory to affect gas calculation (sim tx) as well as real tx
 		txf = txf.WithFeeGranter(granterAddr)
+		//txf = txf.WithFeePayer(granterAddr)
 		feegranterAddr = cc.MustEncodeAccAddr(granterAddr)
-	}
-
-	adjusted := gas
-
-	if memo != "" {
-		txf = txf.WithMemo(memo)
-	}
-
-	if gas == 0 {
-		_, adjusted, err = cc.CalculateGas(ctx, txf, signingKey, feegranterAddr, msgs...)
-
-		if err != nil {
-			return nil, 0, sdk.Coins{}, err
-		}
+		fmt.Printf("[Lens:%d] feegranter addr: %s \n", id, feegranterAddr)
 	}
 
 	// Set the gas amount on the transaction factory
@@ -486,12 +550,31 @@ func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo str
 		return nil, 0, sdk.Coins{}, err
 	}
 
-	err = func() error {
-		if err = tx.Sign(txf, signingKey, txb, false); err != nil {
-			return err
-		}
-		return nil
-	}()
+	//err = func() error {
+	k, err := txf.Keybase().Key(signingKey)
+	if err != nil {
+		fmt.Printf("[Lens:%d] Key err %s\n", id, err.Error())
+		//return err
+		return nil, 0, sdk.Coins{}, err
+	}
+
+	pubKey, err := k.GetPubKey()
+	if err != nil {
+		fmt.Printf("[Lens:%d] GetPubKey err %s\n", id, err.Error())
+		//return err
+		return nil, 0, sdk.Coins{}, err
+	}
+
+	fmt.Printf("[Lens:%d] before sdk.AccAddress\n", id)
+	addr := sdk.AccAddress(pubKey.Address()).String()
+	fmt.Printf("[Lens:%d] Signing TX with key %s, which has address %s\n", id, signingKey, addr)
+
+	if err = tx.Sign(txf, signingKey, txb, false); err != nil {
+		//return err
+		return nil, 0, sdk.Coins{}, err
+	}
+	//return nil
+	//}()
 
 	if err != nil {
 		return nil, 0, sdk.Coins{}, err
@@ -502,6 +585,15 @@ func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo str
 	if err != nil {
 		return nil, 0, sdk.Coins{}, err
 	}
+
+	// decoder := cc.Codec.TxConfig.TxDecoder()
+	// sdktx, err := decoder(txBytes)
+	// if err != nil {
+	// 	fmt.Printf("[Lens:%d] err: %s \n", id, err.Error())
+	// 	return nil, 0, sdk.Coins{}, err
+	// }
+	// sdktx.GetMsgs()
+	//fmt.Printf("[Lens:%d] feegrant addr: %s \n", id, feegranterAddr)
 
 	return txBytes, txf.Sequence(), fees, nil
 }

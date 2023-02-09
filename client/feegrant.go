@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -79,6 +80,7 @@ func (cc *ChainClient) GetTxFeeGrant() (txSignerKey string, feeGranterKey string
 	txSignerKey = cc.Config.Key
 
 	if cc.Config.FeeGrants == nil {
+		fmt.Printf("cc.Config.FeeGrants == nil\n")
 		return
 	}
 
@@ -88,12 +90,15 @@ func (cc *ChainClient) GetTxFeeGrant() (txSignerKey string, feeGranterKey string
 	// The ChainClient Feegrant configuration has never been verified on chain.
 	// Don't use Feegrants as it could cause the TX to fail on chain.
 	if feeGranterKey == "" || cc.Config.FeeGrants.BlockHeightVerified <= 0 {
+		fmt.Printf("cc.Config.FeeGrants.BlockHeightVerified <= 0\n")
 		feeGranterKey = ""
 		return
 	}
 
 	//Pick the next managed grantee in the list as the TX signer
 	lastGranteeIdx := cc.Config.FeeGrants.GranteeLastSignerIndex
+	fmt.Printf("lastGranteeIdx: %d\n", lastGranteeIdx)
+
 	if lastGranteeIdx >= 0 && lastGranteeIdx <= len(cc.Config.FeeGrants.ManagedGrantees)-1 {
 		txSignerKey = cc.Config.FeeGrants.ManagedGrantees[lastGranteeIdx]
 		cc.Config.FeeGrants.GranteeLastSignerIndex = cc.Config.FeeGrants.GranteeLastSignerIndex + 1

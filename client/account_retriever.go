@@ -18,7 +18,8 @@ var _ client.AccountRetriever = &ChainClient{}
 // GetAccount queries for an account given an address and a block height. An
 // error is returned if the query or decoding fails.
 func (cc *ChainClient) GetAccount(clientCtx client.Context, addr sdk.AccAddress) (client.Account, error) {
-	account, _, err := cc.GetAccountWithHeight(clientCtx, addr)
+	account, height, err := cc.GetAccountWithHeight(clientCtx, addr)
+	fmt.Printf("Block height for GetAccount: %d\n", height)
 	return account, err
 }
 
