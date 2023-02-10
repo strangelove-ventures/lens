@@ -5,6 +5,7 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -323,9 +324,10 @@ func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, signing
 	fmt.Printf("Lens[%d]: Signing address in CalcGas: %s", id, addr.String())
 
 	var txBytes []byte
+	var txb client.TxBuilder
 	if err := retry.Do(func() error {
 		var err error
-		txBytes, err = BuildSimTx(keyInfo, txf, feegranterAddr, id, msgs...)
+		txBytes, err, txb = BuildSimTx(keyInfo, txf, feegranterAddr, id, msgs...)
 		if err != nil {
 			return err
 		}
@@ -339,7 +341,43 @@ func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, signing
 		Data: txBytes,
 	}
 
-	fmt.Printf("[Lens:%d] before CalculateGas:QueryABCI\n", id)
+	signingTx := txb.GetTx()
+	pubKeys, err := signingTx.GetPubKeys()
+	if err != nil {
+		fmt.Printf("[Lens:%d] decoder pubkey err: %s \n", id, err.Error())
+		return txtypes.SimulateResponse{}, 0, err
+	}
+	for _, curr := range pubKeys {
+		if curr != nil {
+			sEnc := b64.StdEncoding.EncodeToString(curr.Bytes())
+			fmt.Printf("[Lens:%d] signingTx public key: %s \n", id, sEnc)
+		} else {
+			fmt.Printf("[Lens:%d] signingTx public key nil \n", id)
+		}
+	}
+
+	sigs, err := signingTx.GetSignaturesV2()
+	if err != nil {
+		fmt.Printf("[Lens:%d] decoder sigs err: %s \n", id, err.Error())
+		return txtypes.SimulateResponse{}, 0, err
+	}
+	for _, curr := range sigs {
+		if curr.PubKey != nil {
+			sEnc := b64.StdEncoding.EncodeToString(curr.PubKey.Bytes())
+			fmt.Printf("[Lens:%d] signingTx SIG public key: %s \n", id, sEnc)
+		} else {
+			fmt.Printf("[Lens:%d] signingTx SIG public key nil \n", id)
+		}
+	}
+
+	signers := signingTx.GetSigners()
+	for _, curr := range signers {
+		if curr != nil {
+			fmt.Printf("[Lens:%d] signer: %s \n", id, curr.String())
+		} else {
+			fmt.Printf("[Lens:%d] signer nil \n", id)
+		}
+	}
 
 	var res abci.ResponseQuery
 	if err := retry.Do(func() error {
@@ -425,17 +463,17 @@ type protoTxProvider interface {
 
 // BuildSimTx creates an unsigned tx with an empty single signature and returns
 // the encoded transaction or an error if the unsigned transaction cannot be built.
-func BuildSimTx(info *keyring.Record, txf tx.Factory, feegranterAddr string, logId int, msgs ...sdk.Msg) ([]byte, error) {
+func BuildSimTx(info *keyring.Record, txf tx.Factory, feegranterAddr string, logId int, msgs ...sdk.Msg) ([]byte, error, client.TxBuilder) {
 	txb, err := txf.BuildUnsignedTx(msgs...)
 	if err != nil {
-		return nil, err
+		return nil, err, nil
 	}
 
 	var pk cryptotypes.PubKey = &secp256k1.PubKey{} // use default public key type
 
 	pk, err = info.GetPubKey()
 	if err != nil {
-		return nil, err
+		return nil, err, nil
 	}
 
 	// Create an empty signature literal as the ante handler will populate with a
@@ -448,24 +486,32 @@ func BuildSimTx(info *keyring.Record, txf tx.Factory, feegranterAddr string, log
 		Sequence: txf.Sequence(),
 	}
 	if err := txb.SetSignatures(sig); err != nil {
-		return nil, err
+		return nil, err, nil
 	}
 
 	sEnc := b64.StdEncoding.EncodeToString(pk.Bytes())
-	fmt.Printf("Lens[%d]: pubkey b64 in simtx: %s\n", logId, sEnc)
+	fmt.Printf("Lens[%d]: pubkey b64 in simtx (new modified.....): %s\n", logId, sEnc)
 
 	protoProvider, ok := txb.(protoTxProvider)
 	if !ok {
-		return nil, fmt.Errorf("cannot simulate amino tx")
+		return nil, fmt.Errorf("cannot simulate amino tx"), nil
 	}
 
-	simReq := txtypes.SimulateRequest{Tx: protoProvider.GetProtoTx()}
+	tBytes, err := protoProvider.GetProtoTx().Marshal()
+	if err != nil {
+		fmt.Printf("err: %s\n", err.Error())
+		panic("marshalling getprototx is a bad idea, bucko")
+	}
+	//simReq := txtypes.SimulateRequest{Tx: protoProvider.GetProtoTx()}
+	simReq := txtypes.SimulateRequest{TxBytes: tBytes}
+
 	//if feegranterAddr != "" {
-	fmt.Printf("Lens[%d]: feegranter in simtx: %s\n", logId, simReq.Tx.AuthInfo.Fee.Granter)
+	//fmt.Printf("Lens[%d]: feegranter in simtx: %s\n", logId, simReq.Tx.AuthInfo.Fee.Granter)
 	//simReq.Tx.AuthInfo.Fee.Granter = ""
 	//simReq.Tx.AuthInfo.Fee.Granter = feegranterAddr
 	//	}
-	return simReq.Marshal()
+	data, err := simReq.Marshal()
+	return data, err, txb
 }
 
 func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64) (
@@ -511,13 +557,10 @@ func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo str
 	feegranterAddr := ""
 	adjusted := gas
 
-	if memo != "" {
-		txf = txf.WithMemo(memo)
-	}
-
 	fmt.Printf("[Lens:%d] before CalculateGas\n", id)
 
 	if gas == 0 {
+		txf = txf.WithMemo(strconv.Itoa(id)) //ID will help trace on the SDK side
 		_, adjusted, err = cc.CalculateGas(ctx, txf, signingKey, feegranterAddr, id, msgs...)
 
 		if err != nil {
@@ -526,6 +569,10 @@ func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo str
 		}
 	}
 	fmt.Printf("[Lens:%d] after CalculateGas\n", id)
+
+	if memo != "" {
+		txf = txf.WithMemo(memo)
+	}
 
 	//Cannot feegrant your own TX
 	if signingKey != feegranterKey && feegranterKey != "" {
