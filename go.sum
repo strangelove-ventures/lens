@@ -85,7 +85,7 @@ github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d/go.mod h1:
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
 github.com/InjectiveLabs/sdk-go v1.42.4-lens h1:90uImanXE/+AOwbq1geijvvvyNgUiEUvjyWC0W98D9Y=
 github.com/InjectiveLabs/sdk-go v1.42.4-lens/go.mod h1:gVKlyJDwXQz4PR7QkOITbF89it2FVcB4ifRkP1hH/7k=
-github.com/KyleMoser/relayer-cosmos-sdk v0.46.6 h1:+gRfbCIDr8l8b6sfxnK5PyVp9lInEEhiRZuFiKkFcO0=
+github.com/KyleMoser/relayer-cosmos-sdk v0.46.6 h1:gyv1jGUUmNU9FCJZ1I4F2yjU+Y41flek1mielA48OLw=
 github.com/KyleMoser/relayer-cosmos-sdk v0.46.6/go.mod h1:8O5Hx8ULYTnZvSppHU+yRbCwb2AcpgKVMvDDlmve+Z4=
 github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=

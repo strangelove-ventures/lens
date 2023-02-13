@@ -321,7 +321,7 @@ func (cc *ChainClient) CalculateGas(ctx context.Context, txf tx.Factory, signing
 	}
 
 	addr, _ := keyInfo.GetAddress()
-	fmt.Printf("Lens[%d]: Signing address in CalcGas: %s", id, addr.String())
+	fmt.Printf("Lens[%d]: Signing address in CalcGas: %s\n", id, addr.String())
 
 	var txBytes []byte
 	var txb client.TxBuilder
