@@ -348,10 +348,7 @@ func feegrantSendFunds(t *testing.T, ctx context.Context, cc *client.ChainClient
 		Amount:      coins,
 	}
 
-	signer, feegranter, err := cc.GetTxFeeGrant()
-	if err != nil {
-		return nil, err
-	}
+	signer, feegranter := cc.GetTxFeeGrant()
 	res, err := cc.SendMsgsWith(ctx, []sdk.Msg{req}, "", gas, signer, feegranter)
 	if err != nil {
 		return nil, err

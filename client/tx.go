@@ -168,10 +168,7 @@ func (cc *ChainClient) SendMsgsWith(ctx context.Context, msgs []sdk.Msg, memo st
 // of that transaction will be logged. A boolean indicating if a transaction was successfully
 // sent and executed successfully is returned.
 func (cc *ChainClient) SendMsgs(ctx context.Context, msgs []sdk.Msg, memo string) (*sdk.TxResponse, error) {
-	signer, feegranter, err := cc.GetTxFeeGrant()
-	if err != nil {
-		return nil, err
-	}
+	signer, feegranter := cc.GetTxFeeGrant()
 	return cc.SendMsgsWith(ctx, msgs, memo, 0, signer, feegranter)
 }
 
@@ -520,17 +517,13 @@ func (cc *ChainClient) BuildTx(ctx context.Context, msgs []sdk.Msg, memo string,
 	fees sdk.Coins,
 	err error,
 ) {
-	signingKey, feegranterKey, err := cc.GetTxFeeGrant()
-	if err != nil {
-		return nil, 0, sdk.Coins{}, err
-	}
-
+	signingKey, feegranterKey := cc.GetTxFeeGrant()
 	rand.Seed(time.Now().UnixNano())
 	logId := rand.Int()
-	return cc.buildTxWith(ctx, msgs, memo, gas, signingKey, feegranterKey, logId)
+	return cc.BuildTxWith(ctx, msgs, memo, gas, signingKey, feegranterKey, logId)
 }
 
-func (cc *ChainClient) buildTxWith(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64, signingKey string, feegranterKey string, id int) (
+func (cc *ChainClient) BuildTxWith(ctx context.Context, msgs []sdk.Msg, memo string, gas uint64, signingKey string, feegranterKey string, id int) (
 	txBytes []byte,
 	sequence uint64,
 	fees sdk.Coins,

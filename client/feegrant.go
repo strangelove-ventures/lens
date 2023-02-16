@@ -75,7 +75,7 @@ func (fg *FeeGrantConfiguration) AddGranteeKeys(cc *ChainClient) error {
 
 // Get the feegrant params to use for the next TX. If feegrants are not configured for the chain client, the default key will be used for TX signing.
 // Otherwise, a configured feegrantee will be chosen for TX signing in round-robin fashion.
-func (cc *ChainClient) GetTxFeeGrant() (txSignerKey string, feeGranterKey string, err error) {
+func (cc *ChainClient) GetTxFeeGrant() (txSignerKey string, feeGranterKey string) {
 	//By default, we should sign TXs with the ChainClient's default key
 	txSignerKey = cc.Config.Key
 
