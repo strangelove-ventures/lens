@@ -8,18 +8,19 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/go-bip39"
-	ethhd "github.com/evmos/ethermint/crypto/hd"
+	"github.com/strangelove-ventures/lens/client/codecs/ethermint"
+	"github.com/strangelove-ventures/lens/client/codecs/injective"
 )
 
 var (
 	// SupportedAlgorithms defines the list of signing algorithms used on Evmos:
 	//  - secp256k1     (Cosmos)
 	//  - eth_secp256k1 (Ethereum)
-	SupportedAlgorithms = keyring.SigningAlgoList{hd.Secp256k1, ethhd.EthSecp256k1}
+	SupportedAlgorithms = keyring.SigningAlgoList{hd.Secp256k1, ethermint.EthSecp256k1, injective.EthSecp256k1}
 	// SupportedAlgorithmsLedger defines the list of signing algorithms used on Evmos for the Ledger device:
 	//  - secp256k1     (Cosmos)
 	//  - eth_secp256k1 (Ethereum)
-	SupportedAlgorithmsLedger = keyring.SigningAlgoList{hd.Secp256k1, ethhd.EthSecp256k1}
+	SupportedAlgorithmsLedger = keyring.SigningAlgoList{hd.Secp256k1, ethermint.EthSecp256k1, injective.EthSecp256k1}
 )
 
 // Option defines a function keys options for the ethereum Secp256k1 curve.
@@ -137,7 +138,12 @@ func (cc *ChainClient) KeyAddOrRestore(keyName string, coinType uint32, mnemonic
 	}
 
 	if coinType == 60 {
-		algo = keyring.SignatureAlgo(ethhd.EthSecp256k1)
+		algo = keyring.SignatureAlgo(ethermint.EthSecp256k1)
+		for _, codec := range cc.Config.ExtraCodecs {
+			if codec == "injective" {
+				algo = keyring.SignatureAlgo(injective.EthSecp256k1)
+			}
+		}
 	}
 
 	info, err := cc.Keybase.NewAccount(keyName, mnemonicStr, "", hd.CreateHDPath(coinType, 0, 0).String(), algo)

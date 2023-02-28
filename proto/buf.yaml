@@ -1,0 +1,4 @@
+version: v1
+lint:
+  allow_comment_ignores: true
+
