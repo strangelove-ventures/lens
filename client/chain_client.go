@@ -11,8 +11,9 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ethhd "github.com/evmos/ethermint/crypto/hd"
-	"github.com/gogo/protobuf/proto"
+	"github.com/strangelove-ventures/lens/client/codecs/ethermint"
+
+	"github.com/cosmos/gogoproto/proto"
 	provtypes "github.com/tendermint/tendermint/light/provider"
 	prov "github.com/tendermint/tendermint/light/provider/http"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
@@ -50,7 +51,7 @@ func NewChainClient(log *zap.Logger, ccc *ChainClientConfig, homepath string, in
 	cc := &ChainClient{
 		log: log,
 
-		KeyringOptions: append([]keyring.Option{ethhd.EthSecp256k1Option()}, kro...),
+		KeyringOptions: append([]keyring.Option{ethermint.EthSecp256k1Option()}, kro...),
 		Config:         ccc,
 		Input:          input,
 		Output:         output,
