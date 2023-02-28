@@ -4,12 +4,12 @@ go 1.19
 
 require (
 	github.com/avast/retry-go/v4 v4.3.2
-	github.com/btcsuite/btcd v0.20.1-beta
+	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/cosmos/cosmos-sdk v0.47.0-rc1
+	github.com/cosmos/cosmos-sdk v0.47.0-rc2
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/gogoproto v1.4.3
-	github.com/cosmos/ibc-go/v7 v7.0.0-20230129094322-b61f76443f71
+	github.com/cosmos/gogoproto v1.4.4
+	github.com/cosmos/ibc-go/v7 v7.0.0-rc0
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/go-cmp v0.5.9
@@ -24,7 +24,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/sync v0.1.0
-	golang.org/x/term v0.4.0
+	golang.org/x/term v0.5.0
 	google.golang.org/grpc v1.52.3
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -36,6 +36,7 @@ require (
 	cosmossdk.io/core v0.3.2 // indirect
 	cosmossdk.io/depinject v1.0.0-alpha.3 // indirect
 	cosmossdk.io/tools/rosetta v0.2.0 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
@@ -86,7 +87,7 @@ require (
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
-	github.com/bgentry/speakeasy v0.1.0 // indirect
+	github.com/bgentry/speakeasy v0.1.1-0.20220910012023-760eaf8b6816 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -94,7 +95,7 @@ require (
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.1
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
-	github.com/cosmos/iavl v0.19.4 // indirect
+	github.com/cosmos/iavl v0.19.5-rc.1 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.12.1 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -158,8 +159,6 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
-	github.com/tendermint/btcd v0.1.1 // indirect
-	github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15 // indirect
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tendermint/tm-db v0.6.7 // indirect
 	github.com/ulikunitz/xz v0.5.8 // indirect
@@ -171,7 +170,7 @@ require (
 	golang.org/x/crypto v0.4.0 // indirect
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.5.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.107.0 // indirect
