@@ -11,6 +11,7 @@ require (
 	github.com/cosmos/gogoproto v1.4.3
 	github.com/cosmos/ibc-go/v7 v7.0.0-20230129094322-b61f76443f71
 	github.com/ethereum/go-ethereum v1.10.26
+	github.com/gogo/protobuf v1.3.2
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github/v43 v43.0.0
 	github.com/jhump/protoreflect v1.12.1-0.20220721211354-060cc04fc18b
@@ -18,7 +19,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/tendermint/tendermint v0.37.0-rc2
 	github.com/tyler-smith/go-bip39 v1.1.0
 	go.uber.org/zap v1.24.0
@@ -45,7 +46,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/googleapis v1.4.1-0.20201022092350-68b0159b7869 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
