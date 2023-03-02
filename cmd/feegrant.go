@@ -128,7 +128,7 @@ func feegrantBasicGrantsCmd(a *appState) *cobra.Command {
 			options := query.QueryOptions{Pagination: pageReq, Height: height}
 			q := &query.Query{Client: cl, Options: &options}
 
-			res, err := query.Feegrant_GrantsRPC(q, granterAddr)
+			res, err := query.Feegrant_GrantsByGranterRPC(q, granterAddr)
 			if err != nil {
 				return err
 			}

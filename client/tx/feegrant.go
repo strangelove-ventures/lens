@@ -40,15 +40,23 @@ func EnsureBasicGrants(ctx context.Context, memo string, cc *client.ChainClient)
 	}
 
 	validGrants, err := query.GetValidBasicGrants(cc)
-	if err != nil {
-		return nil, err
-	}
+	failedLookupGrantsByGranter := err != nil
 
 	msgs := []sdk.Msg{}
 	numGrantees := len(cc.Config.FeeGrants.ManagedGrantees)
 	grantsNeeded := 0
 
 	for _, grantee := range cc.Config.FeeGrants.ManagedGrantees {
+
+		//Searching for all grants with the given granter failed, so we will search by the grantee.
+		//Reason this lookup sometimes fails is because the 'Search by granter' request is in SDK v0.46+
+		if failedLookupGrantsByGranter {
+			validGrants, err = query.GetGranteeValidBasicGrants(cc, grantee)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		granteeAcc, err := cc.GetKeyAddressForKey(grantee)
 		if err != nil {
 			fmt.Printf("Misconfiguration for grantee key %s. Error: %s\n", grantee, err.Error())

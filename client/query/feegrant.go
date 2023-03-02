@@ -11,9 +11,9 @@ import (
 	"github.com/strangelove-ventures/lens/client"
 )
 
-// Feegrant_GrantsRPC returns all requested grants for the given Granter.
+// Feegrant_GrantsByGranterRPC returns all requested grants for the given Granter.
 // Default behavior will return all grants.
-func Feegrant_GrantsRPC(q *Query, address string) ([]*feegrant.Grant, error) {
+func Feegrant_GrantsByGranterRPC(q *Query, address string) ([]*feegrant.Grant, error) {
 	grants := []*feegrant.Grant{}
 	paginator := &query.PageRequest{}
 	allPages := true
@@ -58,7 +58,104 @@ func Feegrant_GrantsRPC(q *Query, address string) ([]*feegrant.Grant, error) {
 	return grants, nil
 }
 
-// Searches for valid, existing BasicAllowance grants. Expired grants are ignored. Other grant types are ignored.
+// Feegrant_GrantsByGranteeRPC returns all requested grants for the given grantee.
+// Default behavior will return all grants.
+func Feegrant_GrantsByGranteeRPC(q *Query, address string) ([]*feegrant.Grant, error) {
+	grants := []*feegrant.Grant{}
+	paginator := &query.PageRequest{}
+	allPages := true
+
+	if q.Options.Pagination != nil {
+		paginator = q.Options.Pagination
+		allPages = false
+	}
+
+	req := &feegrant.QueryAllowancesRequest{Grantee: address, Pagination: paginator}
+	queryClient := feegrant.NewQueryClient(q.Client)
+	ctx, cancel := q.GetQueryContext()
+	defer cancel()
+	hasNextPage := true
+
+	for {
+		res, err := queryClient.Allowances(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Printf("feegrant query ctx: %+v\n", ctx)
+
+		if res.Allowances != nil {
+			grants = append(grants, res.Allowances...)
+		}
+
+		if res.Pagination != nil {
+			req.Pagination.Key = res.Pagination.NextKey
+			if len(res.Pagination.NextKey) == 0 {
+				hasNextPage = false
+			}
+		} else {
+			hasNextPage = false
+		}
+
+		if !allPages || !hasNextPage {
+			break
+		}
+	}
+
+	return grants, nil
+}
+
+// Searches for valid, existing BasicAllowance grants for the given grantee & ChainClient's configured granter.
+// Expired grants are ignored. Other grant types are ignored.
+func GetGranteeValidBasicGrants(cc *client.ChainClient, granteeKey string) ([]*feegrant.Grant, error) {
+	validGrants := []*feegrant.Grant{}
+
+	if cc.Config.FeeGrants == nil {
+		return nil, errors.New("no feegrant configuration for chainclient")
+	}
+
+	granterAddr, err := cc.AccountFromKeyOrAddress(cc.Config.FeeGrants.GranterKey)
+	if err != nil {
+		return nil, err
+	}
+	granterEncodedAddr := cc.MustEncodeAccAddr(granterAddr)
+
+	address, err := cc.AccountFromKeyOrAddress(granteeKey)
+	if err != nil {
+		return nil, err
+	}
+
+	options := QueryOptions{}
+	q := &Query{Client: cc, Options: &options}
+	encodedAddr := cc.MustEncodeAccAddr(address)
+	grants, err := Feegrant_GrantsByGranteeRPC(q, encodedAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, grant := range grants {
+		if grant.Granter == granterEncodedAddr {
+			switch grant.Allowance.TypeUrl {
+			case "/cosmos.feegrant.v1beta1.BasicAllowance":
+				var feegrantAllowance feegrant.FeeAllowanceI
+				e := cc.Codec.InterfaceRegistry.UnpackAny(grant.Allowance, &feegrantAllowance)
+				if e != nil {
+					return nil, e
+				}
+				if isValidGrant(feegrantAllowance.(*feegrant.BasicAllowance)) {
+					validGrants = append(validGrants, grant)
+				}
+			default:
+				fmt.Printf("Ignoring grant type %s for granter %s and grantee %s\n", grant.Allowance.TypeUrl, grant.Granter, grant.Grantee)
+			}
+		}
+	}
+
+	return validGrants, nil
+}
+
+// Searches for valid, existing BasicAllowance grants for the ChainClient's configured Feegranter.
+// Expired grants are ignored. Other grant types are ignored.
 func GetValidBasicGrants(cc *client.ChainClient) ([]*feegrant.Grant, error) {
 	validGrants := []*feegrant.Grant{}
 
@@ -75,7 +172,7 @@ func GetValidBasicGrants(cc *client.ChainClient) ([]*feegrant.Grant, error) {
 	options := QueryOptions{}
 	q := &Query{Client: cc, Options: &options}
 	encodedAddr := cc.MustEncodeAccAddr(address)
-	grants, err := Feegrant_GrantsRPC(q, encodedAddr)
+	grants, err := Feegrant_GrantsByGranterRPC(q, encodedAddr)
 	if err != nil {
 		return nil, err
 	}
