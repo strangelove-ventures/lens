@@ -7,7 +7,7 @@ require (
 	github.com/btcsuite/btcd v0.23.4
 	github.com/btcsuite/btcd/btcutil v1.1.2
 	github.com/cometbft/cometbft v0.37.0
-	github.com/cosmos/cosmos-sdk v0.47.0
+	github.com/cosmos/cosmos-sdk v0.47.1
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.4.6
 	github.com/cosmos/ibc-go/v7 v7.0.0
@@ -73,7 +73,7 @@ require (
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/tidwall/btree v1.6.0 // indirect
 	github.com/zondax/ledger-go v0.14.1 // indirect
-	golang.org/x/exp v0.0.0-20230310171629-522b1b587ee0 // indirect
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 	pgregory.net/rapid v0.5.5 // indirect
 )
@@ -84,7 +84,7 @@ require (
 	cloud.google.com/go/iam v0.12.0 // indirect
 	cloud.google.com/go/storage v1.29.0 // indirect
 	cosmossdk.io/errors v1.0.0-beta.7
-	cosmossdk.io/math v1.0.0-rc.0
+	cosmossdk.io/math v1.0.0
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
