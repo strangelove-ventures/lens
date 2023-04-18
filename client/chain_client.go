@@ -14,11 +14,11 @@ import (
 	"github.com/strangelove-ventures/lens/client/codecs/ethermint"
 
 	"github.com/cosmos/gogoproto/proto"
-	provtypes "github.com/tendermint/tendermint/light/provider"
-	prov "github.com/tendermint/tendermint/light/provider/http"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	libclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	provtypes "github.com/cometbft/cometbft/light/provider"
+	prov "github.com/cometbft/cometbft/light/provider/http"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
+	libclient "github.com/cometbft/cometbft/rpc/jsonrpc/client"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
