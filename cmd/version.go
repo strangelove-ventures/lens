@@ -29,7 +29,7 @@ func versionCmd() *cobra.Command {
 				Version:    Version,
 				Commit:     Commit,
 				CosmosSDK:  dependencyVersions["github.com/cosmos/cosmos-sdk"],
-				Tendermint: dependencyVersions["github.com/tendermint/tendermint"],
+				Tendermint: dependencyVersions["github.com/cometbft/cometbft"],
 			}
 
 			if err := writeJSON(cmd.OutOrStdout(), v); err != nil {

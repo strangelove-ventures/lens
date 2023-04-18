@@ -6,8 +6,8 @@ import (
 	"errors"
 	"strings"
 
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 )
 
 // BlockRPC returns information about a block

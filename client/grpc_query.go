@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	gogogrpc "github.com/cosmos/gogoproto/grpc"
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/encoding"

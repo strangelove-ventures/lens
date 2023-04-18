@@ -8,7 +8,7 @@ import (
 	connectiontypes "github.com/cosmos/ibc-go/v7/modules/core/03-connection/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/strangelove-ventures/lens/client"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 )
 
 type Query struct {
