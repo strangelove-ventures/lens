@@ -1,14 +1,8 @@
 # `lens`
 
-## Archival Notice
+## Inactive :
 
-The "lens" repository, developed by Strangelove Ventures, is now archived. It served as a command-line tool and library to interact with Cosmos chains, supporting the core Cosmos-SDK modules.
-
-The repository was divided into two main packages: `cmd`, which housed the `lens` command-line tool, and `client`, comprising foundational elements to develop Cosmos clients in Go.
-
-It found utility in various scenarios like trading bots, server-side integrations, indexers, search engines, and transaction automation for farming applications.
-
-This repository is no longer active. For ongoing development or usage of Cosmos client libraries, please refer to the latest resources.
+The "lens" repository, developed by Strangelove Ventures, is now inactive. It serves as a command-line tool and library to interact with Cosmos chains, supporting the core Cosmos-SDK modules.This repo will be kept open for PRs but will no longer be actively developerd by Strangelove.
 
 
 **Lens provides a command line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).**
