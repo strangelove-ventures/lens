@@ -2,7 +2,7 @@
 
 ## Inactive :
 
-The "lens" repository, developed by Strangelove, is now inactive. It serves as a command-line tool and library to interact with Cosmos chains, supporting the core Cosmos-SDK modules.This repo will be kept open for PRs but will no longer be actively developerd by Strangelove.
+This repository is now inactive. It will be kept open (non-archived) but will no longer be actively developed by Strangelove.
 
 
 **Lens provides a command line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).**
