@@ -1,5 +1,10 @@
 # `lens`
 
+## Inactive :
+
+This repository is now inactive. It will be kept open (non-archived) but will no longer be actively developed by Strangelove.
+
+
 **Lens provides a command line tool to  interact with any cosmos chain supporting the core [Cosmos-SDK modules](https://github.com/cosmos/cosmos-sdk/tree/master/x).**
 
 **Lens is meant to be imported as a library in other repos and projects to easily navigate and interact with the Cosmos Hub along with IBC chains.**
