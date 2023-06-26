@@ -21,7 +21,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&EthAccount{},
 	)
 	registry.RegisterImplementations(
-		(*tx.ExtensionOptionI)(nil),
+		(*tx.TxExtensionOptionI)(nil),
 		&ExtensionOptionsWeb3Tx{},
 		&ExtensionOptionDynamicFeeTx{},
 	)
